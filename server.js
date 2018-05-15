@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const bcrypt_salt = 10;
 
-const config = require('config');
+const config = require('./config');
 
 const app = express();
 app.use(function (req,res,next) {
@@ -83,7 +83,7 @@ app.route('/api/login').post((req,res,next) => {
         user.token = jwt.sign({
           username: user.name
         },
-        jwt_secret,
+        config.app_jwt_secret,
         {
           expiresIn: 60*60*24,
           subject: ""+user.id
@@ -320,6 +320,7 @@ app.route('/api/lists/:listId').post((req,res) => {
 });
 
 function getLists(uid,gid,callback) {
+  const database = new Database();
   var query = `
     SELECT l.list_id, l.game_id, n.list_name
     FROM lists l

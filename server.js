@@ -279,12 +279,12 @@ app.route('/api/users/:uid/games/:gid/lists').get((req,res) => {
 });
 
 app.route('/api/lists/:listId').post((req,res) => {
-  const uid = req.body.username;
-  const gid = req.body.password;
+  const uid = req.body.userId;
+  const gid = req.body.gameId;
   const value = req.body.value;
   const lid = parseInt(req.params.listId, 10);
-
-  if (req.user.subject != userId) {
+  
+  if (!req.user || req.user.sub == null || req.user.sub != uid) {
     res.status(403).send();
     return;
   }

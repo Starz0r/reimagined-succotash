@@ -30,6 +30,7 @@ app.use(function (err,req,res,next) {
   if (req.user) {
     req.user.roles = ['game_update'];
   }
+  next();
 });
 
 //if !req.user throw error if required
@@ -207,6 +208,7 @@ app.route('/api/games/:id').get((req,res) => {
     getRandomGame(callback);
   } else if (!isNaN(req.params.id)) {
     var id = parseInt(req.params.id, 10);
+
     getGame(id,callback);
   } else {
     res.status(400).send({error:'id must be a number'});
@@ -264,6 +266,25 @@ app.route('/api/games/:id/screenshots').get((req,res) => {
     .then(rows => {
       res.send(rows); 
     })
+    .then(() => database.close())
+    .catch(err => {
+      console.log(err);
+      database.close();
+    });
+});
+
+app.route('/api/games/:id/tags').get((req,res) => {
+  const database = new Database();
+  var gid = parseInt(req.params.id,10);
+  var query = `
+    SELECT gt.*, t.name as name
+    FROM gametag gt
+    JOIN game g on g.id = gt.game_id AND g.removed = 0
+    JOIN tag t on t.id = gt.tag_id
+    WHERE gt.game_id = ?
+  `;
+  database.query(query,[gid])
+    .then(rows => { res.send(rows); })
     .then(() => database.close())
     .catch(err => {
       console.log(err);

@@ -10,21 +10,18 @@ app.route('/:id').get((req,res,next) => {
   }
 
   var id = parseInt(req.params.id, 10);
-  datastore.getReviews(
-    {id:id}, 
-    rows => { 
+  datastore.getReviews({id:id})
+    .then(rows => { 
       if (rows.length == 0) res.sendStatus(404);
       else res.send(rows[0]); 
-    },
-    next
-  );
+    })
+    .catch(err => next(err));
 });
 
 app.route('/').get((req,res,next) => {
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
-  datastore.getReviews({page:page,limit:limit}, 
-    rows => res.send(rows),
-    next
-  );
+  datastore.getReviews({page:page,limit:limit})
+    .then(rows => res.send(rows))
+    .catch(err => next(err));
 });

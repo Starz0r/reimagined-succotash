@@ -43,7 +43,6 @@ app.route('/').get((req,res,next) => {
     })
     .then(() => database.close())
     .catch(err => {
-      console.log(err);
       database.close();
       next(err);
     });
@@ -71,11 +70,15 @@ app.route('/:id').get((req,res,next) => {
   };
 
   if (req.params.id === 'random') {
-    datastore.getRandomGame(callback,next);
+    datastore.getRandomGame()
+      .then(rows=>callback(rows))
+      .catch(err=>next(err));
   } else if (!isNaN(req.params.id)) {
     var id = parseInt(req.params.id, 10);
 
-    datastore.getGame(id,callback,next);
+    datastore.getGame(id)
+      .then(rows=>callback(rows))
+      .catch(err=>next(err));;
   } else {
     res.status(400).send({error:'id must be a number'});
   }
@@ -90,11 +93,9 @@ app.route('/:id/reviews').get((req,res,next) => {
   var id = parseInt(req.params.id, 10);
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
-  datastore.getReviews(
-    {game_id:id,page:page,limit:limit}, 
-    rows => res.send(rows),
-    next
-  );
+  datastore.getReviews({game_id:id,page:page,limit:limit})
+    .then(rows=>res.send(rows))
+    .catch(err=>next(err));;
 });
 
 app.route('/:id/screenshots').get((req,res,next) => {
@@ -122,7 +123,6 @@ app.route('/:id/screenshots').get((req,res,next) => {
     })
     .then(() => database.close())
     .catch(err => {
-      console.log(err);
       database.close();
       next(err);
     });
@@ -147,7 +147,6 @@ app.route('/:id/tags').get((req,res,next) => {
     .then(rows => { res.send(rows); })
     .then(() => database.close())
     .catch(err => {
-      console.log(err);
       database.close();
       next(err);
     });

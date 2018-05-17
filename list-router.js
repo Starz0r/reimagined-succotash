@@ -23,10 +23,11 @@ app.route('/:listId').post((req,res,next) => {
         WHERE user_id=? AND game_id=? AND list_id=?
       `;
       database.query(query,[uid,gid,lid])
-        .then(() => datastore.getLists(uid,gid, rows => res.send(rows),next))
+        .then(() => datastore.getLists(uid,gid)
+          .then(rows=>res.send(rows)
+          .catch(err=>next(err))))
         .then(() => database.close())
         .catch(err => {
-          console.log(err);
           database.close();
           next(err);
         });
@@ -38,10 +39,11 @@ app.route('/:listId').post((req,res,next) => {
         VALUES (?,?,?)
       `;
       database.query(query,[uid,gid,lid])
-        .then(() => datastore.getLists(uid,gid, rows => res.send(rows),next))
+        .then(() => datastore.getLists(uid,gid)
+          .then(rows=>res.send(rows)
+          .catch(err=>next(err))))
         .then(() => database.close())
         .catch(err => {
-          console.log(err);
           database.close();
           next(err);
         });

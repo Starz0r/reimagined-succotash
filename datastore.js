@@ -1,7 +1,8 @@
 const Database = require('./database');
 
 module.exports = {
- getLists(uid,gid,callback,err_cb) {
+  getLists(uid, gid) {
+    return new Promise((res,rej) => {
     const database = new Database();
     var query = `
       SELECT l.list_id, l.game_id, n.list_name
@@ -10,17 +11,18 @@ module.exports = {
       WHERE l.user_id=?
       AND l.game_id=?
     `;
-    database.query(query,[uid,gid])
-      .then(callback)
+    database.query(query, [uid, gid])
+      .then(res)
       .then(() => database.close())
       .catch(err => {
-        console.log(err);
         database.close();
-        if (err_cb) err_cb(err);
+        rej(err);
       });
+    });
   },
-  
-  getReviews(options, callback, err_cb) {
+
+  getReviews(options) {
+    return new Promise((res,rej)=>{
     const database = new Database();
     const params = [];
     let where = '';
@@ -44,56 +46,59 @@ module.exports = {
       JOIN user u ON r.user_id=u.id
       JOIN game g on r.game_id=g.id
       WHERE 1=1
-      ${options.game_id?' AND r.game_id = ? ':''}
-      ${options.user_id?' AND r.user_id = ? ':''}
-      ${options.id?' AND r.id = ? ':''}
-      ${isAdmin?'':' AND r.removed=0 '}
+      ${options.game_id ? ' AND r.game_id = ? ' : ''}
+      ${options.user_id ? ' AND r.user_id = ? ' : ''}
+      ${options.id ? ' AND r.id = ? ' : ''}
+      ${isAdmin ? '' : ' AND r.removed=0 '}
       ORDER BY r.date_created DESC
-      ${options.page!==undefined?' LIMIT ?,? ':''}
+      ${options.page !== undefined ? ' LIMIT ?,? ' : ''}
     `;
-    database.query(query,params)
-      .then(callback)
+    database.query(query, params)
+      .then(res)
       .then(() => database.close())
       .catch(err => {
-        console.log(err);
         database.close();
-        if (err_cb) err_cb(err);
+        rej(err);
       });
+    });
   },
 
-  getGame(id,callback,err_cb,database) {
-    database = database || new Database();
-    query = `
-      SELECT g.*
-           , AVG(r.rating) AS rating
-           , AVG(r.difficulty) AS difficulty 
-      FROM game g 
-      JOIN rating r ON r.game_id = g.id AND r.removed = 0
-      WHERE g.id = ?
-    `;
-    database.query(query,[id])
-      .then(callback)
-      .then(() => database.close())
-      .catch(err => {
-        console.log(err);
-        database.close();
-        if (err_cb) err_cb(err);
-      });
+  getGame(id, database) {
+    return new Promise((res,rej) => {
+      database = database || new Database();
+      query = `
+        SELECT g.*
+            , AVG(r.rating) AS rating
+            , AVG(r.difficulty) AS difficulty 
+        FROM game g 
+        JOIN rating r ON r.game_id = g.id AND r.removed = 0
+        WHERE g.id = ?
+      `;
+      database.query(query, [id])
+        .then(res)
+        .then(() => database.close())
+        .catch(err => {
+          database.close();
+          rej(err);
+        });
+    });
   },
-  
-  getRandomGame(callback, err_cb) {
-    const database = new Database();
-    query = `
-      SELECT COUNT(*) AS cnt FROM Game 
-      WHERE removed=0 AND url != '' AND url IS NOT NULL
-    `;
-    query2 = `
-      SELECT id FROM Game 
-      WHERE removed=0 AND url != '' AND url IS NOT NULL 
-      LIMIT 1 OFFSET ?
-    `;
-    database.query(query)
-      .then(rows => database.query(query2,[Math.floor(+rows[0].cnt*Math.random())]))
-      .then(rows => this.getGame(rows[0].id,callback,err_cb,database));
+
+  getRandomGame() {
+    return new Promise((res,rej)=>{
+      const database = new Database();
+      query = `
+        SELECT COUNT(*) AS cnt FROM Game 
+        WHERE removed=0 AND url != '' AND url IS NOT NULL
+      `;
+      query2 = `
+        SELECT id FROM Game 
+        WHERE removed=0 AND url != '' AND url IS NOT NULL 
+        LIMIT 1 OFFSET ?
+      `;
+      database.query(query)
+        .then(rows => database.query(query2, [Math.floor(+rows[0].cnt * Math.random())]))
+        .then(rows => this.getGame(rows[0].id, database).then(res).catch(rej));
+    });
   }
 }

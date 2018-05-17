@@ -9,18 +9,18 @@ app.route('/:uid/games/:gid/lists').get((req,res,next) => {
   var uid = parseInt(req.params.uid, 10);
   var gid = parseInt(req.params.gid, 10);
 
-  datastore.getLists(uid,gid,rows => res.send(rows),next);
+  datastore.getLists(uid,gid)
+    .then(rows => res.send(rows))
+    .catch(err => next(err));
 });
 
 app.route('/:id/reviews').get((req,res,next) => {
   var id = parseInt(req.params.id, 10);
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
-  datastore.getReviews(
-    {user_id:id,page:page,limit:limit},
-    rows => { res.send(rows) },
-    next
-  );
+  datastore.getReviews({user_id:id,page:page,limit:limit})
+  .then(rows => res.send(rows))
+  .catch(err => next(err));
 });
 
 app.route('/:id').get((req,res,next) => {
@@ -45,7 +45,6 @@ app.route('/:id').get((req,res,next) => {
     })
     .then(() => database.close())
     .catch(err => {
-      console.log(err);
       database.close();
       next(err);
     });

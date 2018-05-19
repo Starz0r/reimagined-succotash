@@ -45,7 +45,7 @@ app.use(function (err,req,res,next) {
 
 app.use(function (err, req, res, next) {
   const id = uuid();
-  console.log('severe');
+  console.log(`severe error: id ${id}`);
   console.log(err);
   res.status(500).send({
     error: "Internal Server Error",

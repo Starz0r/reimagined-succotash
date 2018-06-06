@@ -1,13 +1,14 @@
 const express = require('express');
-const database = require('./database');
-
+const Database = require('./database');
+const jwt = require('jsonwebtoken');
+const config = require('./config');
 const bcrypt = require('bcrypt');
 const bcrypt_salt = 10;
 
 const app = express.Router();
 module.exports = app;
 
-app.route('/api/login').post((req,res,next) => {
+app.route('/').post((req,res,next) => {
     const username = req.body.username;
     const password = req.body.password;
   
@@ -35,7 +36,7 @@ app.route('/api/login').post((req,res,next) => {
           },
           config.app_jwt_secret,
           {
-            expiresIn: 60*60*24,
+            expiresIn: "1 day",
             subject: ""+user.id
           });
           res.send(user);

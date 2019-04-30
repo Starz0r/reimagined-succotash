@@ -5,12 +5,14 @@ const uuid = require('uuid/v4');
 const jwt_middleware = require('express-jwt');
 const jwt = require('jsonwebtoken');
 
-const config = require('./config');
+const config = require('./config/config');
 const game_router = require('./game-router');
 const user_router = require('./user-router');
 const review_router = require('./review-router');
 const list_router = require('./list-router');
 const login_router = require('./login-router');
+const ping_router = require('./ping-router');
+
 
 const app = express();
 app.use(function (req,res,next) {
@@ -58,6 +60,7 @@ app.use('/api/users',user_router);
 app.use('/api/reviews',review_router);
 app.use('/api/lists',list_router);
 app.use('/api/login',login_router);
+app.use('/api/ping',ping_router);
 
 app.listen(config.app_port,  () => {
   console.log('Server started at localhost:4201!');

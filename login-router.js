@@ -1,7 +1,7 @@
 const express = require('express');
 const Database = require('./database');
 const jwt = require('jsonwebtoken');
-const config = require('./config');
+const config = require('./config/config');
 const bcrypt = require('bcrypt');
 const bcrypt_salt = 10;
 

@@ -5,6 +5,13 @@ const datastore = require('./datastore');
 const app = express.Router();
 module.exports = app;
 
+//register
+app.route('/').post((req,res,next) => {
+  datastore.addUser(req.body.username,req.body.password)
+    .then(rows => res.send(rows))
+    .catch(err => next(err));
+});
+
 app.route('/:uid/games/:gid/lists').get((req,res,next) => {
   var uid = parseInt(req.params.uid, 10);
   var gid = parseInt(req.params.gid, 10);

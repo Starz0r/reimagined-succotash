@@ -1,6 +1,23 @@
 const Database = require('./database');
 
 module.exports = {
+  addUser(username,password,email) {
+    return new Promise((res,rej) => {
+      const database = new Database();
+      var query = `
+      INSERT INTO User (name, phash2, email) 
+      VALUES ( ?, ?, ? )
+      `;
+      database.query(query, [username,password,email])
+        .then(res)
+        .then(() => database.close())
+        .catch(err => {
+          database.close();
+          rej(err);
+        });
+      });
+  },
+
   getLists(uid, gid) {
     return new Promise((res,rej) => {
     const database = new Database();

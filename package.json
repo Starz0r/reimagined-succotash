@@ -4,7 +4,7 @@
   "description": "delfruit 2.0 server in node",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha -R spec test.js",
     "start": "node server.js"
   },
   "author": "klazen108",
@@ -19,5 +19,11 @@
     "moment": "^2.22.1",
     "mysql": "^2.15.0",
     "uuid": "^3.2.1"
+  },
+  "devDependencies": {
+    "axios": "^0.18.0",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "supertest": "^4.0.2"
   }
 }

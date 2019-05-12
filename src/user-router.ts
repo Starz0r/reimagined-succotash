@@ -1,15 +1,19 @@
-const express = require('express');
-const Database = require('./database');
-const datastore = require('./datastore');
+import express from 'express';
+import { Database } from './database';
+import datastore from './datastore';
 
 const app = express.Router();
-module.exports = app;
+export default app;
 
 //register
-app.route('/').post((req,res,next) => {
-  datastore.addUser(req.body.username,req.body.password)
-    .then(rows => res.send(rows))
-    .catch(err => next(err));
+app.route('/').post(async (req,res,next) => {
+  try {
+    const success = await datastore.addUser(req.body.username,req.body.password,req.body.email)
+    if (success) res.send({message:"Registration Successful"});
+    else res.status(400).send({error:"User Exists"});
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.route('/:uid/games/:gid/lists').get((req,res,next) => {
@@ -30,29 +34,26 @@ app.route('/:id/reviews').get((req,res,next) => {
   .catch(err => next(err));
 });
 
-app.route('/:id').get((req,res,next) => {
+app.route('/:id').get(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
   const database = new Database();
   const isAdmin = false;
   const removedClause = isAdmin?'':'AND banned = 0';
-  query = `
+  const query = `
     SELECT u.id, u.name, u.date_created
          , u.twitch_link, u.youtube_link
          , u.nico_link, u.twitter_link
          , u.bio
-    FROM user u 
+    FROM User u 
     WHERE u.id = ? ${removedClause}
   `;
-  database.query(query,[id])
-    .then(rows => {
-      if (rows.length == 0) res.sendStatus(404);
-      else {
-        res.send(rows[0]); 
-      }
-    })
-    .then(() => database.close())
-    .catch(err => {
-      database.close();
-      next(err);
-    });
+  try {
+    const rows = await database.query(query,[id]);
+    if (rows.length == 0) res.sendStatus(404);
+    else res.send(rows[0]);
+  } catch (err) {
+    next(err);
+  } finally {
+    database.close();
+  }
 });

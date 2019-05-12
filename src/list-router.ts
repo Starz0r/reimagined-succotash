@@ -1,9 +1,9 @@
-const express = require('express');
-const Database = require('./database');
-const datastore = require('./datastore');
+import express from 'express';
+import { Database } from './database';
+import datastore from './datastore';
 
 const app = express.Router();
-module.exports = app;
+export default app;
 
 app.route('/:listId').post((req,res,next) => {
     const uid = req.body.userId;
@@ -24,8 +24,9 @@ app.route('/:listId').post((req,res,next) => {
       `;
       database.query(query,[uid,gid,lid])
         .then(() => datastore.getLists(uid,gid)
-          .then(rows=>res.send(rows)
-          .catch(err=>next(err))))
+          .then(rows=>res.send(rows))
+          .catch(err=>next(err))
+        )
         .then(() => database.close())
         .catch(err => {
           database.close();
@@ -40,8 +41,8 @@ app.route('/:listId').post((req,res,next) => {
       `;
       database.query(query,[uid,gid,lid])
         .then(() => datastore.getLists(uid,gid)
-          .then(rows=>res.send(rows)
-          .catch(err=>next(err))))
+          .then(rows=>res.send(rows))
+          .catch(err=>next(err)))
         .then(() => database.close())
         .catch(err => {
           database.close();

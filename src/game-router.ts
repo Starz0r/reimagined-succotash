@@ -1,10 +1,10 @@
-const express = require('express');
-const moment = require('moment');
-const Database = require('./database');
-const datastore = require('./datastore');
+import express from 'express';
+import moment from 'moment';
+import datastore from './datastore';
+import { Database } from './database';
 
 const app = express.Router();
-module.exports = app;
+export default app;
 
 app.route('/').get((req,res,next) => {
   var id = parseInt(req.params.id, 10);
@@ -22,7 +22,7 @@ app.route('/').get((req,res,next) => {
     'ASC');
   var isAdmin = false;
   const database = new Database();
-  query = `
+  const query = `
     SELECT g.*, AVG(r.rating) AS rating, AVG(r.difficulty) AS difficulty
     FROM game g
     JOIN rating r ON r.removed=0 AND r.game_id=g.id
@@ -48,7 +48,7 @@ app.route('/').get((req,res,next) => {
     });
 });
 
-function whitelist(input,valid,defval) {
+function whitelist(input: string,valid: string[],defval: string) {
   if (input === null || input === undefined) return defval;
   for (var i = 0; i < valid.length; i++) {
     if (input.toLowerCase() === valid[i].toLowerCase()) return input;
@@ -57,7 +57,7 @@ function whitelist(input,valid,defval) {
 }
 
 app.route('/:id').get((req,res,next) => {
-  const callback = rows => {
+  const callback = (rows:any) => {
     if (rows.length == 0) res.sendStatus(404);
     else {
       let game = rows[0];

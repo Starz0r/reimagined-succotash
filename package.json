@@ -4,26 +4,43 @@
   "description": "delfruit 2.0 server in node",
   "main": "server.js",
   "scripts": {
-    "test": "mocha -R spec test.js",
-    "start": "node server.js"
+    "start": "ts-node src/server.ts",
+    "dev": "nodemon",
+    "test": "mocha -R spec build/test.js",
+    "tsc": "tsc",
+    "start-plain": "node build/server.js",
+    "docker-reboot": "docker build -t delfruit-server . && docker kill df-server & docker rm df-server & docker run -d --name df-server --network df-network -p 4201:4201 -v D:\\Projects\\delfruit2-server\\config:/home/node/app/config delfruit-server"
   },
   "author": "klazen108",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^2.0.1",
+    "@types/bcrypt": "^3.0.0",
+    "@types/express": "^4.16.1",
+    "@types/express-jwt": "0.0.42",
+    "@types/jsonwebtoken": "^8.3.2",
+    "@types/mysql": "^2.15.6",
+    "@types/uuid": "^3.4.4",
+    "bcrypt": "^3.0.6",
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.18.3",
     "express": "^4.16.3",
     "express-jwt": "^5.3.1",
     "jsonwebtoken": "^8.2.1",
     "moment": "^2.22.1",
-    "mysql": "^2.15.0",
+    "mysql": "^2.17.1",
+    "typescript": "^3.4.5",
     "uuid": "^3.2.1"
   },
   "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/chai-as-promised": "^7.1.0",
+    "@types/mocha": "^5.2.6",
     "axios": "^0.18.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "supertest": "^4.0.2"
+    "mocha": "^6.1.4",
+    "nodemon": "^1.19.0",
+    "supertest": "^4.0.2",
+    "ts-node": "^8.1.0"
   }
 }

@@ -1,18 +1,20 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const uuid = require('uuid/v4');
+import express, { RequestHandler, ErrorRequestHandler } from 'express';
+import bodyParser from 'body-parser';
+import uuid from 'uuid/v4';
 
-const jwt_middleware = require('express-jwt');
-const jwt = require('jsonwebtoken');
+import jwt_middleware from 'express-jwt';
+//import jwt from 'jsonwebtoken';
 
-const config = require('./config/config');
-const game_router = require('./game-router');
-const user_router = require('./user-router');
-const review_router = require('./review-router');
-const list_router = require('./list-router');
-const login_router = require('./login-router');
-const ping_router = require('./ping-router');
+import config from './config/config';
+import game_router from './game-router';
+import user_router from './user-router';
+import review_router from './review-router';
+import list_router from './list-router';
+import login_router from './login-router';
+import ping_router from './ping-router';
 
+import { Database } from './database';
+Database.init();
 
 const app = express();
 app.use(function (req,res,next) {
@@ -27,12 +29,13 @@ app.use(jwt_middleware({
   credentialsRequired: false
 }));
 
-app.use(function (err,req,res,next) {
-  if (req.user) {
+const c: RequestHandler = (req,res,next) => {
+  if (req.user) { 
     req.user.roles = ['game_update'];
   }
   next();
-});
+}
+app.use(c);
 
 //if !req.user throw error if required
 /*app.use(function (err, req, res, next) {
@@ -45,7 +48,7 @@ app.use(function (err,req,res,next) {
   }
 });*/
 
-app.use(function (err, req, res, next) {
+const e: ErrorRequestHandler = (err,req,res,next) => {
   const id = uuid();
   console.log(`severe error: id ${id}`);
   console.log(err);
@@ -53,7 +56,8 @@ app.use(function (err, req, res, next) {
     error: "Internal Server Error",
     id: id
   });
-});
+}
+app.use(e);
 
 app.use('/api/games',game_router);
 app.use('/api/users',user_router);

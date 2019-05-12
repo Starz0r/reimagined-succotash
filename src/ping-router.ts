@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 
 const app = express.Router();
-module.exports = app;
+export default app;
 
 app.route('/').get((req,res,next) => {
   res.send('pong')

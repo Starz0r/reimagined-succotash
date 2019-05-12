@@ -1,8 +1,8 @@
-const datastore = require('./datastore');
-const express = require('express');
+import datastore from './datastore';
+import express from 'express';
 
 const app = express.Router();
-module.exports = app;
+export default app;
 
 app.route('/:id').get((req,res,next) => {
   if (isNaN(req.params.id)) {

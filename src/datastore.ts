@@ -1,25 +1,28 @@
-const Database = require('./database');
+import { Database } from './database';
 
-module.exports = {
-  addUser(username,password,email) {
-    return new Promise((res,rej) => {
-      const database = new Database();
-      var query = `
+export default {
+  /**
+   * true if user was created
+   * false if user collision occurred
+   */
+  async addUser(username: string,password: string,email: string): Promise<boolean> {
+    const database = new Database();
+    try {
+      const userExists = await database.query(`SELECT 1 FROM User WHERE name = ?`,[username]);
+      if (userExists.length > 0) return false;
+
+      await database.execute(`
       INSERT INTO User (name, phash2, email) 
       VALUES ( ?, ?, ? )
-      `;
-      database.query(query, [username,password,email])
-        .then(res)
-        .then(() => database.close())
-        .catch(err => {
-          database.close();
-          rej(err);
-        });
-      });
+      `, [username,password,email]);
+
+      return true;
+    } finally {
+      database.close();
+    }
   },
 
-  getLists(uid, gid) {
-    return new Promise((res,rej) => {
+  async getLists(uid: number, gid: number): Promise<any[]> {
     const database = new Database();
     var query = `
       SELECT l.list_id, l.game_id, n.list_name
@@ -28,17 +31,14 @@ module.exports = {
       WHERE l.user_id=?
       AND l.game_id=?
     `;
-    database.query(query, [uid, gid])
-      .then(res)
-      .then(() => database.close())
-      .catch(err => {
-        database.close();
-        rej(err);
-      });
-    });
+    try {
+      return await database.execute(query, [uid,gid]);
+    } finally {
+      database.close();
+    }
   },
 
-  getReviews(options) {
+  getReviews(options: any): Promise<any[]> {
     return new Promise((res,rej)=>{
     const database = new Database();
     const params = [];
@@ -80,10 +80,10 @@ module.exports = {
     });
   },
 
-  getGame(id, database) {
+  getGame(id: number, database?: Database) {
     return new Promise((res,rej) => {
-      database = database || new Database();
-      query = `
+      const db = database || new Database();
+      const query = `
         SELECT g.*
             , AVG(r.rating) AS rating
             , AVG(r.difficulty) AS difficulty 
@@ -91,11 +91,11 @@ module.exports = {
         JOIN rating r ON r.game_id = g.id AND r.removed = 0
         WHERE g.id = ?
       `;
-      database.query(query, [id])
+      db.query(query, [id])
         .then(res)
-        .then(() => database.close())
+        .then(() => db.close())
         .catch(err => {
-          database.close();
+          db.close();
           rej(err);
         });
     });
@@ -104,11 +104,11 @@ module.exports = {
   getRandomGame() {
     return new Promise((res,rej)=>{
       const database = new Database();
-      query = `
+      const query = `
         SELECT COUNT(*) AS cnt FROM Game 
         WHERE removed=0 AND url != '' AND url IS NOT NULL
       `;
-      query2 = `
+      const query2 = `
         SELECT id FROM Game 
         WHERE removed=0 AND url != '' AND url IS NOT NULL 
         LIMIT 1 OFFSET ?

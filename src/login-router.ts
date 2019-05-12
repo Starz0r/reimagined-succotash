@@ -1,18 +1,18 @@
-const express = require('express');
-const Database = require('./database');
-const jwt = require('jsonwebtoken');
-const config = require('./config/config');
-const bcrypt = require('bcrypt');
+import express from 'express';
+import { Database } from './database';
+import jwt from 'jsonwebtoken';
+import config from './config/config';
+import bcrypt from 'bcrypt';
 const bcrypt_salt = 10;
 
 const app = express.Router();
-module.exports = app;
+export default app;
 
 app.route('/').post((req,res,next) => {
     const username = req.body.username;
     const password = req.body.password;
   
-    var user;
+    var user: any;
     
     const database = new Database();
     database.query('SELECT * FROM user WHERE name = ?',[username])

@@ -19,6 +19,7 @@ export default class AuthModule {
     }
 
     public async verifyPassword(hash: string, password: string): Promise<boolean> {
+        if (!password) return false;
         return await bcrypt.compare(password,hash.replace(/^\$2y/, "$2a"));
     }
 }

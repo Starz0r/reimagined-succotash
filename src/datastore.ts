@@ -1,5 +1,10 @@
 import { Database } from './database';
 
+export interface UserLoginParams {
+  id?: number;
+  name?: string;
+}
+
 export default {
   /**
    * return user if user was created
@@ -19,6 +24,25 @@ export default {
     } finally {
       database.close();
     }
+  },
+
+  async getUserForLogin(params: UserLoginParams): Promise<any> {
+    const database = new Database();
+    let query = `SELECT id,name,phash2 FROM User WHERE`;
+    let qparams = [];
+    if (params.id != undefined) {
+      query += ` id = ? `;
+      qparams.push(params.id);
+    }
+    if (params.name != undefined) {
+      query += ` name = ? `;
+      qparams.push(params.name);
+    }
+    const users = await database.query(query,qparams);
+    if (users.length == 0) {
+      return null;
+    }
+    return users[0];
   },
 
   async getUser(id: number): Promise<any> {

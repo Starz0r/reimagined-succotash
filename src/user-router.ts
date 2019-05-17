@@ -60,7 +60,18 @@ app.route('/:id').patch(async (req,res,next) => {
 
   let params: any[] = [];
   let query = ` UPDATE User SET `;
-  //TODO: password
+  if (req.body.password) {
+    //verify password and abort if incorrect
+    const targetUser = await datastore.getUserForLogin({id:uid});
+    const pwVerified = await auth.verifyPassword(targetUser.phash2,req.body.currentPassword);
+    if (!pwVerified) {
+      res.status(401).send({error:'invalid password'});
+      return;
+    }
+    query += ` phash2 = ?, `;
+    const newPassHash = await auth.hashPassword(req.body.password);
+    params.push(newPassHash);
+  }
   if (req.body.email) {
     query += ` email = ?, `;
     params.push(req.body.email);

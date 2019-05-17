@@ -6,7 +6,8 @@
   "scripts": {
     "start": "ts-node src/server.ts",
     "dev": "nodemon",
-    "test": "mocha -R spec build/test.js",
+    "test": "mocha -R spec build/test/**/*.js",
+    "test-int": "mocha -R spec build/int-test/**/*.js",
     "tsc": "tsc",
     "start-plain": "node build/server.js",
     "docker-reboot": "docker build -t delfruit-server . && docker kill df-server & docker rm df-server & docker run -d --name df-server --network df-network -p 4201:4201 -v D:\\Projects\\delfruit2-server\\config:/home/node/app/config delfruit-server"

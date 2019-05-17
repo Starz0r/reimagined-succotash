@@ -27,6 +27,16 @@ Auto-redeployment and breakpoint support are included through the use of nodemon
 
 Once the app and database are running and connected, you can run the integration tests with `npm run test`
 
+To start the database:
+
+```
+docker run --network=df-network --net=host -e MYSQL_ROOT_PASSWORD=my-secret-pw --name test-mysql -d mysql:latest mysqld --default-authentication-plugin=mysql_native_password
+```
+
+To find the database IP for Windows: `ipconfig /all` and find DockerNAT, the IP will be something like 10.0.75.1. The mysql IP will be 10.0.75.2 (yeah I know, totally obvious)
+
+For linux, it's just the host IP. ezpz
+
 #Production Deployment
 For a production-like environment, you may spin up as many instances of the server as desired, as the server is stateless. This will allow the application to scale with request volume. The bottleneck then lies at the mysql instance.
 
@@ -40,7 +50,7 @@ docker build -t delfruit-server .
 docker network create -d bridge df-network
 
 ##Start mysql
-docker run --network=df-network --net=host -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:latest mysqld --default-authentication-plugin=mysql_native_password
+docker run --network=df-network --network df-network -e MYSQL_ROOT_PASSWORD=my-secret-pw  -d mysql:latest mysqld --default-authentication-plugin=mysql_native_password
 
 ##Start the app
 docker run -d --name df-server --network df-network -p 4201:4201 -v D:\Projects\delfruit2-server\config:/home/node/app/config delfruit-server

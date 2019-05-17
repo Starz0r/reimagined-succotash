@@ -2,21 +2,41 @@ import { Database } from './database';
 
 export default {
   /**
-   * true if user was created
-   * false if user collision occurred
+   * return user if user was created
    */
-  async addUser(username: string,password: string,email: string): Promise<boolean> {
+  async addUser(username: string,password: string,email: string): Promise<any> {
     const database = new Database();
     try {
       const userExists = await database.query(`SELECT 1 FROM User WHERE name = ?`,[username]);
       if (userExists.length > 0) return false;
 
-      await database.execute(`
+      const result = await database.execute(`
       INSERT INTO User (name, phash2, email) 
       VALUES ( ?, ?, ? )
       `, [username,password,email]);
 
-      return true;
+      return this.getUser(result.insertId as number);
+    } finally {
+      database.close();
+    }
+  },
+
+  async getUser(id: number): Promise<any> {
+    const database = new Database();
+    const isAdmin = false;
+    const removedClause = isAdmin?'':'AND banned = 0';
+    const query = `
+      SELECT u.id, u.name, u.date_created
+           , u.twitch_link, u.youtube_link
+           , u.nico_link, u.twitter_link
+           , u.bio, u.email
+      FROM User u 
+      WHERE u.id = ? ${removedClause}
+    `;
+    try {
+      const rows = await database.query(query,[id]);
+      if (rows.length == 0) return null;
+      else return rows[0];
     } finally {
       database.close();
     }

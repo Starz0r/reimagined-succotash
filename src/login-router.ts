@@ -1,51 +1,33 @@
 import express from 'express';
 import { Database } from './database';
-import jwt from 'jsonwebtoken';
-import config from './config/config';
-import bcrypt from 'bcrypt';
-const bcrypt_salt = 10;
+import AuthModule from './auth';
 
 const app = express.Router();
+const auth = new AuthModule();
 export default app;
 
-app.route('/').post((req,res,next) => {
+app.route('/').post(async (req,res,next) => {
     const username = req.body.username;
     const password = req.body.password;
-  
-    var user: any;
     
     const database = new Database();
-    database.query('SELECT * FROM user WHERE name = ?',[username])
-      .then(rows => {
-        if (rows.length == 0) {
-          res.status(401).send({error: 'Invalid Credentials'});
-        } else {
-          return rows[0];
-        }
-      })
-      .then(user_res => {
-        user = user_res;
-        return bcrypt.compare(password,user.phash2.replace(/^\$2y/, "$2a"))
-      })
-      .then(pwres => {
-        if (!pwres) {
-          res.status(401).send({error: 'Invalid Credentials'});
-        } else {
-          user.token = jwt.sign({
-            username: user.name
-          },
-          config.app_jwt_secret,
-          {
-            expiresIn: "1 day",
-            subject: ""+user.id
-          });
-          res.send(user);
-        }
-      })
-      .then(() => { database.close(); })
-      .catch(err => {
-        database.close();
-        next(err);
-      });
+    try {
+      const users = await database.query('SELECT id,name,phash2 FROM User WHERE name = ?',[username]);
+      if (users.length == 0) {
+        res.status(401).send({error: 'Invalid Credentials'});
+      }
+      const user = users[0];
+
+      const verified = await auth.verifyPassword(user.phash2,password)
+          
+      if (!verified) {
+        res.status(401).send({error: 'Invalid Credentials'});
+      } else {
+        user.token = auth.getToken(user.name,user.id);
+        res.send(user);
+      }
+    } finally {
+      database.close();
+    }
   });
   

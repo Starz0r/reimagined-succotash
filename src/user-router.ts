@@ -1,16 +1,22 @@
 import express from 'express';
 import { Database } from './database';
 import datastore from './datastore';
+import { resolveTxt } from 'dns';
 
+import AuthModule from './auth';
+const auth = new AuthModule();
 const app = express.Router();
 export default app;
 
 //register
 app.route('/').post(async (req,res,next) => {
   try {
-    const success = await datastore.addUser(req.body.username,req.body.password,req.body.email)
-    if (success) res.send({message:"Registration Successful"});
-    else res.status(400).send({error:"User Exists"});
+    const phash = await auth.hashPassword(req.body.password);
+    const user = await datastore.addUser(req.body.username,phash,req.body.email)
+    if (!user) res.status(400).send({error:"User Exists"});
+
+    user.token = auth.getToken(user.name,user.id);
+    res.send(user);
   } catch (err) {
     next(err);
   }
@@ -36,21 +42,88 @@ app.route('/:id/reviews').get((req,res,next) => {
 
 app.route('/:id').get(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
+  const user = await datastore.getUser(id);
+  if (user == null) res.sendStatus(404);
+  else res.send(user);
+});
+
+app.route('/:id').patch(async (req,res,next) => {
+  var uid = parseInt(req.params.id, 10);
   const database = new Database();
   const isAdmin = false;
-  const removedClause = isAdmin?'':'AND banned = 0';
-  const query = `
-    SELECT u.id, u.name, u.date_created
-         , u.twitch_link, u.youtube_link
-         , u.nico_link, u.twitter_link
-         , u.bio
-    FROM User u 
-    WHERE u.id = ? ${removedClause}
-  `;
+  console.log(req.user);
+  //if not admin (and if not, uid is not uid in token)
+  if (!isAdmin && (!req.user || req.user.sub == null || req.user.sub != uid)) {
+    res.status(403).send({error:'unauthorized access to this user'});
+    return;
+  }
+
+  let params: any[] = [];
+  let query = ` UPDATE User SET `;
+  //TODO: password
+  if (req.body.email) {
+    query += ` email = ?, `;
+    params.push(req.body.email);
+  }
+  if (isAdmin && req.body.canReport) {
+    query += ` can_report = ?, `;
+    params.push(req.body.canReport?1:0);
+  }
+  if (isAdmin && req.body.canSumbit) {
+    query += ` can_submit = ?, `;
+    params.push(req.body.canSubmit?1:0);
+  }
+  if (isAdmin && req.body.canReview) {
+    query += ` can_review = ?, `;
+    params.push(req.body.canReview?1:0);
+  }
+  if (isAdmin && req.body.canScreenshot) {
+    query += ` can_screenshot = ?, `;
+    params.push(req.body.canScreenshot?1:0);
+  }
+  if (isAdmin && req.body.canMessage) {
+    query += ` can_message = ?, `;
+    params.push(req.body.canMessage?1:0);
+  }
+  if (req.body.twitchLink) {
+    query += ` twitch_link = ?, `;
+    params.push(req.body.twitchLink);
+  }
+  if (req.body.nicoLink) {
+    query += ` nico_link = ?, `;
+    params.push(req.body.nicoLink);
+  }
+  if (req.body.youtubeLink) {
+    query += ` youtube_link = ?, `;
+    params.push(req.body.youtubeLink);
+  }
+  if (req.body.twitterLink) {
+    query += ` twitterLink = ?, `;
+    params.push(req.body.twitterLink);
+  }
+  if (req.body.bio) {
+    query += ` bio = ?, `;
+    params.push(req.body.bio);
+  }
+  if (isAdmin && req.body.banned) {
+    query += ` banned = ?, `;
+    params.push(req.body.banned?1:0);
+  }
+  if (req.body.locale) {
+    query += ` locale = ?, `;
+    params.push(req.body.locale?1:0);
+  }
+  query = query.substring(0, query.length - 2);
+  query += ` WHERE id = ?`;
+  params.push(uid);
+
   try {
-    const rows = await database.query(query,[id]);
-    if (rows.length == 0) res.sendStatus(404);
-    else res.send(rows[0]);
+    const rows = await database.execute(query,params);
+    if (rows.affectedRows == 0) res.sendStatus(404);
+
+    const user = await datastore.getUser(uid);
+    if (user == null) res.sendStatus(404);
+    else res.send(user);
   } catch (err) {
     next(err);
   } finally {

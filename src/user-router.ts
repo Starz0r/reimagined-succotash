@@ -4,6 +4,7 @@ import datastore from './datastore';
 import { resolveTxt } from 'dns';
 
 import AuthModule from './auth';
+import UpdateList from './update-list';
 const auth = new AuthModule();
 const app = express.Router();
 export default app;
@@ -51,15 +52,14 @@ app.route('/:id').patch(async (req,res,next) => {
   var uid = parseInt(req.params.id, 10);
   const database = new Database();
   const isAdmin = false;
-  console.log(req.user);
   //if not admin (and if not, uid is not uid in token)
   if (!isAdmin && (!req.user || req.user.sub == null || req.user.sub != uid)) {
     res.status(403).send({error:'unauthorized access to this user'});
     return;
   }
 
-  let params: any[] = [];
-  let query = ` UPDATE User SET `;
+  const updateList = new UpdateList();
+
   if (req.body.password) {
     //verify password and abort if incorrect
     const targetUser = await datastore.getUserForLogin({id:uid});
@@ -68,68 +68,27 @@ app.route('/:id').patch(async (req,res,next) => {
       res.status(401).send({error:'invalid password'});
       return;
     }
-    query += ` phash2 = ?, `;
     const newPassHash = await auth.hashPassword(req.body.password);
-    params.push(newPassHash);
+    updateList.add('phash2',newPassHash);
   }
-  if (req.body.email) {
-    query += ` email = ?, `;
-    params.push(req.body.email);
-  }
-  if (isAdmin && req.body.canReport) {
-    query += ` can_report = ?, `;
-    params.push(req.body.canReport?1:0);
-  }
-  if (isAdmin && req.body.canSumbit) {
-    query += ` can_submit = ?, `;
-    params.push(req.body.canSubmit?1:0);
-  }
-  if (isAdmin && req.body.canReview) {
-    query += ` can_review = ?, `;
-    params.push(req.body.canReview?1:0);
-  }
-  if (isAdmin && req.body.canScreenshot) {
-    query += ` can_screenshot = ?, `;
-    params.push(req.body.canScreenshot?1:0);
-  }
-  if (isAdmin && req.body.canMessage) {
-    query += ` can_message = ?, `;
-    params.push(req.body.canMessage?1:0);
-  }
-  if (req.body.twitchLink) {
-    query += ` twitch_link = ?, `;
-    params.push(req.body.twitchLink);
-  }
-  if (req.body.nicoLink) {
-    query += ` nico_link = ?, `;
-    params.push(req.body.nicoLink);
-  }
-  if (req.body.youtubeLink) {
-    query += ` youtube_link = ?, `;
-    params.push(req.body.youtubeLink);
-  }
-  if (req.body.twitterLink) {
-    query += ` twitterLink = ?, `;
-    params.push(req.body.twitterLink);
-  }
-  if (req.body.bio) {
-    query += ` bio = ?, `;
-    params.push(req.body.bio);
-  }
-  if (isAdmin && req.body.banned) {
-    query += ` banned = ?, `;
-    params.push(req.body.banned?1:0);
-  }
-  if (req.body.locale) {
-    query += ` locale = ?, `;
-    params.push(req.body.locale?1:0);
-  }
-  query = query.substring(0, query.length - 2);
-  query += ` WHERE id = ?`;
-  params.push(uid);
+  updateList.add('email',req.body.email);
+  updateList.addIf('can_report',req.body.canReport,isAdmin);
+  updateList.addIf('can_submit',req.body.canSubmit,isAdmin);
+  updateList.addIf('can_review',req.body.canReview,isAdmin);
+  updateList.addIf('can_screenshot',req.body.canScreenshot,isAdmin);
+  updateList.add('twitch_link',req.body.twitchLink);
+  updateList.add('nico_link',req.body.nicoLink);
+  updateList.add('youtube_link',req.body.youtubeLink);
+  updateList.add('twitterLink',req.body.twitterLink);
+  updateList.add('bio',req.body.bio);
+  updateList.addIf('banned',req.body.banned,isAdmin);
+  updateList.add('locale',req.body.locale);
 
   try {
-    const rows = await database.execute(query,params);
+    let params = updateList.getParams();
+    params.push(uid);
+    const rows = await database.execute(
+      ` UPDATE User ${updateList.getSetClause()} WHERE id = ?`,params);
     if (rows.affectedRows == 0) res.sendStatus(404);
 
     const user = await datastore.getUser(uid);

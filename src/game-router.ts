@@ -6,6 +6,22 @@ import { Database } from './database';
 const app = express.Router();
 export default app;
 
+app.route('/').post(async (req,res,next) => {
+  const isAdmin = true;
+  if (!isAdmin || !req.user || !req.user.sub) {
+    res.status(403).send({error:'unauthorized access'});
+    return;
+  }
+  const uid = req.user.sub;
+
+  try {
+    const game = await datastore.addGame(req.body,uid);
+    res.send(game);
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.route('/').get((req,res,next) => {
   var id = parseInt(req.params.id, 10);
   var page = +req.query.page || 0;
@@ -24,7 +40,7 @@ app.route('/').get((req,res,next) => {
   const database = new Database();
   const query = `
     SELECT g.*, AVG(r.rating) AS rating, AVG(r.difficulty) AS difficulty
-    FROM game g
+    FROM Game g
     JOIN rating r ON r.removed=0 AND r.game_id=g.id
     WHERE g.name LIKE ?
     ${isAdmin?'':' AND g.removed = 0 '}
@@ -109,9 +125,9 @@ app.route('/:id/screenshots').get((req,res,next) => {
   var isAdmin = false;
   var query = `
     SELECT s.*, u.name user_name, g.name game_name
-    FROM screenshot s
-    JOIN user u ON s.added_by_id=u.id
-    JOIN game g on s.game_id=g.id
+    FROM Screenshot s
+    JOIN User u ON s.added_by_id=u.id
+    JOIN Game g on s.game_id=g.id
     WHERE s.game_id = ?
     AND s.approved = 1
     ${!isAdmin?' AND s.removed = 0 ':''}
@@ -138,8 +154,8 @@ app.route('/:id/tags').get((req,res,next) => {
   var gid = parseInt(req.params.id,10);
   var query = `
     SELECT gt.*, t.name as name
-    FROM gametag gt
-    JOIN game g on g.id = gt.game_id AND g.removed = 0
+    FROM Gametag gt
+    JOIN Game g on g.id = gt.game_id AND g.removed = 0
     JOIN tag t on t.id = gt.tag_id
     WHERE gt.game_id = ?
   `;

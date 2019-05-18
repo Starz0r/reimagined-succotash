@@ -41,16 +41,23 @@ export class Database {
     });
   }
 
-  static init() {
-    var connection = mysql.createConnection({
-      host: config.db_host,
-      user: config.db_user,
-      password: config.db_password
-    })
+  static async init() {
+    let connection;
 
-    return this.createDatabase(connection)
-      .then(() => this.createUserTable(connection))
-      .then(() => connection.end());
+    try {
+      connection = mysql.createConnection({
+        host: config.db_host,
+        user: config.db_user,
+        password: config.db_password
+      })
+
+      await this.createDatabase(connection)
+      await this.createUserTable(connection)
+      await this.createGameTable(connection)
+      await this.createRatingTable(connection)
+    } finally {
+      if (connection) connection.end()
+    }
   }
 
   static createDatabase(connection: mysql.Connection) {
@@ -113,6 +120,61 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
   KEY banned (banned)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
       
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createGameTable(connection: mysql.Connection) {
+    console.log('Creating game table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.Game (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        name varchar(200) NOT NULL,
+        sortname varchar(150) NOT NULL,
+        url varchar(400) CHARACTER SET latin1 DEFAULT NULL,
+        url_spdrn varchar(400) DEFAULT NULL,
+        author varchar(300) DEFAULT NULL,
+        collab tinyint(1) NOT NULL DEFAULT '0',
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        adder_id int(11) DEFAULT NULL,
+        removed tinyint(1) NOT NULL DEFAULT '0',
+        owner_id int(11) DEFAULT NULL,
+        owner_bio varchar(5000) DEFAULT NULL,
+        PRIMARY KEY (id),
+        KEY removed (removed),
+        KEY date_created (date_created)
+      ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+      
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createRatingTable(connection: mysql.Connection) {
+    console.log('Creating rating table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.Rating (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        user_id int(11) NOT NULL,
+        game_id int(11) NOT NULL,
+        rating tinyint(4) DEFAULT NULL,
+        difficulty tinyint(4) DEFAULT NULL,
+        comment text,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        removed tinyint(1) NOT NULL DEFAULT '0',
+        PRIMARY KEY (id),
+        UNIQUE KEY idk_ug (user_id,game_id),
+        KEY game_id (removed,game_id),
+        KEY review_date (date_created),
+        KEY idx_gid_rem (game_id,removed)
+      ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();

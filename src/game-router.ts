@@ -125,18 +125,17 @@ app.route('/:id').delete(async (req,res,next) => {
   }
 
   let gamePatch: Game = {
+    id: req.params.id,
     removed: true
   };
   try {
-    const success = await datastore.updateGame(game,isAdmin);
+    const success = await datastore.updateGame(gamePatch,isAdmin);
     if (!success) {
       res.sendStatus(404);
       return;
     }
 
-    const newUser = await datastore.getGame(req.params.id);
-    if (newUser == null) res.sendStatus(404);
-    else res.send(newUser);
+    res.sendStatus(204);
   } catch (err) {
     next(err);
   }

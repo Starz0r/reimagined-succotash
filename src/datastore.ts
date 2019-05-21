@@ -76,7 +76,21 @@ export default {
   },
 
   async updateGame(game: any, isAdmin: boolean): Promise<boolean> {
-    return false;
+    const database = new Database();
+  
+    const updateList = new UpdateList();
+  
+    updateList.add('removed',game.removed);
+  
+    try {
+      let params = updateList.getParams();
+      params.push(game.id);
+      const rows = await database.execute(
+        ` UPDATE Game ${updateList.getSetClause()} WHERE id = ?`,params);
+      return (rows.affectedRows == 1);
+    } finally {
+      database.close();
+    }
   },
 
   async addGame(game: Game, adderId: number): Promise<Game> {

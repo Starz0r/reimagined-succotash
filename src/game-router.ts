@@ -102,7 +102,7 @@ app.route('/:id').get(async (req,res,next) => {
   res.send(game); 
 });
 
-app.route('/:id').delete(async (req,res,next) => {
+app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
   if (!req.user || !req.user.isAdmin) return res.status(403).send({error:'Unauthorized'});
 
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
@@ -182,10 +182,11 @@ app.route('/:id/tags').get((req,res,next) => {
   const database = new Database();
   var gid = parseInt(req.params.id,10);
   var query = `
-    SELECT gt.*, t.name as name
-    FROM Gametag gt
+    SELECT gt.*, t.name, t.id
+    FROM GameTag gt
     JOIN Game g on g.id = gt.game_id AND g.removed = 0
-    JOIN tag t on t.id = gt.tag_id
+    INNER JOIN Rating AS r ON r.user_id = gt.user_id AND r.game_id = gt.game_id AND r.removed=0
+    JOIN Tag t on t.id = gt.tag_id
     WHERE gt.game_id = ?
   `;
   database.query(query,[gid])

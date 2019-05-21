@@ -191,3 +191,24 @@ app.route('/:id/tags').get((req,res,next) => {
       next(err);
     });
 });
+
+app.route('/:id').patch(async (req,res,next) => {
+  //restrict to admins
+  if (!req.user || !req.user.isAdmin) return res.status(403).send({error:'Unauthorized'});
+
+  var gid = parseInt(req.params.id, 10);
+
+  let game = req.body as Game;
+  game.id = gid;
+
+  try {
+    const gameFound = await datastore.updateGame(game,req.user.isAdmin);
+    if (!gameFound) return res.sendStatus(404);
+
+    const newGame = await datastore.getGame(gid);
+    if (newGame == null) res.sendStatus(404);
+    else res.send(newGame);
+  } catch (err) {
+    next(err);
+  }
+});

@@ -75,12 +75,21 @@ export default {
     }
   },
 
-  async updateGame(game: any, isAdmin: boolean): Promise<boolean> {
+  async updateGame(game: Game, isAdmin: boolean): Promise<boolean> {
     const database = new Database();
   
     const updateList = new UpdateList();
   
     updateList.add('removed',game.removed);
+    updateList.add('name',game.name);
+    updateList.add('url',game.url);
+    updateList.add('urlSpdrn',game.urlSpdrn);
+    if (game.author) {
+      updateList.add('author',game.author.join(' '));
+    }
+    updateList.add('date_created',game.dateCreated);
+    updateList.add('owner_id',game.ownerId);
+    updateList.add('owner_bio',game.ownerBio);
   
     try {
       let params = updateList.getParams();

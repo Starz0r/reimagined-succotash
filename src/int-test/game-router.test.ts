@@ -146,4 +146,45 @@ describe('game endpoint', function () {
     }
     fail("delete should not have been successful");
   });
+
+  it('allows admins to modify a game', async () => {
+    const user = await createUser(true);
+    
+    //create game
+    const rsp = await axios.post('http://localhost:4201/api/games',
+        {
+          name:"i wanna "+user.username,
+          url:"example.com/"+user.username,
+          author:user.username
+        },
+        {headers: {'Authorization': "Bearer " + user.token}});
+    expect(rsp).to.have.property('status').and.equal(200);
+    expect(rsp).to.have.property('data');
+    expect(rsp.data).to.have.property('id').and.be.a("number");
+    
+    //update game
+    const upd = await axios.patch(`http://localhost:4201/api/games/${rsp.data.id}`,
+      {name: "totally different name "+user.username},
+      {headers: {'Authorization': "Bearer " + user.token}});
+    expect(upd).to.have.property('status').and.equal(200);
+    expect(upd).to.have.property('data');
+    expect(upd.data).to.have.property('id').and.equal(rsp.data.id);
+    expect(upd.data).to.have.property('name').and.equal("totally different name "+user.username);
+  });
+
+  it('prevents regular users from modifying a game', async () => {
+    const user = await createUser(false);
+    const game = await createGame();
+
+    try {
+      await axios.patch(`http://localhost:4201/api/games/${game.id}`,
+      {name: "totally different name "+user.username},
+      {headers: {'Authorization': "Bearer " + user.token}});
+    } catch (err) {
+      expect(err).to.have.property('response');
+      expect(err.response).to.have.property('status').and.equal(403);
+      return;
+    }
+    fail("patch should not have been successful");
+  });
 });

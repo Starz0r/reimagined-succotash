@@ -155,14 +155,18 @@ export default {
       SELECT u.id, u.name, u.date_created
            , u.twitch_link, u.youtube_link
            , u.nico_link, u.twitter_link
-           , u.bio, u.email
+           , u.bio, u.email, u.is_admin
       FROM User u 
       WHERE u.id = ? ${removedClause}
     `;
     try {
       const rows = await database.query(query,[id]);
       if (rows.length == 0) return null;
-      else return rows[0];
+
+      rows[0].isAdmin = (rows[0].is_admin===1);
+      delete rows[0].is_admin;
+
+      return rows[0];
     } finally {
       database.close();
     }

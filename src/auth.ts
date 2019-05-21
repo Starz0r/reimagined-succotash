@@ -3,10 +3,8 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
 export default class AuthModule {
-    public getToken(username: string, id: number) {
-        return jwt.sign({
-            username: username
-          },
+    public getToken(username: string, id: number, isAdmin: boolean) {
+        return jwt.sign({username,isAdmin},
           config.app_jwt_secret,
           {
             expiresIn: "1 day",

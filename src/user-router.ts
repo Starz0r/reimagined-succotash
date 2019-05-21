@@ -1,10 +1,8 @@
 import express from 'express';
-import { Database } from './database';
 import datastore from './datastore';
 import { resolveTxt } from 'dns';
 
 import AuthModule from './auth';
-import UpdateList from './lib/update-list';
 const auth = new AuthModule();
 const app = express.Router();
 export default app;
@@ -16,7 +14,7 @@ app.route('/').post(async (req,res,next) => {
     const user = await datastore.addUser(req.body.username,phash,req.body.email)
     if (!user) res.status(400).send({error:"User Exists"});
 
-    user.token = auth.getToken(user.name,user.id);
+    user.token = auth.getToken(user.name,user.id,user.isAdmin);
     res.send(user);
   } catch (err) {
     next(err);

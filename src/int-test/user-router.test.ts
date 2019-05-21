@@ -31,6 +31,7 @@ describe('user endpoint', function () {
         expect(rsp.data).to.have.property('id').and.be.a('number');
         expect(rsp.data).to.have.property('email').and.equal('test@example.com');
         expect(rsp.data).to.have.property('token').and.be.a('string');
+        expect(rsp.data).to.have.property('isAdmin').and.equal(false);
     });
   
     it('rejects existing users', async () => {

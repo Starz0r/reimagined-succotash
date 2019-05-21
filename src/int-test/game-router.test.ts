@@ -1,6 +1,7 @@
 import axios from 'axios';
 import chai from 'chai';
 import { fail } from 'assert';
+import { Database } from '../database';
 
 var expect = chai.expect;
 
@@ -12,65 +13,85 @@ function getConTest(ctx: Mocha.Context): Mocha.HookFunction {
   });
 }
 
+async function createUser(isAdmin: boolean): Promise<any> {
+  const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+  //register
+  const reg = await axios.post('http://localhost:4201/api/users',
+      {username:usernameA,password:"test-pw",email:"test@example.com"});
+  expect(reg).to.have.property('status').and.equal(200);
+  expect(reg).to.have.property('data');
+  expect(reg.data).to.have.property('token').and.be.a('string');
+  expect(reg.data).to.have.property('id').and.be.a('number');
+
+  if (isAdmin) {
+    const db = new Database();
+    try {
+      const success = await db.execute('update User set is_admin = 1 WHERE id = ?',[reg.data.id]);
+      expect(success.affectedRows).to.be.equal(1);
+    } finally {
+      db.close();
+    }
+  }
+  
+  //login
+  const login = await axios.post('http://localhost:4201/api/login',
+      {username:usernameA,password:"test-pw"});
+  expect(login).to.have.property('status').and.equal(200);
+  expect(login).to.have.property('data');
+  expect(login.data).to.have.property('token').and.be.a('string');
+  
+  return {token: login.data.token,id: login.data.id, username: usernameA};
+}
+
+async function createGame(): Promise<any> {
+  const user = await createUser(true);
+  
+  //create game
+  const rsp = await axios.post('http://localhost:4201/api/games',
+      {
+        name:"i wanna "+user.username,
+        url:"example.com/"+user.username,
+        author:user.username
+      },
+      {headers: {'Authorization': "Bearer " + user.token}});
+  expect(rsp).to.have.property('status').and.equal(200);
+  expect(rsp).to.have.property('data');
+  expect(rsp.data).to.have.property('id').and.be.a("number");
+
+  return {id: rsp.data.id, name: rsp.data.name};
+}
+
 describe('game endpoint', function () {
   before(getConTest(this.ctx));
 
   it('allows admins to add a game', async () => {
-    const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-    //register
-    const reg = await axios.post('http://localhost:4201/api/users',
-        {username:usernameA,password:"test-pw",email:"test@example.com"});
-    expect(reg).to.have.property('status').and.equal(200);
-    expect(reg).to.have.property('data');
-    expect(reg.data).to.have.property('token').and.be.a('string');
-    expect(reg.data).to.have.property('id').and.be.a('number');
+    const user = await createUser(true);
     
     const rsp = await axios.post('http://localhost:4201/api/games',
         {
-          name:"i wanna "+usernameA,
-          url:"example.com/"+usernameA,
-          author:usernameA
+          name:"i wanna "+user.username,
+          url:"example.com/"+user.username,
+          author:user.username
         },
-        {headers: {'Authorization': "Bearer " + reg.data.token}});
+        {headers: {'Authorization': "Bearer " + user.token}});
     expect(rsp).to.have.property('status').and.equal(200);
     expect(rsp).to.have.property('data');
-    expect(rsp.data).to.have.property('name').and.equal("i wanna "+usernameA);
-    expect(rsp.data).to.have.property('sortname').and.equal(usernameA);
-    expect(rsp.data).to.have.property('url').and.equal("example.com/"+usernameA)
-    expect(rsp.data).to.have.property('author').and.equal(usernameA);
-    expect(rsp.data).to.have.property('adder_id').and.equal(reg.data.id);
+    expect(rsp.data).to.have.property('name').and.equal("i wanna "+user.username);
+    expect(rsp.data).to.have.property('sortname').and.equal(user.username);
+    expect(rsp.data).to.have.property('url').and.equal("example.com/"+user.username)
+    expect(rsp.data).to.have.property('author').and.equal(user.username);
+    expect(rsp.data).to.have.property('adder_id').and.equal(user.id);
   });
 
-  it('returns games', async () => {
-    const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-    //register
-    const reg = await axios.post('http://localhost:4201/api/users',
-        {username:usernameA,password:"test-pw",email:"test@example.com"});
-    expect(reg).to.have.property('status').and.equal(200);
-    expect(reg).to.have.property('data');
-    expect(reg.data).to.have.property('token').and.be.a('string');
-    expect(reg.data).to.have.property('id').and.be.a('number');
-    
-    //create game
-    const rsp = await axios.post('http://localhost:4201/api/games',
-        {
-          name:"i wanna "+usernameA,
-          url:"example.com/"+usernameA,
-          author:usernameA
-        },
-        {headers: {'Authorization': "Bearer " + reg.data.token}});
-    expect(rsp).to.have.property('status').and.equal(200);
-    expect(rsp).to.have.property('data');
-    expect(rsp.data).to.have.property('id').and.be.a("number");
+  it('returns games for anonymous users', async () => {
+    const game = await createGame();
     
     //get game
-    const del = await axios.get(`http://localhost:4201/api/games/${rsp.data.id}`,
-        {headers: {'Authorization': "Bearer " + reg.data.token}});
+    const del = await axios.get(`http://localhost:4201/api/games/${game.id}`);
     expect(del).to.have.property('status').and.equal(200);
     expect(del).to.have.property('data');
-    expect(del.data).to.have.property('name').and.equal("i wanna "+usernameA);
+    expect(del.data).to.have.property('name').and.equal(game.name);
   });
 
   it('prevents anonymous users from adding games', async () => {
@@ -83,72 +104,46 @@ describe('game endpoint', function () {
           url:"example.com/"+usernameA,
           author:usernameA
         });
-      fail("delete should not have been successful");
     } catch (err) {
       expect(err).to.have.property('response');
       expect(err.response).to.have.property('status').and.equal(403);
+      return;
     }
+    fail("add should not have been successful");
   });
 
   it('allows admins to delete a game', async () => {
-    const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-    //register
-    const reg = await axios.post('http://localhost:4201/api/users',
-        {username:usernameA,password:"test-pw",email:"test@example.com"});
-    expect(reg).to.have.property('status').and.equal(200);
-    expect(reg).to.have.property('data');
-    expect(reg.data).to.have.property('token').and.be.a('string');
-    expect(reg.data).to.have.property('id').and.be.a('number');
+    const user = await createUser(true);
     
     //create game
     const rsp = await axios.post('http://localhost:4201/api/games',
         {
-          name:"i wanna "+usernameA,
-          url:"example.com/"+usernameA,
-          author:usernameA
+          name:"i wanna "+user.username,
+          url:"example.com/"+user.username,
+          author:user.username
         },
-        {headers: {'Authorization': "Bearer " + reg.data.token}});
+        {headers: {'Authorization': "Bearer " + user.token}});
     expect(rsp).to.have.property('status').and.equal(200);
     expect(rsp).to.have.property('data');
     expect(rsp.data).to.have.property('id').and.be.a("number");
     
     //delete game
     const del = await axios.delete(`http://localhost:4201/api/games/${rsp.data.id}`,
-        {headers: {'Authorization': "Bearer " + reg.data.token}});
+        {headers: {'Authorization': "Bearer " + user.token}});
     expect(del).to.have.property('status').and.equal(204);
   });
 
   it('prevents anonymous users from deleting games', async () => {
-    const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-    //register
-    const reg = await axios.post('http://localhost:4201/api/users',
-        {username:usernameA,password:"test-pw",email:"test@example.com"});
-    expect(reg).to.have.property('status').and.equal(200);
-    expect(reg).to.have.property('data');
-    expect(reg.data).to.have.property('token').and.be.a('string');
-    expect(reg.data).to.have.property('id').and.be.a('number');
+    const game = await createGame();
     
-    //create game
-    const rsp = await axios.post('http://localhost:4201/api/games',
-        {
-          name:"i wanna "+usernameA,
-          url:"example.com/"+usernameA,
-          author:usernameA
-        },
-        {headers: {'Authorization': "Bearer " + reg.data.token}});
-    expect(rsp).to.have.property('status').and.equal(200);
-    expect(rsp).to.have.property('data');
-    expect(rsp.data).to.have.property('id').and.be.a("number");
-    
-    //delete game
+    //delete game as anon
     try {
-      await axios.delete(`http://localhost:4201/api/games/${rsp.data.id}`);
-      fail("delete should not have been successful");
+      await axios.delete(`http://localhost:4201/api/games/${game.id}`);
     } catch (err) {
       expect(err).to.have.property('response');
       expect(err.response).to.have.property('status').and.equal(403);
+      return;
     }
+    fail("delete should not have been successful");
   });
 });

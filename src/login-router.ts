@@ -12,7 +12,7 @@ app.route('/').post(async (req,res,next) => {
     
     const database = new Database();
     try {
-      const users = await database.query('SELECT id,name,phash2 FROM User WHERE name = ?',[username]);
+      const users = await database.query('SELECT id,name,phash2,is_admin as isAdmin FROM User WHERE name = ?',[username]);
       if (users.length == 0) {
         res.status(401).send({error: 'Invalid Credentials'});
       }
@@ -23,7 +23,7 @@ app.route('/').post(async (req,res,next) => {
       if (!verified) {
         res.status(401).send({error: 'Invalid Credentials'});
       } else {
-        user.token = auth.getToken(user.name,user.id);
+        user.token = auth.getToken(user.name,user.id,user.isAdmin);
         res.send(user);
       }
     } finally {

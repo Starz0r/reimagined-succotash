@@ -7,8 +7,8 @@ const app = express.Router();
 export default app;
 
 app.route('/').post(async (req,res,next) => {
-  const isAdmin = true;
-  if (!isAdmin || !req.user || !req.user.sub) {
+  console.log(req.user);
+  if (!req.user || !req.user.sub || !req.user.isAdmin) {
     res.status(403).send({error:'unauthorized access'});
     return;
   }
@@ -36,7 +36,7 @@ app.route('/').get((req,res,next) => {
     req.query.order_dir,
     ['ASC','DESC'],
     'ASC');
-  var isAdmin = false;
+  var isAdmin = req.user && req.user.isAdmin;
   const database = new Database();
   const query = `
     SELECT g.*, AVG(r.rating) AS rating, AVG(r.difficulty) AS difficulty
@@ -98,42 +98,25 @@ app.route('/:id').get(async (req,res,next) => {
 });
 
 app.route('/:id').delete(async (req,res,next) => {
-  let isAdmin = true;
-  if (!isAdmin) {
-    res.status(403).send({error:'Unauthorized'});
-    return;
-  }
+  if (!req.user || !req.user.isAdmin) return res.status(403).send({error:'Unauthorized'});
 
-  if (isNaN(req.params.id)) {
-    res.status(400).send({error:'id must be a number'});
-    return;
-  }
+  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   var id = parseInt(req.params.id, 10);
   let game = await datastore.getGame(id);
 
-  if (!game) {
-    res.sendStatus(404);
-    return;
-  }
-
+  if (!game) return res.sendStatus(404);
   game = game!;
 
-  if (game.removed) {
-    res.send({message:'Game is already deleted'});
-    return;
-  }
+  if (game.removed) return res.send({message:'Game is already deleted'});
 
   let gamePatch: Game = {
     id: req.params.id,
     removed: true
   };
   try {
-    const success = await datastore.updateGame(gamePatch,isAdmin);
-    if (!success) {
-      res.sendStatus(404);
-      return;
-    }
+    const success = await datastore.updateGame(gamePatch,req.user.isAdmin);
+    if (!success) return res.sendStatus(404);
 
     res.sendStatus(204);
   } catch (err) {
@@ -163,7 +146,7 @@ app.route('/:id/screenshots').get((req,res,next) => {
 
   var id = parseInt(req.params.id, 10);
   const database = new Database();
-  var isAdmin = false;
+  var isAdmin = req.user && req.user.isAdmin;
   var query = `
     SELECT s.*, u.name user_name, g.name game_name
     FROM Screenshot s

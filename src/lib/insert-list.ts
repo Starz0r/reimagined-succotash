@@ -1,4 +1,4 @@
-export default class UpdateList {
+export default class InsertList {
     private columns: string[] = [];
     private params: any[] = [];
     public add(column: string, value: any): boolean {
@@ -17,7 +17,7 @@ export default class UpdateList {
         return this.params;
     }
 
-    public getSetClause(): string {
-        return ` SET ` + this.columns.map(s => s+' = ?').join(', ') + ' ';
+    public getClause(): string {
+        return ` (${this.columns.join(', ')}) VALUES (${this.columns.map(s => '?').join(', ')}) `;
     }
 }

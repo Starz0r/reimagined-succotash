@@ -1,6 +1,6 @@
 import express from 'express';
 import moment from 'moment';
-import datastore from './datastore';
+import datastore, { Game } from './datastore';
 import { Database } from './database';
 
 const app = express.Router();
@@ -72,31 +72,73 @@ function whitelist(input: string,valid: string[],defval: string) {
   return defval;
 }
 
-app.route('/:id').get((req,res,next) => {
-  const callback = (rows:any) => {
-    if (rows.length == 0) res.sendStatus(404);
-    else {
-      let game = rows[0];
-      //if zero date, we don't have it, so null it out
-      if (!moment(game.date_created).isValid()) game.date_created = null;
-      if (game.collab == 1) game.author = game.author.split(" ");
-      else game.author = [game.author];
-      res.send(game); 
-    }
-  };
-
+app.route('/:id').get(async (req,res,next) => {
+  let game;
   if (req.params.id === 'random') {
-    datastore.getRandomGame()
-      .then(rows=>callback(rows))
-      .catch(err=>next(err));
+    game = await datastore.getRandomGame();
   } else if (!isNaN(req.params.id)) {
     var id = parseInt(req.params.id, 10);
-
-    datastore.getGame(id)
-      .then(rows=>callback(rows))
-      .catch(err=>next(err));;
+    game = await datastore.getGame(id);
   } else {
     res.status(400).send({error:'id must be a number'});
+    return;
+  }
+
+  if (!game) {
+    res.sendStatus(404);
+    return;
+  }
+  game = game!;
+  
+  //if zero date, we don't have it, so null it out
+  if (!moment(game.dateCreated).isValid()) game.dateCreated = undefined;
+  if (game.collab && game.author_raw) game.author = (game.author_raw).split(" ");
+  else game.author = game.author_raw?[game.author_raw]:[];
+  res.send(game); 
+});
+
+app.route('/:id').delete(async (req,res,next) => {
+  let isAdmin = true;
+  if (!isAdmin) {
+    res.status(403).send({error:'Unauthorized'});
+    return;
+  }
+
+  if (isNaN(req.params.id)) {
+    res.status(400).send({error:'id must be a number'});
+    return;
+  }
+
+  var id = parseInt(req.params.id, 10);
+  let game = await datastore.getGame(id);
+
+  if (!game) {
+    res.sendStatus(404);
+    return;
+  }
+
+  game = game!;
+
+  if (game.removed) {
+    res.send({message:'Game is already deleted'});
+    return;
+  }
+
+  let gamePatch: Game = {
+    removed: true
+  };
+  try {
+    const success = await datastore.updateGame(game,isAdmin);
+    if (!success) {
+      res.sendStatus(404);
+      return;
+    }
+
+    const newUser = await datastore.getGame(req.params.id);
+    if (newUser == null) res.sendStatus(404);
+    else res.send(newUser);
+  } catch (err) {
+    next(err);
   }
 });
 

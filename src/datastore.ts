@@ -1,5 +1,7 @@
 import { Database } from './database';
-import InsertList from './insert-list';
+import InsertList from './lib/insert-list';
+import WhereList from './lib/where-list';
+import UpdateList from './lib/update-list';
 
 export interface UserLoginParams {
   id?: number;
@@ -12,11 +14,12 @@ export interface Game {
   sortname?: string;
   url?: string;
   urlSpdrn?: string;
-  author?: string;
+  author?: string[];
+  author_raw?: string;
   collab?: boolean;
   dateCreated?: string;
   adderId?: string;
-  removed?: string;
+  removed?: boolean;
   ownerId?: string;
   ownerBio?: string;
 }
@@ -40,6 +43,40 @@ export default {
     } finally {
       database.close();
     }
+  },
+
+  async updateUser(user: any, isAdmin: boolean): Promise<boolean> {
+    const database = new Database();
+  
+    const updateList = new UpdateList();
+  
+    updateList.add('phash2',user.phash2);
+    updateList.add('email',user.email);
+    updateList.addIf('can_report',user.canReport,isAdmin);
+    updateList.addIf('can_submit',user.canSubmit,isAdmin);
+    updateList.addIf('can_review',user.canReview,isAdmin);
+    updateList.addIf('can_screenshot',user.canScreenshot,isAdmin);
+    updateList.add('twitch_link',user.twitchLink);
+    updateList.add('nico_link',user.nicoLink);
+    updateList.add('youtube_link',user.youtubeLink);
+    updateList.add('twitterLink',user.twitterLink);
+    updateList.add('bio',user.bio);
+    updateList.addIf('banned',user.banned,isAdmin);
+    updateList.add('locale',user.locale);
+  
+    try {
+      let params = updateList.getParams();
+      params.push(user.id);
+      const rows = await database.execute(
+        ` UPDATE User ${updateList.getSetClause()} WHERE id = ?`,params);
+      return (rows.affectedRows == 1);
+    } finally {
+      database.close();
+    }
+  },
+
+  async updateGame(game: any, isAdmin: boolean): Promise<boolean> {
+    return false;
   },
 
   async addGame(game: Game, adderId: number): Promise<Game> {
@@ -133,46 +170,36 @@ export default {
     }
   },
 
-  getReviews(options: any): Promise<any[]> {
-    return new Promise((res,rej)=>{
+  async getReviews(options: any): Promise<any[]> {
     const database = new Database();
-    const params = [];
-    let where = '';
-    if (options.game_id) {
-      params.push(options.game_id);
+    try {
+      var isAdmin = false;
+
+      const where = new WhereList();
+      where.add('r.game_id',options.game_id);
+      where.add('r.user_id',options.user_id);
+      where.add('r.id',options.game_id);
+      where.addIf('r.removed',0,!isAdmin);
+
+      let params = [];
+      if (options.page !== undefined) {
+        params.push(options.page);
+        params.push(options.limit);
+      }
+      var query = `
+        SELECT r.*, u.name user_name, g.name game_name
+        FROM Rating r
+        JOIN User u ON r.user_id=u.id
+        JOIN Game g on r.game_id=g.id
+        ${where.getClause()}
+        ORDER BY r.date_created DESC
+        ${options.page !== undefined ? ' LIMIT ?,? ' : ''}
+      `;
+
+      return await database.query(query, where.getParams().concat(params));
+    } finally {
+      database.close();
     }
-    if (options.user_id) {
-      params.push(options.user_id);
-    }
-    if (options.id) {
-      params.push(options.id);
-    }
-    if (options.page !== undefined) {
-      params.push(options.page);
-      params.push(options.limit);
-    }
-    var isAdmin = false;
-    var query = `
-      SELECT r.*, u.name user_name, g.name game_name
-      FROM Rating r
-      JOIN User u ON r.user_id=u.id
-      JOIN Game g on r.game_id=g.id
-      WHERE 1=1
-      ${options.game_id ? ' AND r.game_id = ? ' : ''}
-      ${options.user_id ? ' AND r.user_id = ? ' : ''}
-      ${options.id ? ' AND r.id = ? ' : ''}
-      ${isAdmin ? '' : ' AND r.removed=0 '}
-      ORDER BY r.date_created DESC
-      ${options.page !== undefined ? ' LIMIT ?,? ' : ''}
-    `;
-    database.query(query, params)
-      .then(res)
-      .then(() => database.close())
-      .catch(err => {
-        database.close();
-        rej(err);
-      });
-    });
   },
 
   async getGame(id: number, database?: Database): Promise<Game | null> {

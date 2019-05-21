@@ -4,7 +4,7 @@ import datastore from './datastore';
 import { resolveTxt } from 'dns';
 
 import AuthModule from './auth';
-import UpdateList from './update-list';
+import UpdateList from './lib/update-list';
 const auth = new AuthModule();
 const app = express.Router();
 export default app;
@@ -50,7 +50,6 @@ app.route('/:id').get(async (req,res,next) => {
 
 app.route('/:id').patch(async (req,res,next) => {
   var uid = parseInt(req.params.id, 10);
-  const database = new Database();
   const isAdmin = false;
   //if not admin (and if not, uid is not uid in token)
   if (!isAdmin && (!req.user || req.user.sub == null || req.user.sub != uid)) {
@@ -58,7 +57,8 @@ app.route('/:id').patch(async (req,res,next) => {
     return;
   }
 
-  const updateList = new UpdateList();
+  let user = req.body;
+  user.id = uid;
 
   if (req.body.password) {
     //verify password and abort if incorrect
@@ -69,34 +69,20 @@ app.route('/:id').patch(async (req,res,next) => {
       return;
     }
     const newPassHash = await auth.hashPassword(req.body.password);
-    updateList.add('phash2',newPassHash);
+    user.phash2 = newPassHash;
   }
-  updateList.add('email',req.body.email);
-  updateList.addIf('can_report',req.body.canReport,isAdmin);
-  updateList.addIf('can_submit',req.body.canSubmit,isAdmin);
-  updateList.addIf('can_review',req.body.canReview,isAdmin);
-  updateList.addIf('can_screenshot',req.body.canScreenshot,isAdmin);
-  updateList.add('twitch_link',req.body.twitchLink);
-  updateList.add('nico_link',req.body.nicoLink);
-  updateList.add('youtube_link',req.body.youtubeLink);
-  updateList.add('twitterLink',req.body.twitterLink);
-  updateList.add('bio',req.body.bio);
-  updateList.addIf('banned',req.body.banned,isAdmin);
-  updateList.add('locale',req.body.locale);
 
   try {
-    let params = updateList.getParams();
-    params.push(uid);
-    const rows = await database.execute(
-      ` UPDATE User ${updateList.getSetClause()} WHERE id = ?`,params);
-    if (rows.affectedRows == 0) res.sendStatus(404);
+    const success = await datastore.updateUser(user,isAdmin);
+    if (!success) {
+      res.sendStatus(404);
+      return;
+    }
 
-    const user = await datastore.getUser(uid);
-    if (user == null) res.sendStatus(404);
-    else res.send(user);
+    const newUser = await datastore.getUser(uid);
+    if (newUser == null) res.sendStatus(404);
+    else res.send(newUser);
   } catch (err) {
     next(err);
-  } finally {
-    database.close();
   }
 });

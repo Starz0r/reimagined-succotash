@@ -39,15 +39,20 @@ app.route('/').get((req,res,next) => {
   var isAdmin = req.user && req.user.isAdmin;
   const database = new Database();
   const query = `
-    SELECT g.*, AVG(r.rating) AS rating, AVG(r.difficulty) AS difficulty
+    SELECT g.*,
+    AVG(case when u.banned = 1 THEN NULL else r.rating end) AS rating,
+    AVG(case when u.banned = 1 THEN NULL ELSE r.difficulty END) AS difficulty,
+    COUNT(case when u.banned = 0 THEN r.id END) AS rating_count
     FROM Game g
-    JOIN rating r ON r.removed=0 AND r.game_id=g.id
+    LEFT JOIN Rating r ON r.removed=0 AND r.game_id=g.id
+    LEFT JOIN User AS u ON u.id = r.user_id
     WHERE g.name LIKE ?
     ${isAdmin?'':' AND g.removed = 0 '}
     GROUP BY g.id
     ORDER BY ${order_col} ${order_dir}
     LIMIT ?,?
   `;
+	//WHERE gg.removed = 0 AND gg.url IS NOT NULL and gg.url != '' FOR TOP 10 LATEST
   database.query(query,[q,page*limit,limit])
     .then(rows => {
       rows.forEach(game => {

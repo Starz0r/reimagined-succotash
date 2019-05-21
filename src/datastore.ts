@@ -24,6 +24,15 @@ export interface Game {
   ownerBio?: string;
 }
 
+export interface GetReviewOptions {
+  game_id?: number;
+  user_id?: number;
+  id?: number;
+  page?: number;
+  limit?: number;
+  textReviewsFirst?: boolean;
+}
+
 export default {
   /**
    * return user if user was created
@@ -197,7 +206,7 @@ export default {
     }
   },
 
-  async getReviews(options: any): Promise<any[]> {
+  async getReviews(options: GetReviewOptions): Promise<any[]> {
     const database = new Database();
     try {
       var isAdmin = false;
@@ -205,21 +214,35 @@ export default {
       const where = new WhereList();
       where.add('r.game_id',options.game_id);
       where.add('r.user_id',options.user_id);
-      where.add('r.id',options.game_id);
-      where.addIf('r.removed',0,!isAdmin);
+      where.add('r.id',options.id);
+      where.addIf('r.removed',0,!isAdmin); //TODO: allow admin to toggle
+      where.addIf('u.removed',0,!isAdmin); //TODO: allow admin to toggle
+      where.addIf('g.removed',0,!isAdmin); //TODO: allow admin to toggle
 
       let params = [];
       if (options.page !== undefined) {
         params.push(options.page);
         params.push(options.limit);
       }
+
       var query = `
-        SELECT r.*, u.name user_name, g.name game_name
+        SELECT r.*, 
+        u.name user_name,
+        u.id AS uid, 
+        g.name game_name,
+        g.id AS game_id,
+        COUNT(l.id) AS like_count,
+        r.user_id = g.owner_id AS owner_review
         FROM Rating r
         JOIN User u ON r.user_id=u.id
         JOIN Game g on r.game_id=g.id
+        LEFT JOIN LikeReview AS l ON l.rating_id = r.id
         ${where.getClause()}
-        ORDER BY r.date_created DESC
+        ${options.textReviewsFirst
+          ?`	CASE WHEN (r.comment IS NULL OR r.comment='') THEN 0 ELSE 1 END DESC, 
+              COUNT(l.id) DESC,
+              r.date_created DESC`
+          :'ORDER BY r.date_created DESC'}
         ${options.page !== undefined ? ' LIMIT ?,? ' : ''}
       `;
 

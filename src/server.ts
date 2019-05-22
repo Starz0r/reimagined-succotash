@@ -12,6 +12,7 @@ import review_router from './review-router';
 import list_router from './list-router';
 import login_router from './login-router';
 import ping_router from './ping-router';
+import message_router from './message-router';
 
 import { Database } from './database';
 Database.init();
@@ -65,6 +66,7 @@ app.use('/api/reviews',review_router);
 app.use('/api/lists',list_router);
 app.use('/api/login',login_router);
 app.use('/api/ping',ping_router);
+app.use('/api/message',message_router);
 
 app.listen(config.app_port,  () => {
   console.log('Server started at localhost:4201!');

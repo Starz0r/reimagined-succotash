@@ -55,6 +55,7 @@ export class Database {
       await this.createUserTable(connection)
       await this.createGameTable(connection)
       await this.createRatingTable(connection)
+      await this.createMessageTable(connection)
     } finally {
       if (connection) connection.end()
     }
@@ -175,6 +176,30 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         KEY review_date (date_created),
         KEY idx_gid_rem (game_id,removed)
       ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createMessageTable(connection: mysql.Connection) {
+    console.log('Creating message table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE delfruit.Message (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        is_read tinyint(1) NOT NULL DEFAULT '0',
+        user_from_id int(11) NOT NULL,
+        user_to_id int(11) NOT NULL,
+        subject varchar(100) NOT NULL,
+        body text NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        deleted tinyint(1) NOT NULL DEFAULT '0',
+        reply_to_id int(11),
+        thread_id int(11),
+        PRIMARY KEY (id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();

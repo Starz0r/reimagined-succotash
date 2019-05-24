@@ -187,7 +187,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
     console.log('Creating message table...')
     return new Promise((resolve,reject) => {
       connection.query(`
-      CREATE TABLE delfruit.Message (
+      CREATE TABLE IF NOT EXISTS delfruit.Message (
         id int(11) NOT NULL AUTO_INCREMENT,
         is_read tinyint(1) NOT NULL DEFAULT '0',
         user_from_id int(11) NOT NULL,

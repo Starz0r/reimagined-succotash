@@ -39,7 +39,7 @@ app.route('/inbox').get(async (req,res,next) => {
   const database = new Database();
   try {
     const messages = await database.query(`
-      SELECT *
+      SELECT *, thread_id as threadId
       FROM Message 
       ${whereList.getClause()}`,whereList.getParams());
     return res.send(messages);

@@ -1,6 +1,6 @@
 import express from 'express';
 import moment from 'moment';
-import datastore, { Game } from './datastore';
+import datastore, { Game, GetScreenshotParms } from './datastore';
 import { Database } from './database';
 
 const app = express.Router();
@@ -148,29 +148,18 @@ app.route('/:id/screenshots').get((req,res,next) => {
     res.status(400).send({error:'id must be a number'});
     return;
   }
-
-  var id = parseInt(req.params.id, 10);
-  const database = new Database();
+  
   var isAdmin = req.user && req.user.isAdmin;
-  var query = `
-    SELECT s.*, u.name user_name, g.name game_name
-    FROM Screenshot s
-    JOIN User u ON s.added_by_id=u.id
-    JOIN Game g on s.game_id=g.id
-    WHERE s.game_id = ?
-    AND s.approved = 1
-    ${!isAdmin?' AND s.removed = 0 ':''}
-    ORDER BY s.date_created DESC
-  `;
-  database.query(query,[id])
-    .then(rows => {
-      res.send(rows); 
-    })
-    .then(() => database.close())
-    .catch(err => {
-      database.close();
-      next(err);
-    });
+
+  let parms: GetScreenshotParms = {};
+  parms.gameId = req.params.id;
+  if (!isAdmin) parms.removed = false;
+  try {
+    const rows = datastore.getScreenshots(parms);
+    res.send(rows);
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.route('/:id/tags').get((req,res,next) => {

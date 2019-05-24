@@ -3,7 +3,7 @@ export default class WhereList {
     private params: any[] = [];
 
     public add(column: string, value: any): boolean {
-        if (!value) return false;
+        if (value === undefined || value === null) return false;
         this.columns.push(`(${column} = ?)`);
         this.params.push(value);
         return true;

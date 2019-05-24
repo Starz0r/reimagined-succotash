@@ -33,6 +33,11 @@ export interface GetReviewOptions {
   textReviewsFirst?: boolean;
 }
 
+export interface GetScreenshotParms {
+  gameId?: number;
+  removed?: boolean;
+}
+
 export default {
   /**
    * return user if user was created
@@ -288,6 +293,28 @@ export default {
       const rows2 = await database.query(query2, [Math.floor(+rows[0].cnt * Math.random())]);
       const res = await this.getGame(rows2[0].id, database);
       return res;
+    } finally {
+      database.close();
+    }
+  },
+
+  async getScreenshots(params: GetScreenshotParms) {
+    const whereList = new WhereList();
+    whereList.add("s.game_id",params.gameId);
+    whereList.add("s.approved",1);
+    whereList.add("s.removed",params.removed);
+
+    var query = `
+      SELECT s.*, u.name user_name, g.name game_name
+      FROM Screenshot s
+      JOIN User u ON s.added_by_id=u.id
+      JOIN Game g on s.game_id=g.id
+      ${whereList.getClause()}
+      ORDER BY s.date_created DESC
+    `;
+    const database = new Database();
+    try {
+      return await database.query(query,whereList.getParams());
     } finally {
       database.close();
     }

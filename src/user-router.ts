@@ -12,7 +12,7 @@ app.route('/').post(async (req,res,next) => {
   try {
     const phash = await auth.hashPassword(req.body.password);
     const user = await datastore.addUser(req.body.username,phash,req.body.email)
-    if (!user) res.status(400).send({error:"User Exists"});
+    if (!user) return res.status(400).send({error:"User Exists"});
 
     user.token = auth.getToken(user.name,user.id,user.isAdmin);
     res.send(user);

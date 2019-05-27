@@ -1,13 +1,13 @@
 import express from 'express';
 import moment from 'moment';
-import datastore, { Game, GetScreenshotParms } from './datastore';
+import datastore, { Game, GetScreenshotParms, GetGamesParms } from './datastore';
 import { Database } from './database';
+import whitelist from './lib/whitelist';
 
 const app = express.Router();
 export default app;
 
 app.route('/').post(async (req,res,next) => {
-  console.log(req.user);
   if (!req.user || !req.user.sub || !req.user.isAdmin) {
     res.status(403).send({error:'unauthorized access'});
     return;
@@ -22,60 +22,34 @@ app.route('/').post(async (req,res,next) => {
   }
 });
 
-app.route('/').get((req,res,next) => {
-  var id = parseInt(req.params.id, 10);
-  var page = +req.query.page || 0;
-  var limit = +req.query.limit || 50;
-  var q = req.query.q ? `%${req.query.q}%` : '%';
+app.route('/').get(async (req,res,next) => {
   var order_col = whitelist(
     req.query.order_col,
     ['sortname','date_created'],
     'sortname');
   order_col = 'g.'+order_col;
-  var order_dir = whitelist(
+  let order_dir = whitelist(
     req.query.order_dir,
     ['ASC','DESC'],
-    'ASC');
+    'ASC') as 'ASC'|'DESC';
   var isAdmin = req.user && req.user.isAdmin;
-  const database = new Database();
-  const query = `
-    SELECT g.*,
-    AVG(case when u.banned = 1 THEN NULL else r.rating end) AS rating,
-    AVG(case when u.banned = 1 THEN NULL ELSE r.difficulty END) AS difficulty,
-    COUNT(case when u.banned = 0 THEN r.id END) AS rating_count
-    FROM Game g
-    LEFT JOIN Rating r ON r.removed=0 AND r.game_id=g.id
-    LEFT JOIN User AS u ON u.id = r.user_id
-    WHERE g.name LIKE ?
-    ${isAdmin?'':' AND g.removed = 0 '}
-    GROUP BY g.id
-    ORDER BY ${order_col} ${order_dir}
-    LIMIT ?,?
-  `;
-	//WHERE gg.removed = 0 AND gg.url IS NOT NULL and gg.url != '' FOR TOP 10 LATEST
-  database.query(query,[q,page*limit,limit])
-    .then(rows => {
-      rows.forEach(game => {
-        if (!moment(game.date_created).isValid()) game.date_created = null;
-        if (game.collab == 1) game.author = game.author.split(" ");
-        else game.author = [game.author];
-      });
-      res.send(rows); 
-    })
-    .then(() => database.close())
-    .catch(err => {
-      database.close();
-      next(err);
-    });
-});
 
-function whitelist(input: string,valid: string[],defval: string) {
-  if (input === null || input === undefined) return defval;
-  for (var i = 0; i < valid.length; i++) {
-    if (input.toLowerCase() === valid[i].toLowerCase()) return input;
+  const params: GetGamesParms = {
+    page: +req.query.page || 0,
+    limit: +req.query.limit || 50,
+    orderCol: order_col,
+    orderDir: order_dir
+  };
+  if (!isAdmin) params.removed = false;
+  if (req.query.q) params.name = req.query.q;
+
+  try {
+    const rows = await datastore.getGames(params);
+    res.send(rows);
+  } catch (err) {
+    next(err);
   }
-  return defval;
-}
+});
 
 app.route('/:id').get(async (req,res,next) => {
   let game;

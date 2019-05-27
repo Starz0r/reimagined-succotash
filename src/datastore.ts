@@ -2,6 +2,7 @@ import { Database } from './database';
 import InsertList from './lib/insert-list';
 import WhereList from './lib/where-list';
 import UpdateList from './lib/update-list';
+import moment = require('moment');
 
 export interface UserLoginParams {
   id?: number;
@@ -36,6 +37,16 @@ export interface GetReviewOptions {
 export interface GetScreenshotParms {
   gameId?: number;
   removed?: boolean;
+}
+
+export interface GetGamesParms {
+  page: number;
+  limit: number;
+  name?: string;
+  removed?: boolean;
+
+  orderCol?: string;
+  orderDir?: "ASC"|"DESC";
 }
 
 export default {
@@ -315,6 +326,43 @@ export default {
     const database = new Database();
     try {
       return await database.query(query,whereList.getParams());
+    } finally {
+      database.close();
+    }
+  },
+
+  async getGames(params: GetGamesParms) {
+    const database = new Database();
+
+    const whereList = new WhereList();
+    whereList.addIf("g.removed",params.removed?1:0,params.removed!==undefined);
+    if (params.name !== undefined) {
+      whereList.addPhrase("g.name LIKE ?",'%'+params.name+'%');
+    }
+
+    const query = `
+      SELECT g.*,
+      AVG(case when u.banned = 1 THEN NULL else r.rating end) AS rating,
+      AVG(case when u.banned = 1 THEN NULL ELSE r.difficulty END) AS difficulty,
+      COUNT(case when u.banned = 0 THEN r.id END) AS rating_count
+      FROM Game g
+      LEFT JOIN Rating r ON r.removed=0 AND r.game_id=g.id
+      LEFT JOIN User AS u ON u.id = r.user_id
+      ${whereList.getClause()}
+      GROUP BY g.id
+      ORDER BY ${params.orderCol || 'date_created'} ${params.orderDir || 'ASC'}
+      LIMIT ?,?
+    `;
+    //WHERE gg.removed = 0 AND gg.url IS NOT NULL and gg.url != '' FOR TOP 10 LATEST
+    try {
+      const rows = await database.query(query,
+        whereList.getParams().concat([params.page*params.limit,params.limit]));
+      rows.forEach(game => {
+        if (!moment(game.date_created).isValid()) game.date_created = null;
+        if (game.collab == 1) game.author = game.author.split(" ");
+        else game.author = [game.author];
+      });
+      return rows;
     } finally {
       database.close();
     }

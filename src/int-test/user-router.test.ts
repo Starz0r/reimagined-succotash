@@ -1,17 +1,9 @@
 import axios from 'axios';
 import chai from 'chai';
 import { fail } from 'assert';
-import AuthModule from '../auth';
+import { getConTest } from './test-lib';
 
 var expect = chai.expect;
-
-function getConTest(ctx: Mocha.Context): Mocha.HookFunction {
-  return () => axios.get('http://localhost:4201/api/ping')
-  .then(ctx.done)
-  .catch((_: Error) => {
-    ctx.done(new Error('server not responding at http://localhost:4201/api, is it online?'));
-  });
-}
 
 describe('user endpoint', function () {
   const ctx = this.ctx;

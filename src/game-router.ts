@@ -119,6 +119,20 @@ app.route('/:id/reviews').get(async (req,res,next) => {
   }
 });
 
+app.route('/:id/reviews').post(async (req,res,next) => {
+  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (!req.user) return res.sendStatus(401);
+  
+  var gameId = parseInt(req.params.id,10);
+
+  try {
+    const newReview = await datastore.addReview(req.body,gameId,req.user.sub);
+    res.send(newReview);
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.route('/:id/screenshots').get(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     res.status(400).send({error:'id must be a number'});

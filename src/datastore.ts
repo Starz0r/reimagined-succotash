@@ -26,6 +26,17 @@ export interface Game {
   ownerBio?: string;
 }
 
+export interface Review {
+  id?: number;
+  userId?: number;
+  gameId?: number;
+  rating?: number;
+  difficulty?: number;
+  comment?: string;
+  date_created?: string;
+  removed?: boolean;
+}
+
 export interface GetReviewOptions {
   game_id?: number;
   user_id?: number;
@@ -237,7 +248,7 @@ export default {
       where.add('r.user_id',options.user_id);
       where.add('r.id',options.id);
       where.addIf('r.removed',0,!isAdmin); //TODO: allow admin to toggle
-      where.addIf('u.removed',0,!isAdmin); //TODO: allow admin to toggle
+      where.addIf('u.banned',0,!isAdmin); //TODO: allow admin to toggle
       where.addIf('g.removed',0,!isAdmin); //TODO: allow admin to toggle
 
       let params = [];
@@ -271,6 +282,35 @@ export default {
     } finally {
       database.close();
     }
+  },
+
+  async addReview(review: Review, gameId: number, userId: number): Promise<Review> {
+    const database = new Database();
+    try {
+      const insertList = new InsertList();
+      insertList.add('game_id',gameId);
+      insertList.add('user_id',userId);
+      insertList.add('rating',review.rating);
+      insertList.add('difficulty',review.difficulty);
+      insertList.add('comment',review.comment);
+
+      const result = await database.execute(
+        `INSERT INTO Rating ${insertList.getClause()}`, 
+        insertList.getParams());
+
+      const r = await this.getReview(result.insertId as number);
+
+      if (!r) throw 'rating failed to be created';
+      return r;
+    } finally {
+      database.close();
+    }
+  },
+
+  async getReview(reviewId: number): Promise<Review|null> {
+    const rows = await this.getReviews({id: reviewId});
+    if (!rows || rows.length == 0) return null;
+    return rows[0];
   },
 
   async getGame(id: number, database?: Database): Promise<Game | null> {

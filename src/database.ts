@@ -56,6 +56,7 @@ export class Database {
       await this.createGameTable(connection)
       await this.createRatingTable(connection)
       await this.createMessageTable(connection)
+      await this.createLikeReviewTable(connection)
     } finally {
       if (connection) connection.end()
     }
@@ -199,6 +200,25 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         reply_to_id int(11),
         thread_id int(11),
         PRIMARY KEY (id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createLikeReviewTable(connection: mysql.Connection) {
+    console.log('Creating like review table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.LikeReview (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        user_id int(11) NOT NULL,
+        rating_id int(11) NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY lr_ur (rating_id,user_id)
       ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
       `,[],(err,rows)=>{
         if (err) reject(err);

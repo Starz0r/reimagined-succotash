@@ -3,6 +3,7 @@ import InsertList from './lib/insert-list';
 import WhereList from './lib/where-list';
 import UpdateList from './lib/update-list';
 import moment = require('moment');
+import { getPackedSettings } from 'http2';
 
 export interface UserLoginParams {
   id?: number;
@@ -47,6 +48,10 @@ export interface GetGamesParms {
 
   orderCol?: string;
   orderDir?: "ASC"|"DESC";
+}
+
+export interface getTagsParms {
+  gameId?: number;
 }
 
 export default {
@@ -105,7 +110,7 @@ export default {
   
     const updateList = new UpdateList();
   
-    updateList.add('removed',game.removed);
+    updateList.addIf('removed',game.removed?1:0,game.removed !== undefined);
     updateList.add('name',game.name);
     updateList.add('url',game.url);
     updateList.add('urlSpdrn',game.urlSpdrn);
@@ -272,7 +277,7 @@ export default {
     const doClose = !database;
     const db = database || new Database();
     const query = `
-      SELECT g.*
+      SELECT g.*, g.author as author_raw
           , AVG(r.rating) AS rating
           , AVG(r.difficulty) AS difficulty 
       FROM Game g 
@@ -282,9 +287,28 @@ export default {
     try {
       const res = await db.query(query, [id]);
       if (!res || res.length == 0) return null;
-      return res[0];
+
+      const game = res[0];
+      //if zero date, we don't have it, so null it out
+      if (!moment(game.dateCreated).isValid()) game.dateCreated = undefined;
+      if (game.collab && game.author_raw) game.author = (game.author_raw).split(" ");
+      else game.author = game.author_raw?[game.author_raw]:[];
+      delete game.author_raw;
+
+      return game;
     } finally {
       if (doClose) db.close();
+    }
+  },
+
+  async gameExists(id: number): Promise<boolean> {
+    const db = new Database();
+    try {
+      const res = await db.query(
+        'SELECT 1 FROM Game g WHERE g.id = ? AND g.removed = 0', [id]);
+      return (res && res.length == 1);
+    } finally {
+      db.close();
     }
   },
 
@@ -323,6 +347,28 @@ export default {
       ${whereList.getClause()}
       ORDER BY s.date_created DESC
     `;
+    const database = new Database();
+    try {
+      return await database.query(query,whereList.getParams());
+    } finally {
+      database.close();
+    }
+  },
+
+  async getTags(params: getTagsParms) {
+
+    const whereList = new WhereList();
+    whereList.add('gt.game_id',params.gameId);
+
+    var query = `
+      SELECT gt.*, t.name, t.id
+      FROM GameTag gt
+      JOIN Game g on g.id = gt.game_id AND g.removed = 0
+      INNER JOIN Rating AS r ON r.user_id = gt.user_id AND r.game_id = gt.game_id AND r.removed=0
+      JOIN Tag t on t.id = gt.tag_id
+      ${whereList.getClause()}
+    `;
+
     const database = new Database();
     try {
       return await database.query(query,whereList.getParams());

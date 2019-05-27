@@ -67,12 +67,6 @@ app.route('/:id').get(async (req,res,next) => {
     res.sendStatus(404);
     return;
   }
-  game = game!;
-  
-  //if zero date, we don't have it, so null it out
-  if (!moment(game.dateCreated).isValid()) game.dateCreated = undefined;
-  if (game.collab && game.author_raw) game.author = (game.author_raw).split(" ");
-  else game.author = game.author_raw?[game.author_raw]:[];
   res.send(game); 
 });
 
@@ -103,62 +97,68 @@ app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
   }
 });
 
-app.route('/:id/reviews').get((req,res,next) => {
-  if (isNaN(req.params.id)) {
-    res.status(400).send({error:'id must be a number'});
-    return;
-  }
-
-  var id = parseInt(req.params.id, 10);
-  var page = +req.query.page || 0;
-  var limit = +req.query.limit || 50;
-  datastore.getReviews({game_id:id,page:page,limit:limit})
-    .then(rows=>res.send(rows))
-    .catch(err=>next(err));;
-});
-
-app.route('/:id/screenshots').get((req,res,next) => {
+app.route('/:id/reviews').get(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     res.status(400).send({error:'id must be a number'});
     return;
   }
   
-  var isAdmin = req.user && req.user.isAdmin;
+  var gameId = parseInt(req.params.id,10);
 
-  let parms: GetScreenshotParms = {};
-  parms.gameId = req.params.id;
-  if (!isAdmin) parms.removed = false;
+  const game = await datastore.gameExists(gameId);
+  if (!game) return res.sendStatus(404);
+
+  var id = parseInt(req.params.id, 10);
+  var page = +req.query.page || 0;
+  var limit = +req.query.limit || 50;
   try {
-    const rows = datastore.getScreenshots(parms);
+    const rows = await datastore.getReviews({game_id:id,page:page,limit:limit});
     res.send(rows);
   } catch (err) {
     next(err);
   }
 });
 
-app.route('/:id/tags').get((req,res,next) => {
+app.route('/:id/screenshots').get(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     res.status(400).send({error:'id must be a number'});
     return;
   }
+  
+  var gameId = parseInt(req.params.id,10);
 
-  const database = new Database();
-  var gid = parseInt(req.params.id,10);
-  var query = `
-    SELECT gt.*, t.name, t.id
-    FROM GameTag gt
-    JOIN Game g on g.id = gt.game_id AND g.removed = 0
-    INNER JOIN Rating AS r ON r.user_id = gt.user_id AND r.game_id = gt.game_id AND r.removed=0
-    JOIN Tag t on t.id = gt.tag_id
-    WHERE gt.game_id = ?
-  `;
-  database.query(query,[gid])
-    .then(rows => { res.send(rows); })
-    .then(() => database.close())
-    .catch(err => {
-      database.close();
-      next(err);
-    });
+  const game = await datastore.gameExists(gameId);
+  if (!game) return res.sendStatus(404);
+  
+  var isAdmin = req.user && req.user.isAdmin;
+
+  let parms: GetScreenshotParms = {gameId};
+  if (!isAdmin) parms.removed = false;
+  try {
+    const rows = await datastore.getScreenshots(parms);
+    res.send(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.route('/:id/tags').get(async (req,res,next) => {
+  if (isNaN(req.params.id)) {
+    res.status(400).send({error:'invalid game id'});
+    return;
+  }
+
+  var gameId = parseInt(req.params.id,10);
+
+  const game = await datastore.gameExists(gameId);
+  if (!game) return res.sendStatus(404);
+
+  try {
+    const tags = datastore.getTags({gameId});
+    res.send(tags);
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.route('/:id').patch(async (req,res,next) => {

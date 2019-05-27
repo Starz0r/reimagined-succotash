@@ -13,7 +13,13 @@ function getConTest(ctx: Mocha.Context): Mocha.HookFunction {
   });
 }
 
-async function createUser(isAdmin: boolean): Promise<any> {
+interface TestUser {
+  token: string;
+  id: number;
+  username: string;
+}
+
+async function createUser(isAdmin: boolean): Promise<TestUser> {
   const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
   //register
@@ -80,7 +86,7 @@ describe('game endpoint', function () {
     expect(rsp.data).to.have.property('name').and.equal("i wanna "+user.username);
     expect(rsp.data).to.have.property('sortname').and.equal(user.username);
     expect(rsp.data).to.have.property('url').and.equal("example.com/"+user.username)
-    expect(rsp.data).to.have.property('author').and.equal(user.username);
+    expect(rsp.data).to.have.property('author').and.deep.equal([user.username]);
     expect(rsp.data).to.have.property('adder_id').and.equal(user.id);
   });
 
@@ -186,5 +192,23 @@ describe('game endpoint', function () {
       return;
     }
     fail("patch should not have been successful");
+  });
+
+  it('returns 404 when retrieving tags for a non-existent game', async () => {
+    const admin = await createUser(true);
+    const user = await createUser(false);
+    const game = await createGame();
+    await axios.delete(`http://localhost:4201/api/games/${game.id}`,
+      {headers: {'Authorization': "Bearer " + admin.token}});
+
+    try {
+      await axios.get(`http://localhost:4201/api/games/${game.id}/tags`,
+      {headers: {'Authorization': "Bearer " + user.token}});
+    } catch (err) {
+      expect(err).to.have.property('response');
+      expect(err.response).to.have.property('status').and.equal(404);
+      return;
+    }
+    fail("get should not have been successful");
   });
 });

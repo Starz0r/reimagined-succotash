@@ -57,6 +57,8 @@ export class Database {
       await this.createRatingTable(connection)
       await this.createMessageTable(connection)
       await this.createLikeReviewTable(connection)
+      await this.createListTable(connection)
+      await this.createListGameTable(connection)
     } finally {
       if (connection) connection.end()
     }
@@ -219,6 +221,43 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         UNIQUE KEY lr_ur (rating_id,user_id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createListTable(connection: mysql.Connection) {
+    console.log('Creating list review table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.List (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        user_id int(11) NOT NULL,
+        name varchar(200) NOT NULL,
+        description text,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_id (user_id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createListGameTable(connection: mysql.Connection) {
+    console.log('Creating list game review table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.ListGame (
+        list_id int(11) NOT NULL,
+        game_id int(11) NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (list_id,game_id)
       ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
       `,[],(err,rows)=>{
         if (err) reject(err);

@@ -37,6 +37,15 @@ export interface Review {
   removed?: boolean;
 }
 
+export interface List {
+  id?: number;
+  userId?: number;
+  name?: string;
+  description?: string;
+  private?: boolean
+  gameIds?: number[];
+}
+
 export interface GetReviewOptions {
   game_id?: number;
   user_id?: number;
@@ -302,6 +311,58 @@ export default {
 
       if (!r) throw 'rating failed to be created';
       return r;
+    } finally {
+      database.close();
+    }
+  },
+
+  async addList(list: List, userId: number): Promise<List> {
+    const database = new Database();
+    try {
+      const insertList = new InsertList();
+      insertList.add('name',list.name);
+      insertList.add('user_id',userId);
+      insertList.add('description',list.description);
+      insertList.addIf('private',list.private?1:0,list.private!==undefined);
+
+      const result = await database.execute(
+        `INSERT INTO List ${insertList.getClause()}`, 
+        insertList.getParams());
+
+      const l = await this.getList(result.insertId as number);
+
+      if (!l) throw 'list failed to be created';
+      return l;
+    } finally {
+      database.close();
+    }
+  },
+
+  async getList(id: number): Promise<List|null> {
+    const database = new Database();
+    try {
+      let where = new WhereList();
+      where.add('l.id',id);
+
+      const lists = await database.query(`
+        SELECT *, l.user_id as userId
+        FROM List l
+        ${where.getClause()}
+      `, where.getParams());
+      if (!lists || lists.length == 0) return null;
+      const list = lists[0] as List;
+
+      where = new WhereList();
+      where.add('lg.list_id',id);
+
+      const games = await database.query(`
+        SELECT lg.game_id
+        FROM ListGame lg
+        ${where.getClause()}
+      `, where.getParams());
+      list.gameIds = games;
+
+      return list;
     } finally {
       database.close();
     }

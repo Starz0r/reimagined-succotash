@@ -1,7 +1,7 @@
 import axios from 'axios';
 import chai from 'chai';
 import { fail } from 'assert';
-import { getConTest } from './test-lib';
+import { getConTest, createUser } from './test-lib';
 
 var expect = chai.expect;
 
@@ -206,5 +206,15 @@ describe('user endpoint', function () {
         expect(err).to.have.property('response');
         expect(err.response).to.have.property('status').and.equal(401);
       }
+    });
+
+    it('gets lists for a user', async () => {
+      const user = await createUser(false);
+      
+      const rsp = await axios.get(`http://localhost:4201/api/users/${user.id}/lists`,
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+      expect(rsp.data).to.be.an('array');
     });
   });

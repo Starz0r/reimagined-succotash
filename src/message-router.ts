@@ -95,6 +95,15 @@ app.route('/').post(async (req,res,next) => {
       result = await database.execute(`
         UPDATE Message SET thread_id = id WHERE id = ?`,result.insertId);
       if (result.affectedRows != 1) throw 'Wonky database error!';
+    } else {
+      let replyTo = await database.query(`
+        SELECT thread_id FROM Message WHERE id = ?`,result.replyToId);
+      if (replyTo.length != 1) {
+        
+      }
+      result = await database.execute(`
+        UPDATE Message SET thread_id = ? WHERE id = ?`,[replyTo[0].thread_id, result.insertId]);
+      if (result.affectedRows != 1) throw 'Wonky database error!';
     }
 
     return res.sendStatus(204);

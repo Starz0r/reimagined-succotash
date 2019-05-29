@@ -1,5 +1,9 @@
 import express from 'express';
-import datastore, { Game, GetScreenshotParms, GetGamesParms, Screenshot } from './datastore';
+import datastore from './datastore';
+import { GetGamesParms } from "./model/GetGamesParms";
+import { GetScreenshotParms } from "./model/GetScreenshotParms";
+import { Screenshot } from "./model/Screenshot";
+import { Game } from "./model/Game";
 import whitelist from './lib/whitelist';
 
 

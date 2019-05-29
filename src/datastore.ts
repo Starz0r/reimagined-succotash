@@ -3,100 +3,16 @@ import InsertList from './lib/insert-list';
 import WhereList from './lib/where-list';
 import UpdateList from './lib/update-list';
 import moment = require('moment');
-import { getPackedSettings } from 'http2';
-
-export interface UserLoginParams {
-  id?: number;
-  name?: string;
-}
-
-export interface Game {
-  id?: number;
-  name?: string;
-  sortname?: string;
-  url?: string;
-  urlSpdrn?: string;
-  author?: string[];
-  author_raw?: string;
-  collab?: boolean;
-  dateCreated?: string;
-  adderId?: string;
-  removed?: boolean;
-  ownerId?: string;
-  ownerBio?: string;
-}
-
-export interface Screenshot {
-  id?: number;
-  gameId?: number;
-  addedById?: number;
-  approvedById?: number;
-  description?: string;
-  approved?: boolean;
-  dateCreated?: string;
-  removed?: boolean;
-}
-
-export interface Review {
-  id?: number;
-  userId?: number;
-  gameId?: number;
-  rating?: number;
-  difficulty?: number;
-  comment?: string;
-  date_created?: string;
-  removed?: boolean;
-}
-
-export interface List {
-  id?: number;
-  userId?: number;
-  name?: string;
-  description?: string;
-  private?: boolean
-}
-
-export interface GetReviewOptions {
-  game_id?: number;
-  user_id?: number;
-  id?: number;
-  page?: number;
-  limit?: number;
-  textReviewsFirst?: boolean;
-}
-
-export interface GetScreenshotParms {
-  gameId?: number;
-  removed?: boolean;
-  approved?: boolean;
-  page: number;
-  limit: number;
-  id?: number;
-}
-
-export interface GetGamesParms {
-  page: number;
-  limit: number;
-  name?: string;
-  removed?: boolean;
-
-  orderCol?: string;
-  orderDir?: "ASC"|"DESC";
-}
-
-export interface GetListsParms {
-  page: number;
-  limit: number;
-  userId?: number;
-  gameId?: number;
-
-  orderCol?: string;
-  orderDir?: "ASC"|"DESC";
-}
-
-export interface getTagsParms {
-  gameId?: number;
-}
+import { UserLoginParams } from './model/UserLoginParams';
+import { Game } from './model/Game';
+import { Screenshot } from './model/Screenshot';
+import { Review } from './model/Review';
+import { List } from './model/List';
+import { GetReviewOptions } from './model/GetReviewOptions';
+import { GetScreenshotParms } from './model/GetScreenshotParms';
+import { GetGamesParms } from './model/GetGamesParms';
+import { GetListsParms } from './model/GetListsParms';
+import { getTagsParms } from './model/getTagsParms';
 
 export default {
   /**

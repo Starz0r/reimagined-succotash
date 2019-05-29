@@ -1,5 +1,7 @@
 import express from 'express';
-import datastore, { GetScreenshotParms, Screenshot } from './datastore';
+import datastore from './datastore';
+import { GetScreenshotParms } from "./model/GetScreenshotParms";
+import { Screenshot } from "./model/Screenshot";
 
 const app = express.Router();
 export default app;

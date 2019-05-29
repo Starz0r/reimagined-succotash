@@ -59,6 +59,7 @@ export class Database {
       await this.createLikeReviewTable(connection)
       await this.createListTable(connection)
       await this.createListGameTable(connection)
+      await this.createScreenshotTable(connection)
     } finally {
       if (connection) connection.end()
     }
@@ -230,7 +231,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
   }
 
   static createListTable(connection: mysql.Connection) {
-    console.log('Creating list review table...')
+    console.log('Creating list table...')
     return new Promise((resolve,reject) => {
       connection.query(`
       CREATE TABLE IF NOT EXISTS delfruit.List (
@@ -250,7 +251,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
   }
 
   static createListGameTable(connection: mysql.Connection) {
-    console.log('Creating list game review table...')
+    console.log('Creating list game table...')
     return new Promise((resolve,reject) => {
       connection.query(`
       CREATE TABLE IF NOT EXISTS delfruit.ListGame (
@@ -258,6 +259,28 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         game_id int(11) NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (list_id,game_id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createScreenshotTable(connection: mysql.Connection) {
+    console.log('Creating screenshot table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.Screenshot (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        game_id int(11) NOT NULL,
+        added_by_id int(11) NOT NULL,
+        approved_by_id int(11) DEFAULT NULL,
+        description varchar(100) CHARACTER SET utf8 NOT NULL,
+        approved tinyint(1) DEFAULT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        removed tinyint(1) NOT NULL DEFAULT '0',
+        PRIMARY KEY (id)
       ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
       `,[],(err,rows)=>{
         if (err) reject(err);

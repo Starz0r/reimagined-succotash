@@ -1,6 +1,8 @@
 import axios from 'axios';
 import chai from 'chai';
 import { Database } from '../database';
+import FormData from 'form-data';
+import fs from 'fs';
 
 var expect = chai.expect;
 
@@ -57,6 +59,24 @@ export async function createGame(): Promise<any> {
     expect(rsp.data).to.have.property('id').and.be.a("number");
 
     return { id: rsp.data.id, name: rsp.data.name };
+}
+
+export async function addScreenshot(user: TestUser, game: any): Promise<any> {
+    let data = new FormData();
+
+    data.append('description', 'super neat screenshot');
+    data.append('screenshot', fs.createReadStream(__dirname+'/HYPE.png'));
+
+    const hd = data.getHeaders();
+    hd['Authorization'] = "Bearer " + user.token;
+
+    const upd = await axios.post(`http://localhost:4201/api/games/${game.id}/screenshots`,
+      data,
+      {headers: hd});
+    expect(upd).to.have.property('status').and.equal(200);
+    expect(upd).to.have.property('data');
+    expect(upd.data).to.have.property('id').and.be.a('number');
+    return upd.data;
 }
 
 export function getConTest(ctx: Mocha.Context): Mocha.HookFunction {

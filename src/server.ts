@@ -13,17 +13,18 @@ import list_router from './list-router';
 import login_router from './login-router';
 import ping_router from './ping-router';
 import message_router from './message-router';
+import screenshot_router from './screenshot-router';
 
 import { Database } from './database';
 Database.init();
 
 const app = express();
-app.use(function (req,res,next) {
+/*app.use(function (req,res,next) {
   console.log(req.originalUrl);
   next();
-});
+});*/
 
-app.use(bodyParser.json({type:"*/*"}));
+app.use(bodyParser.json({type:"application/json"}));
 
 app.use(jwt_middleware({
   secret: config.app_jwt_secret,
@@ -67,6 +68,7 @@ app.use('/api/lists',list_router);
 app.use('/api/login',login_router);
 app.use('/api/ping',ping_router);
 app.use('/api/message',message_router);
+app.use('/api/screenshots',screenshot_router);
 
 app.listen(config.app_port,  () => {
   console.log('Server started at localhost:4201!');

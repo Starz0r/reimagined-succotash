@@ -1,0 +1,80 @@
+import axios from 'axios';
+import chai from 'chai';
+import { createUser, getConTest, createGame, addScreenshot } from './test-lib';
+import { fail } from 'assert';
+import FormData from 'form-data';
+import fs from 'fs';
+
+var expect = chai.expect;
+
+describe('screenshot endpoint', function () {
+    before(getConTest(this.ctx));
+  
+    it('allows users to get a list of screenshots', async () => {
+      const user = await createUser(false);
+      const game = await createGame();
+      const ss = await addScreenshot(user,game);
+
+      const rsp = await axios.get(`http://localhost:4201/api/screenshots`);
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+      //todo: check if array contains the new screenshot
+    });
+
+    it('allows the user to get a screenshot', async () => {
+      const user = await createUser(false);
+      const game = await createGame();
+      const ss = await addScreenshot(user,game);
+      
+      const rsp = await axios.get(`http://localhost:4201/api/screenshots/${ss.id}`);
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+      //todo: check if object equals created screenshot
+    });
+
+    it('allows admins to remove a screenshot', async () => {
+      const admin = await createUser(true);
+      const game = await createGame();
+      const ss = await addScreenshot(admin,game);
+
+      const rsp = await axios.delete(`http://localhost:4201/api/screenshots/${ss.id}`,
+        {headers: {'Authorization': "Bearer " + admin.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+    });
+
+    it('prevents non-admins from deleting a screenshot', async () => {
+      const admin = await createUser(false);
+      const game = await createGame();
+      const ss = await addScreenshot(admin,game);
+
+      try {
+        await axios.delete(`http://localhost:4201/api/screenshots/${ss.id}`,
+          {headers: {'Authorization': "Bearer " + admin.token}});
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(403);
+        return;
+      }
+      fail("get should not have been successful");
+    });
+
+    it('prevents anons from creating a screenshot', async () => {
+      const game = await createGame();
+
+      let data = new FormData();
+
+      data.append('description', 'super neat screenshot');
+      data.append('screenshot', fs.createReadStream(__dirname+'/HYPE.png'));
+  
+      try {
+        await axios.post(`http://localhost:4201/api/games/${game.id}/screenshots`,
+          data,
+          {headers: data.getHeaders()});
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(401);
+        return;
+      }
+      fail("get should not have been successful");
+    });
+  });

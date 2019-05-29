@@ -1,8 +1,10 @@
 import express from 'express';
-import moment from 'moment';
-import datastore, { Game, GetScreenshotParms, GetGamesParms } from './datastore';
-import { Database } from './database';
+import datastore, { Game, GetScreenshotParms, GetGamesParms, Screenshot } from './datastore';
 import whitelist from './lib/whitelist';
+
+
+import multer from 'multer';
+const upload = multer({ dest: 'uploads/' }) //TODO
 
 const app = express.Router();
 export default app;
@@ -145,11 +147,36 @@ app.route('/:id/screenshots').get(async (req,res,next) => {
   if (!game) return res.sendStatus(404);
   
   var isAdmin = req.user && req.user.isAdmin;
+  var page = +req.query.page || 0;
+  var limit = +req.query.limit || 50;
 
-  let parms: GetScreenshotParms = {gameId};
+  let parms: GetScreenshotParms = {gameId,page,limit};
   if (!isAdmin) parms.removed = false;
   try {
     const rows = await datastore.getScreenshots(parms);
+    res.send(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.route('/:id/screenshots').post(upload.single('screenshot'), async (req,res,next) => {
+  if (isNaN(req.params.id)) {
+    return res.status(400).send({error:'id must be a number'});
+  }
+  const gameId = parseInt(req.params.id,10);
+
+  if (!req.user || !req.user.sub) return res.sendStatus(401);
+
+  const game = await datastore.gameExists(gameId);
+  if (!game) return res.sendStatus(404);
+  const ss: Screenshot = {
+    gameId: req.params.id,
+    description: req.body.description
+  };
+
+  try {
+    const rows = await datastore.addScreenshot(ss,req.user.sub);
     res.send(rows);
   } catch (err) {
     next(err);

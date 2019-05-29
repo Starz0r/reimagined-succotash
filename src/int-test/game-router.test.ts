@@ -2,6 +2,9 @@ import axios from 'axios';
 import chai from 'chai';
 import { fail } from 'assert';
 import { createUser, createGame, getConTest } from './test-lib';
+import FormData from 'form-data';
+import fs from 'fs';
+import { hashSync } from 'bcrypt';
 
 var expect = chai.expect;
 
@@ -167,5 +170,27 @@ describe('game endpoint', function () {
     expect(upd.data).to.have.property('rating').and.equal(69);
     expect(upd.data).to.have.property('difficulty').and.equal(50);
     expect(upd.data).to.have.property('comment').and.equal('good game very good');
+  });
+
+  it('allows users to add a screenshot to the game', async () => {
+    const user = await createUser(false);
+    const game = await createGame();
+
+    let data = new FormData();
+
+    data.append('description', 'super neat screenshot');
+    data.append('screenshot', fs.createReadStream(__dirname+'/HYPE.png'));
+
+    const hd = data.getHeaders();
+    hd['Authorization'] = "Bearer " + user.token;
+
+    const upd = await axios.post(`http://localhost:4201/api/games/${game.id}/screenshots`,
+      data,
+      {headers: hd});
+    expect(upd).to.have.property('status').and.equal(200);
+    expect(upd).to.have.property('data');
+    expect(upd.data).to.have.property('id').and.be.a('number');
+    expect(upd.data).to.have.property('description').and.equal('super neat screenshot');
+    expect(upd.data).to.have.property('gameId').and.equal(game.id);
   });
 });

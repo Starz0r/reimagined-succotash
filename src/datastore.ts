@@ -26,6 +26,17 @@ export interface Game {
   ownerBio?: string;
 }
 
+export interface Screenshot {
+  id?: number;
+  gameId?: number;
+  addedById?: number;
+  approvedById?: number;
+  description?: string;
+  approved?: boolean;
+  dateCreated?: string;
+  removed?: boolean;
+}
+
 export interface Review {
   id?: number;
   userId?: number;
@@ -58,6 +69,10 @@ export interface GetReviewOptions {
 export interface GetScreenshotParms {
   gameId?: number;
   removed?: boolean;
+  approved?: boolean;
+  page: number;
+  limit: number;
+  id?: number;
 }
 
 export interface GetGamesParms {
@@ -434,14 +449,17 @@ export default {
     }
   },
 
-  async getScreenshots(params: GetScreenshotParms) {
+  async getScreenshots(params: GetScreenshotParms): Promise<Screenshot[]> {
     const whereList = new WhereList();
+    whereList.add("s.id",params.id);
     whereList.add("s.game_id",params.gameId);
-    whereList.add("s.approved",1);
-    whereList.add("s.removed",params.removed);
-
+    whereList.addIf("s.approved",params.approved?1:0,params.approved!==undefined);
+    whereList.addIf("s.removed",params.removed?1:0,params.removed!==undefined);
+    
     var query = `
       SELECT s.*, u.name user_name, g.name game_name
+      , s.game_id as gameId
+      , s.added_by_id as addedById
       FROM Screenshot s
       JOIN User u ON s.added_by_id=u.id
       JOIN Game g on s.game_id=g.id
@@ -451,6 +469,54 @@ export default {
     const database = new Database();
     try {
       return await database.query(query,whereList.getParams());
+    } finally {
+      database.close();
+    }
+  },
+
+  async getScreenshot(id: number): Promise<Screenshot|null> {
+    const screenshots = await this.getScreenshots({id,page:0,limit:1});
+    if (!screenshots || screenshots.length == 0) return null;
+    return screenshots[0];
+  },
+
+  async updateScreenshot(ss: Screenshot, isAdmin: boolean): Promise<boolean> {
+    const database = new Database();
+  
+    const updateList = new UpdateList();
+  
+    updateList.addIf('removed',ss.removed?1:0,ss.removed !== undefined);
+  
+    try {
+      let params = updateList.getParams();
+      params.push(ss.id);
+      const rows = await database.execute(
+        ` UPDATE Screenshot ${updateList.getSetClause()} WHERE id = ?`,params);
+      return (rows.affectedRows == 1);
+    } finally {
+      database.close();
+    }
+  },
+
+  async addScreenshot(ss: Screenshot, adderId: number): Promise<Screenshot> {
+    const database = new Database();
+    try {
+      //const userExists = await database.query(`SELECT 1 FROM User WHERE name = ?`,[username]);
+      //if (userExists.length > 0) return false;
+
+      const insertList = new InsertList();
+      insertList.add('game_id',ss.gameId);
+      insertList.add('added_by_id',adderId);
+      insertList.add('description',ss.description);
+
+      const result = await database.execute(
+        `INSERT INTO Screenshot ${insertList.getClause()}`, 
+        insertList.getParams());
+        
+      const g = await this.getScreenshot(result.insertId as number);
+
+      if (!g) throw 'screenshot failed to be created';
+      return g;
     } finally {
       database.close();
     }

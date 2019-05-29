@@ -54,7 +54,6 @@ export interface List {
   name?: string;
   description?: string;
   private?: boolean
-  gameIds?: number[];
 }
 
 export interface GetReviewOptions {

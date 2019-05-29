@@ -27,8 +27,12 @@ app.route('/:uid/lists').get(async (req,res,next) => {
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
 
-  const lists = await datastore.getLists({userId,page,limit});
-  res.send(lists);
+  try {
+    const lists = await datastore.getLists({userId,page,limit});
+    res.send(lists);
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.route('/:id/reviews').get((req,res,next) => {

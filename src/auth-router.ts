@@ -1,6 +1,8 @@
 import express from 'express';
 import { Database } from './database';
 import AuthModule from './auth';
+import datastore from './datastore';
+import moment = require('moment');
 
 const app = express.Router();
 const auth = new AuthModule();
@@ -21,10 +23,21 @@ app.route('/login').post(async (req,res,next) => {
       const verified = await auth.verifyPassword(user.phash2,password)
           
       if (!verified) {
-        res.status(401).send({error: 'Invalid Credentials'});
+        const u = await datastore.getUser(user.id);
+        datastore.updateUser({
+          id: user.id,
+          unsuccessfulLogins: u.unsuccessfulLogins+1
+        },true);
+        return res.status(401).send({error: 'Invalid Credentials'});
       } else {
+        datastore.updateUser({
+          id: user.id,
+          dateLastLogin:moment().format('YYYY-MM-DD HH:mm:ss'),
+          lastIp: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+          unsuccessfulLogins:0
+        },true);
         user.token = auth.getToken(user.name,user.id,user.isAdmin);
-        res.send(user);
+        return res.send(user);
       }
     } finally {
       database.close();

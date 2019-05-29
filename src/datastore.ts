@@ -53,6 +53,9 @@ export default {
     updateList.add('bio',user.bio);
     updateList.addIf('banned',user.banned,isAdmin);
     updateList.add('locale',user.locale);
+    updateList.add('unsuccessful_logins',user.unsuccessfulLogins);
+    updateList.add('last_ip',user.lastIp);
+    updateList.add('date_last_login',user.dateLastLogin);
   
     try {
       let params = updateList.getParams();

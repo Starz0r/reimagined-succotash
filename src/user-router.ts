@@ -21,13 +21,14 @@ app.route('/').post(async (req,res,next) => {
   }
 });
 
-app.route('/:uid/games/:gid/lists').get((req,res,next) => {
-  var uid = parseInt(req.params.uid, 10);
-  var gid = parseInt(req.params.gid, 10);
+app.route('/:uid/lists').get(async (req,res,next) => {
+  var userId = parseInt(req.params.uid, 10);
+  
+  var page = +req.query.page || 0;
+  var limit = +req.query.limit || 50;
 
-  datastore.getLists(uid,gid)
-    .then(rows => res.send(rows))
-    .catch(err => next(err));
+  const lists = await datastore.getLists({userId,page,limit});
+  res.send(lists);
 });
 
 app.route('/:id/reviews').get((req,res,next) => {

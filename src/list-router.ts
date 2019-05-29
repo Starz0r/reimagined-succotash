@@ -1,5 +1,4 @@
 import express from 'express';
-import { Database } from './database';
 import datastore from './datastore';
 
 const app = express.Router();
@@ -16,36 +15,20 @@ app.route('/').post(async (req, res, next) => {
   }
 });
 
-app.route('/:listId').post(async (req, res, next) => {
-  const uid = req.body.userId;
+app.route('/:listId/games').put(async (req, res, next) => {
   const gid = req.body.gameId;
-  const value = req.body.value;
   const lid = parseInt(req.params.listId, 10);
 
-  if (!req.user || req.user.sub == null || req.user.sub != uid) {
-    res.status(403).send({ error: 'user cannot update this list' });
-    return;
-  }
+  if (!req.user || req.user.sub == null) return res.sendStatus(401);
 
-  const database = new Database();
-  try {
-    if (!value) {
-      await database.execute(`
-          DELETE FROM lists 
-          WHERE user_id=? AND game_id=? AND list_id=?
-        `, [uid, gid, lid])
-      return await datastore.getLists(uid, gid);
-    } else {
-      await database.execute(`
-          INSERT INTO lists 
-          (user_id,game_id,list_id)
-          VALUES (?,?,?)
-        `, [uid, gid, lid])
-      return await datastore.getLists(uid, gid);
-    }
-  } catch (err) {
-    next(err);
-  } finally {
-    database.close();
-  }
+  const list = await datastore.getList(lid);
+  if (!list) return res.sendStatus(404);
+
+  if (list.userId !== req.user.sub) return res.sendStatus(403);
+
+  const games = await datastore.getListGames(lid);
+  if (games.includes(gid)) return res.sendStatus(204);
+
+  await datastore.addGameToList(lid,gid);
+  return res.sendStatus(204);
 });

@@ -85,6 +85,16 @@ export interface GetGamesParms {
   orderDir?: "ASC"|"DESC";
 }
 
+export interface GetListsParms {
+  page: number;
+  limit: number;
+  userId?: number;
+  gameId?: number;
+
+  orderCol?: string;
+  orderDir?: "ASC"|"DESC";
+}
+
 export interface getTagsParms {
   gameId?: number;
 }
@@ -246,17 +256,21 @@ export default {
     }
   },
 
-  async getLists(uid: number, gid: number): Promise<any[]> {
+  async getLists(params: GetListsParms): Promise<any[]> {
     const database = new Database();
+
+    const whereList = new WhereList();
+    whereList.add("l.user_id", params.userId);
+    whereList.add("l.game_id", params.gameId);
+
     var query = `
       SELECT l.list_id, l.game_id, n.list_name
       FROM lists l
       JOIN LIST_NAMES n ON n.list_id=l.list_id
-      WHERE l.user_id=?
-      AND l.game_id=?
+      ${whereList.getClause()}
     `;
     try {
-      return await database.execute(query, [uid,gid]);
+      return await database.execute(query, whereList.getParams());
     } finally {
       database.close();
     }
@@ -354,6 +368,7 @@ export default {
   },
 
   async getList(id: number): Promise<List|null> {
+    //TODO: single pattern
     const database = new Database();
     try {
       let where = new WhereList();
@@ -367,17 +382,39 @@ export default {
       if (!lists || lists.length == 0) return null;
       const list = lists[0] as List;
 
-      where = new WhereList();
+      return list;
+    } finally {
+      database.close();
+    }
+  },
+
+  async getListGames(id: number): Promise<any[]> {
+    const database = new Database();
+    try {
+      let where = new WhereList();
       where.add('lg.list_id',id);
 
-      const games = await database.query(`
+      return await database.query(`
         SELECT lg.game_id
         FROM ListGame lg
         ${where.getClause()}
       `, where.getParams());
-      list.gameIds = games;
+    } finally {
+      database.close();
+    }
+  },
 
-      return list;
+  async addGameToList(listId: number, gameId: number): Promise<boolean> {
+    const database = new Database();
+    try {
+      let ins = new InsertList();
+      ins.add('list_id',listId);
+      ins.add('game_id',gameId);
+
+      await database.execute(
+        `INSERT INTO ListGame ${ins.getClause()}`, 
+        ins.getParams());
+      return true;
     } finally {
       database.close();
     }

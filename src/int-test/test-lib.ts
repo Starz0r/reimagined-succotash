@@ -34,7 +34,7 @@ export async function createUser(isAdmin: boolean): Promise<TestUser> {
     }
 
     //login
-    const login = await axios.post('http://localhost:4201/api/login',
+    const login = await axios.post('http://localhost:4201/api/auth/login',
         { username: usernameA, password: "test-pw" });
     expect(login).to.have.property('status').and.equal(200);
     expect(login).to.have.property('data');

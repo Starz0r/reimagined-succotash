@@ -4,7 +4,7 @@ import { getConTest } from './test-lib';
 
 var expect = chai.expect;
 
-describe('login endpoint', function () {
+describe('auth endpoint', function () {
     before(getConTest(this.ctx));
     const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
@@ -17,7 +17,7 @@ describe('login endpoint', function () {
       expect(reg.data).to.have.property('token').and.be.a('string');
   
       //login
-      const login = await axios.post('http://localhost:4201/api/login',
+      const login = await axios.post('http://localhost:4201/api/auth/login',
           {username:usernameA,password:"test-pw"});
       expect(login).to.have.property('status').and.equal(200);
       expect(login).to.have.property('data');

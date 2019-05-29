@@ -66,7 +66,7 @@ describe('user endpoint', function () {
       expect(reg.data).to.have.property('email').and.equal('test@example.com');
 
       //login
-      const login = await axios.post('http://localhost:4201/api/login',
+      const login = await axios.post('http://localhost:4201/api/auth/login',
           {username:usernameC,password:"test-pw"});
       expect(login).to.have.property('status').and.equal(200);
       expect(login).to.have.property('data');
@@ -157,7 +157,7 @@ describe('user endpoint', function () {
       expect(patch).to.have.property('status').and.equal(200);
 
       //verify login
-      const login = await axios.post('http://localhost:4201/api/login',
+      const login = await axios.post('http://localhost:4201/api/auth/login',
           {username:username,password:"new-pw"});
       expect(login).to.have.property('status').and.equal(200);
     });

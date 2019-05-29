@@ -10,7 +10,7 @@ import game_router from './game-router';
 import user_router from './user-router';
 import review_router from './review-router';
 import list_router from './list-router';
-import login_router from './login-router';
+import auth_router from './auth-router';
 import ping_router from './ping-router';
 import message_router from './message-router';
 import screenshot_router from './screenshot-router';
@@ -43,7 +43,7 @@ app.use(c);
 /*app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
     res.status(401).send({
-      error: 'Authorization Required - please visit /login'
+      error: 'Authorization Required - please visit /auth/login'
     });
   } else {
     next(err);
@@ -65,7 +65,7 @@ app.use('/api/games',game_router);
 app.use('/api/users',user_router);
 app.use('/api/reviews',review_router);
 app.use('/api/lists',list_router);
-app.use('/api/login',login_router);
+app.use('/api/auth',auth_router);
 app.use('/api/ping',ping_router);
 app.use('/api/message',message_router);
 app.use('/api/screenshots',screenshot_router);

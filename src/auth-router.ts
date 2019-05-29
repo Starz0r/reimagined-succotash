@@ -6,7 +6,7 @@ const app = express.Router();
 const auth = new AuthModule();
 export default app;
 
-app.route('/').post(async (req,res,next) => {
+app.route('/login').post(async (req,res,next) => {
     const username = req.body.username;
     const password = req.body.password;
     

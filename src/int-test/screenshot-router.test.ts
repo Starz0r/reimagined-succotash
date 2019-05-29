@@ -77,4 +77,101 @@ describe('screenshot endpoint', function () {
       }
       fail("get should not have been successful");
     });
+
+    it('allows admins to approve a screenshot', async () => {
+      const user = await createUser(true);
+      const game = await createGame();
+      const ss = await addScreenshot(user,game);
+      expect(ss).to.have.property('approved').and.equal(null);
+      
+      let rsp = await axios.patch(`http://localhost:4201/api/screenshots/${ss.id}`,{
+        approved: true
+      },
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+      expect(rsp.data).to.have.property('approved').and.equal(true);
+      
+      rsp = await axios.get(`http://localhost:4201/api/screenshots/${ss.id}`);
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+      expect(rsp.data).to.have.property('approved').and.equal(true);
+    });
+
+    it('allows admins to deny a screenshot', async () => {
+      const user = await createUser(true);
+      const game = await createGame();
+      const ss = await addScreenshot(user,game);
+      expect(ss).to.have.property('approved').and.equal(null);
+      
+      let rsp = await axios.patch(`http://localhost:4201/api/screenshots/${ss.id}`,{
+        approved: false
+      },
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+      expect(rsp.data).to.have.property('approved').and.equal(false);
+    });
+
+    it('does not return screenshots until approved', async () => {
+      const user = await createUser(false);
+      const admin = await createUser(true);
+      const game = await createGame();
+      const ss = await addScreenshot(user,game);
+      expect(ss).to.have.property('approved').and.equal(null);
+
+      try {
+        await axios.get(`http://localhost:4201/api/screenshots/${ss.id}`);
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(404);
+        return;
+      }
+      
+      let rsp = await axios.patch(`http://localhost:4201/api/screenshots/${ss.id}`,{
+        approved: true
+      },{headers: {'Authorization': "Bearer " + admin.token}});
+      
+      rsp = await axios.get(`http://localhost:4201/api/screenshots/${ss.id}`);
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+      expect(rsp.data).to.have.property('approved').and.equal(true);
+    });
+
+    it('prevents anons from approving a screenshot', async () => {
+      const user = await createUser(true);
+      const game = await createGame();
+      const ss = await addScreenshot(user,game);
+      expect(ss).to.have.property('approved').and.equal(null);
+
+      try {
+        await axios.patch(`http://localhost:4201/api/screenshots/${ss.id}`,{
+          approved: true
+        });
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(403);
+        return;
+      }
+      fail("get should not have been successful");
+    });
+
+    it('prevents users from approving a screenshot', async () => {
+      const user = await createUser(false);
+      const game = await createGame();
+      const ss = await addScreenshot(user,game);
+      expect(ss).to.have.property('approved').and.equal(null);
+
+      try {
+        await axios.patch(`http://localhost:4201/api/screenshots/${ss.id}`,{
+          approved: true
+        },
+        {headers: {'Authorization': "Bearer " + user.token}});
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(403);
+        return;
+      }
+      fail("get should not have been successful");
+    });
   });

@@ -192,5 +192,6 @@ describe('game endpoint', function () {
     expect(upd.data).to.have.property('id').and.be.a('number');
     expect(upd.data).to.have.property('description').and.equal('super neat screenshot');
     expect(upd.data).to.have.property('gameId').and.equal(game.id);
+    expect(upd.data).to.have.property('approved').and.equal(null);
   });
 });

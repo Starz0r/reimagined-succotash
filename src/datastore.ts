@@ -468,7 +468,12 @@ export default {
     `;
     const database = new Database();
     try {
-      return await database.query(query,whereList.getParams());
+      const rows = await database.query(query,whereList.getParams());
+      rows.forEach(r => {
+        if (r.approved !== null) r.approved = r.approved==1;
+        if (r.removed !== null) r.removed = r.removed==1;
+      });
+      return rows;
     } finally {
       database.close();
     }
@@ -486,7 +491,10 @@ export default {
     const updateList = new UpdateList();
   
     updateList.addIf('removed',ss.removed?1:0,ss.removed !== undefined);
-  
+    updateList.addIf('approved',ss.approved?1:0,ss.approved !== undefined);
+    
+    if (!updateList.hasAny()) return true;
+
     try {
       let params = updateList.getParams();
       params.push(ss.id);

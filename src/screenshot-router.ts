@@ -70,12 +70,12 @@ app.route('/:id').patch(async (req,res,next) => {
 
   let game = req.body as Screenshot;
   game.id = gid;
-
+  
   try {
-    const gameFound = await datastore.updateGame(game,req.user.isAdmin);
+    const gameFound = await datastore.updateScreenshot(game,req.user.isAdmin);
     if (!gameFound) return res.sendStatus(404);
 
-    const newGame = await datastore.getGame(gid);
+    const newGame = await datastore.getScreenshot(gid);
     if (newGame == null) res.sendStatus(404);
     else res.send(newGame);
   } catch (err) {

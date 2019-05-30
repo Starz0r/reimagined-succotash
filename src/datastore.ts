@@ -288,6 +288,32 @@ export default {
     }
   },
 
+  async addLikeToReview(reviewId: number, userId: number): Promise<boolean> {
+    const database = new Database();
+  
+    try {
+      await database.execute(
+        ` INSERT IGNORE INTO LikeReview (rating_id, user_id) VALUES (?,?)`,
+        [reviewId,userId]);
+      return true;
+    } finally {
+      database.close();
+    }
+  },
+
+  async removeLikeFromReview(reviewId: number, userId: number): Promise<boolean> {
+    const database = new Database();
+  
+    try {
+      await database.execute(
+        ` DELETE FROM LikeReview WHERE rating_id = ? AND user_id = ?`,
+        [reviewId,userId]);
+      return true;
+    } finally {
+      database.close();
+    }
+  },
+
   async addList(list: List, userId: number): Promise<List> {
     const database = new Database();
     try {

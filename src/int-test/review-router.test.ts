@@ -110,4 +110,50 @@ describe('review endpoint', function () {
       }
       fail("post should not have been successful");
     });
+    
+    it('allows users to like a review', async () => {
+      const reviewer = await createUser(false);
+      const liker = await createUser(false);
+      const game = await createGame();
+      const rv = await addReview(reviewer,game);
+      
+      const rsp = await axios.put(
+        `http://localhost:4201/api/reviews/${rv.id}/likes/${liker.id}`,{},
+        {headers: {'Authorization': "Bearer " + liker.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+    });
+    
+    it('allows users to unlike a review', async () => {
+      const reviewer = await createUser(false);
+      const liker = await createUser(false);
+      const game = await createGame();
+      const rv = await addReview(reviewer,game);
+
+      let rsp = await axios.put(
+        `http://localhost:4201/api/reviews/${rv.id}/likes/${liker.id}`,{},
+        {headers: {'Authorization': "Bearer " + liker.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+
+      rsp = await axios.delete(
+        `http://localhost:4201/api/reviews/${rv.id}/likes/${liker.id}`,
+        {headers: {'Authorization': "Bearer " + liker.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+    });
+    
+    it('permits multiple likes idempotently', async () => {
+      const reviewer = await createUser(false);
+      const liker = await createUser(false);
+      const game = await createGame();
+      const rv = await addReview(reviewer,game);
+
+      let rsp = await axios.put(
+        `http://localhost:4201/api/reviews/${rv.id}/likes/${liker.id}`,{},
+        {headers: {'Authorization': "Bearer " + liker.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+
+      rsp = await axios.put(
+        `http://localhost:4201/api/reviews/${rv.id}/likes/${liker.id}`,{},
+        {headers: {'Authorization': "Bearer " + liker.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+    });
   });

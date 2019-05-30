@@ -53,3 +53,53 @@ app.route('/:id').post(async (req,res,next) => {
     next(err);
   }
 });
+
+app.route('/:id/likes/:userId').put(async (req,res,next) => {
+  if (!req.user || !req.user.sub) return res.sendStatus(401);
+  const isAdmin = req.user.isAdmin;
+
+  if (isNaN(req.params.id)) 
+    return res.status(400).send({error:'id must be a number'});
+  const rid = req.params.id;
+
+  if (isNaN(req.params.userId)) 
+    return res.status(400).send({error:'userId must be a number'});
+  const uid = parseInt(req.params.userId, 10);
+  
+  if (req.user.sub != uid) return res.sendStatus(403);
+
+  const ogReview = await datastore.getReview(rid);
+  if (ogReview === null) return res.sendStatus(404);
+
+  try {
+    await datastore.addLikeToReview(rid,uid);
+    return res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.route('/:id/likes/:userId').delete(async (req,res,next) => {
+  if (!req.user || !req.user.sub) return res.sendStatus(401);
+  const isAdmin = req.user.isAdmin;
+
+  if (isNaN(req.params.id)) 
+    return res.status(400).send({error:'id must be a number'});
+  const rid = req.params.id;
+
+  if (isNaN(req.params.userId)) 
+    return res.status(400).send({error:'userId must be a number'});
+  const uid = parseInt(req.params.userId, 10);
+  
+  if (req.user.sub != uid) return res.sendStatus(403);
+
+  const ogReview = await datastore.getReview(rid);
+  if (ogReview === null) return res.sendStatus(404);
+
+  try {
+    await datastore.removeLikeFromReview(rid,uid);
+    return res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+});

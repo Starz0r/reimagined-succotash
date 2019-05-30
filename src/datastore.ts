@@ -220,7 +220,9 @@ export default {
         g.name game_name,
         g.id AS game_id,
         COUNT(l.id) AS like_count,
-        r.user_id = g.owner_id AS owner_review
+        r.user_id = g.owner_id AS owner_review,
+        r.user_id as userId,
+        r.game_id as gameId
         FROM Rating r
         JOIN User u ON r.user_id=u.id
         JOIN Game g on r.game_id=g.id
@@ -258,6 +260,29 @@ export default {
 
       if (!r) throw 'rating failed to be created';
       return r;
+    } finally {
+      database.close();
+    }
+  },
+
+  async updateReview(review: any): Promise<boolean> {
+    const database = new Database();
+  
+    const updateList = new UpdateList();
+  
+    updateList.add('removed',review.removed?1:0);
+    updateList.add('rating',review.rating);
+    updateList.add('difficulty',review.difficulty);
+    updateList.add('comment',review.comment);
+
+    if (!updateList.hasAny()) return true;
+  
+    try {
+      let params = updateList.getParams();
+      params.push(review.id);
+      const rows = await database.execute(
+        ` UPDATE Rating ${updateList.getSetClause()} WHERE id = ?`,params);
+      return (rows.affectedRows == 1);
     } finally {
       database.close();
     }

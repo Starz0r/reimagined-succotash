@@ -79,6 +79,22 @@ export async function addScreenshot(user: TestUser, game: any): Promise<any> {
     return upd.data;
 }
 
+export async function addReview(user: TestUser, game: any): Promise<any> {
+    //review game
+    const upd = await axios.post(`http://localhost:4201/api/games/${game.id}/reviews`,
+      {
+        rating: 69,
+        difficulty: 50,
+        comment: 'good game very good'
+      },
+      {headers: {'Authorization': "Bearer " + user.token}});
+    expect(upd).to.have.property('status').and.equal(200);
+    expect(upd).to.have.property('data');
+    expect(upd.data).to.have.property('id').and.be.a('number');
+    
+    return upd.data;
+}
+
 export function getConTest(ctx: Mocha.Context): Mocha.HookFunction {
     return () => axios.get('http://localhost:4201/api/ping')
     .then(ctx.done)

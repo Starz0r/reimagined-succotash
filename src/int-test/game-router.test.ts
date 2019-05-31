@@ -1,6 +1,6 @@
 import axios from 'axios';
 import chai from 'chai';
-import { fail } from 'assert';
+import { fail, ok } from 'assert';
 import { createUser, createGame, getConTest } from './test-lib';
 import FormData from 'form-data';
 import fs from 'fs';
@@ -193,5 +193,31 @@ describe('game endpoint', function () {
     expect(upd.data).to.have.property('description').and.equal('super neat screenshot');
     expect(upd.data).to.have.property('gameId').and.equal(game.id);
     expect(upd.data).to.have.property('approved').and.equal(null);
+  });
+  
+  it('supports name search', async () => {
+    const game = await createGame();
+    
+    //get game
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {name: game.user.username} //name contains username
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('supports author search', async () => {
+    const game = await createGame();
+    
+    //get game
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {author: game.user.username}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
   });
 });

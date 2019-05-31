@@ -47,7 +47,21 @@ app.route('/').get(async (req,res,next) => {
     orderDir: order_dir
   };
   if (!isAdmin) params.removed = false;
-  if (req.query.q) params.name = req.query.q;
+
+  params.removed = false;
+  params.name = req.query.name;
+  params.tags = req.query.tags;
+  params.author = req.query.author;
+  params.hasDownload = req.query.hasDownload;
+  params.createdFrom = req.query.createdFrom;
+  params.createdTo = req.query.createdTo;
+  params.clearedByUserId = req.query.clearedByUserId;
+  params.reviewedByUserId = req.query.reviewedByUserId;
+
+  params.ratingFrom = req.query.ratingFrom;
+  params.ratingTo = req.query.ratingTo;
+  params.difficultyFrom = req.query.difficultyFrom;
+  params.difficultyTo = req.query.difficultyTo;
 
   try {
     const rows = await datastore.getGames(params);

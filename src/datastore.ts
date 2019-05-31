@@ -563,23 +563,63 @@ export default {
 
     const whereList = new WhereList();
     whereList.addIf("g.removed",params.removed?1:0,params.removed!==undefined);
+
     if (params.name !== undefined) {
-      whereList.addPhrase("g.name LIKE ?",'%'+params.name+'%');
+      whereList.add2("g.name LIKE ?",'%'+params.name+'%');
     }
+
+    whereList.add("g.owner_id",params.ownerUserId);
+
+    if (params.author !== undefined) {
+      whereList.add2("g.author LIKE ?",'%'+params.author+'%');
+    }
+
+    if (params.hasDownload!==undefined) {
+      if (params.hasDownload) whereList.addDirect("g.url is not null AND g.url != ''");
+      else whereList.addDirect("g.url is null OR g.url != ''");
+    }
+
+    whereList.add("g.date_created >= ?",params.createdFrom);
+    whereList.add("g.date_created <= ?",params.createdTo);
+
+    if (params.reviewedByUserId !== undefined) {
+      whereList.add2(
+        "g.id IN (SELECT game_id FROM Rating WHERE removed = 0 AND user_id = ?)",
+        params.reviewedByUserId);
+    }
+    //TODO: cleared
+
+    whereList.addIn("gt.name",params.tags);
+    if (params.tags!==undefined) {
+      whereList.addDirect(`g.id IN (
+          SELECT game_id 
+          FROM GameTag gt 
+          JOIN Tag t ON t.id=gt.tag_id 
+          WHERE t.name IN (${params.tags.map(s=>"?").join(',')})
+        )`);
+    }
+    
+    const havingList = new WhereList("HAVING");
+    havingList.add("AVG(r.rating) >= ?",params.ratingFrom);
+    havingList.add("AVG(r.rating) <= ?",params.ratingTo);
+    havingList.add("AVG(r.difficulty) >= ?",params.difficultyFrom);
+    havingList.add("AVG(r.difficulty) <= ?",params.difficultyTo);
 
     const query = `
       SELECT g.*,
-      AVG(case when u.banned = 1 THEN NULL else r.rating end) AS rating,
-      AVG(case when u.banned = 1 THEN NULL ELSE r.difficulty END) AS difficulty,
-      COUNT(case when u.banned = 0 THEN r.id END) AS rating_count
+      AVG(r.rating) AS rating,
+      AVG(r.difficulty) AS difficulty,
+      COUNT(r.id) AS rating_count
       FROM Game g
       LEFT JOIN Rating r ON r.removed=0 AND r.game_id=g.id
-      LEFT JOIN User AS u ON u.id = r.user_id
+      LEFT JOIN User AS u ON u.id = r.user_id AND u.banned = 0
       ${whereList.getClause()}
       GROUP BY g.id
+      ${havingList.getClause()}
       ORDER BY ${params.orderCol || 'date_created'} ${params.orderDir || 'ASC'}
       LIMIT ?,?
     `;
+    //console.log(query);
     //WHERE gg.removed = 0 AND gg.url IS NOT NULL and gg.url != '' FOR TOP 10 LATEST
     try {
       const rows = await database.query(query,

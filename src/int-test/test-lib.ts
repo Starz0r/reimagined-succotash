@@ -58,7 +58,7 @@ export async function createGame(): Promise<any> {
     expect(rsp).to.have.property('data');
     expect(rsp.data).to.have.property('id').and.be.a("number");
 
-    return { id: rsp.data.id, name: rsp.data.name };
+    return { id: rsp.data.id, name: rsp.data.name, user };
 }
 
 export async function addScreenshot(user: TestUser, game: any): Promise<any> {

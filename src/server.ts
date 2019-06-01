@@ -15,6 +15,7 @@ import ping_router from './ping-router';
 import message_router from './message-router';
 import screenshot_router from './screenshot-router';
 import news_router from './news-router';
+import report_router from './report-router';
 
 import { Database } from './database';
 Database.init();
@@ -71,6 +72,7 @@ app.use('/api/ping',ping_router);
 app.use('/api/message',message_router);
 app.use('/api/screenshots',screenshot_router);
 app.use('/api/news',news_router);
+app.use('/api/reports',report_router);
 
 app.listen(config.app_port,  () => {
   console.log('Server started at localhost:4201!');

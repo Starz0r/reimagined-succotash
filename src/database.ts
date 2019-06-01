@@ -49,18 +49,19 @@ export class Database {
         host: config.db_host,
         user: config.db_user,
         password: config.db_password
-      })
+      });
 
-      await this.createDatabase(connection)
-      await this.createUserTable(connection)
-      await this.createGameTable(connection)
-      await this.createRatingTable(connection)
-      await this.createMessageTable(connection)
-      await this.createLikeReviewTable(connection)
-      await this.createListTable(connection)
-      await this.createListGameTable(connection)
-      await this.createScreenshotTable(connection)
-      await this.createNewsTable(connection)
+      await this.createDatabase(connection);
+      await this.createUserTable(connection);
+      await this.createGameTable(connection);
+      await this.createRatingTable(connection);
+      await this.createMessageTable(connection);
+      await this.createLikeReviewTable(connection);
+      await this.createListTable(connection);
+      await this.createListGameTable(connection);
+      await this.createScreenshotTable(connection);
+      await this.createNewsTable(connection);
+      await this.createReportTable(connection);
     } finally {
       if (connection) connection.end()
     }
@@ -301,6 +302,28 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         short text CHARACTER SET utf8 NOT NULL,
         news text CHARACTER SET utf8 NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createReportTable(connection: mysql.Connection) {
+    console.log('Creating news table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.Report (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        type varchar(50) CHARACTER SET utf8 NOT NULL,
+        target_id int(11) NOT NULL,
+        report varchar(2000) CHARACTER SET utf8 NOT NULL,
+        reporter_id int(11) NOT NULL,
+        answered_by_id int(11) DEFAULT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        date_answered timestamp NULL DEFAULT NULL,
         PRIMARY KEY (id)
       ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
       `,[],(err,rows)=>{

@@ -16,6 +16,8 @@ import { getTagsParms } from './model/getTagsParms';
 import { News } from './model/News';
 import { GetNewsParms } from './model/GetNewsParms';
 import whitelist from './lib/whitelist';
+import { Report } from './model/Report';
+import { GetReportParams } from './model/GetReportParams';
 
 export default {
   /**
@@ -131,6 +133,68 @@ export default {
     } finally {
       database.close();
     }
+  },
+
+  async addReport(rpt: Report, adderId: number): Promise<Game> {
+    const database = new Database();
+    try {
+      const insertList = new InsertList();
+      insertList.add('type',rpt.type);
+      insertList.add('target_id',rpt.targetId);
+      insertList.add('report',rpt.report);
+      insertList.add('reporter_id',adderId);
+      insertList.add('answered_by_id',rpt.answeredById);
+      insertList.add('date_answered',rpt.dateAnswered);
+
+      const result = await database.execute(
+        `INSERT INTO Report ${insertList.getClause()}`, 
+        insertList.getParams());
+
+      const n = await this.getReport(result.insertId as number);
+      if (!n) throw 'report failed to be created';
+      return n;
+    } finally {
+      database.close();
+    }
+  },
+
+  async getReports(params: GetReportParams): Promise<Report[]> {
+    const database = new Database();
+
+    const whereList = new WhereList();
+    whereList.add("r.id", params.id);
+    if (params.answered !== undefined) {
+      if (params.answered) whereList.addDirect("r.answered_By_id IS NOT NULL");
+      else whereList.addDirect("r.answered_By_id IS NULL");
+    }
+
+    const orderCol = whitelist(params.orderCol,['id','date_created'],'id');
+    const orderDir = whitelist(params.orderDir,['ASC','DESC'],'DESC');
+
+    var query = `
+      SELECT r.*
+      , r.target_id as targetId
+      , r.reporter_id as reporterId
+      , r.answered_by_id as answeredById
+      , r.date_created as dateCreated
+      , r.date_answered as dateAnswered
+      FROM Report r
+      ${whereList.getClause()}
+      ORDER BY ${orderCol} ${orderDir}
+      LIMIT ?,?
+    `;
+    try {
+      return await database.execute(query, 
+        whereList.getParams().concat(params.page,params.limit));
+    } finally {
+      database.close();
+    }
+  },
+
+  async getReport(id: number): Promise<Report|null> {
+    const reports = await this.getReports({id,page:0,limit:1});
+    if (!reports || reports.length == 0) return null;
+    return reports[0];
   },
 
   async addNews(article: News, adderId: number): Promise<Game> {

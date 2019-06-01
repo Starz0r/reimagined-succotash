@@ -48,6 +48,7 @@ app.route('/').get(async (req,res,next) => {
   };
   if (!isAdmin) params.removed = false;
 
+  params.id = req.query.id;
   params.removed = false;
   params.name = req.query.name;
   params.tags = req.query.tags;

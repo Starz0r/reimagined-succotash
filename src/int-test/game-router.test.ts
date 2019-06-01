@@ -195,10 +195,21 @@ describe('game endpoint', function () {
     expect(upd.data).to.have.property('approved').and.equal(null);
   });
   
+  it('supports id search', async () => {
+    const game = await createGame();
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id} //name contains username
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+  
   it('supports name search', async () => {
     const game = await createGame();
     
-    //get game
     const list = await axios.get(`http://localhost:4201/api/games`,{
       params: {name: game.user.username} //name contains username
     });
@@ -211,7 +222,6 @@ describe('game endpoint', function () {
   it('supports author search', async () => {
     const game = await createGame();
     
-    //get game
     const list = await axios.get(`http://localhost:4201/api/games`,{
       params: {author: game.user.username}
     });
@@ -219,5 +229,43 @@ describe('game endpoint', function () {
     expect(list).to.have.property('data').and.be.an('array');
     const games = list.data as any[];
     return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('does not return games with the wrong author for author search', async () => {
+    const game = await createGame();
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, author: 'this is not the author'}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.be.undefined;
+  });
+
+  it('supports has-download search', async () => {
+    const game = await createGame({
+      url: 'example.com'
+    });
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, hasDownload: true}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('does not return games without download for has-download search', async () => {
+    const game = await createGame();
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, hasDownload: true}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.be.undefined;
   });
 });

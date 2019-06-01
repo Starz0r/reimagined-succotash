@@ -562,6 +562,7 @@ export default {
     const database = new Database();
 
     const whereList = new WhereList();
+    whereList.add("g.id",params.id);
     whereList.addIf("g.removed",params.removed?1:0,params.removed!==undefined);
 
     if (params.name !== undefined) {

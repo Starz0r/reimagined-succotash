@@ -43,15 +43,15 @@ export async function createUser(isAdmin: boolean): Promise<TestUser> {
     return { token: login.data.token, id: login.data.id, username: usernameA };
 }
 
-export async function createGame(): Promise<any> {
+export async function createGame(parameters?: any): Promise<any> {
     const user = await createUser(true);
 
     //create game
     const rsp = await axios.post('http://localhost:4201/api/games',
         {
             name: "i wanna " + user.username,
-            url: "example.com/" + user.username,
-            author: user.username
+            author: user.username,
+            ...parameters
         },
         { headers: { 'Authorization': "Bearer " + user.token } });
     expect(rsp).to.have.property('status').and.equal(200);

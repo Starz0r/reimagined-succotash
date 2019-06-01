@@ -1,7 +1,7 @@
 import axios from 'axios';
 import chai from 'chai';
 import { fail, ok } from 'assert';
-import { createUser, createGame, getConTest } from './test-lib';
+import { createUser, createGame, getConTest, addReview } from './test-lib';
 import FormData from 'form-data';
 import fs from 'fs';
 import { hashSync } from 'bcrypt';
@@ -262,6 +262,60 @@ describe('game endpoint', function () {
     
     const list = await axios.get(`http://localhost:4201/api/games`,{
       params: {id: game.id, hasDownload: true}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.be.undefined;
+  });
+
+  it('supports rating-from search', async () => {
+    const game = await createGame();
+    const user = await createUser(false);
+    const review = await addReview(user,game)
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, ratingFrom: 60}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('supports rating-to search', async () => {
+    const game = await createGame();
+    const user = await createUser(false);
+    const review = await addReview(user,game)
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, ratingTo: 70}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('supports rating range search', async () => {
+    const game = await createGame();
+    const user = await createUser(false);
+    const review = await addReview(user,game)
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, ratingFrom: 60, ratingTo: 70}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('does not return games outside range for rating range search', async () => {
+    const game = await createGame();
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, ratingFrom: 50, ratingTo: 60}
     });
     expect(list).to.have.property('status').and.equal(200);
     expect(list).to.have.property('data').and.be.an('array');

@@ -601,10 +601,14 @@ export default {
     }
     
     const havingList = new WhereList("HAVING");
-    havingList.add("AVG(r.rating) >= ?",params.ratingFrom);
-    havingList.add("AVG(r.rating) <= ?",params.ratingTo);
-    havingList.add("AVG(r.difficulty) >= ?",params.difficultyFrom);
-    havingList.add("AVG(r.difficulty) <= ?",params.difficultyTo);
+    if (params.ratingFrom !== undefined) 
+    havingList.add2("rating >= ?",params.ratingFrom);
+    if (params.ratingTo !== undefined)
+    havingList.add2("rating <= ?",params.ratingTo);
+    if (params.difficultyFrom !== undefined) 
+    havingList.add2("difficulty >= ?",params.difficultyFrom);
+    if (params.difficultyTo !== undefined) 
+    havingList.add2("difficulty <= ?",params.difficultyTo);
 
     const query = `
       SELECT g.*,
@@ -621,10 +625,13 @@ export default {
       LIMIT ?,?
     `;
     //console.log(query);
+    //console.log(whereList.getParams());
     //WHERE gg.removed = 0 AND gg.url IS NOT NULL and gg.url != '' FOR TOP 10 LATEST
     try {
       const rows = await database.query(query,
-        whereList.getParams().concat([params.page*params.limit,params.limit]));
+        whereList.getParams()
+          .concat(havingList.getParams())
+          .concat([params.page*params.limit,params.limit]));
       rows.forEach(game => {
         if (!moment(game.date_created).isValid()) game.date_created = null;
         if (game.collab == 1) game.author = game.author.split(" ");

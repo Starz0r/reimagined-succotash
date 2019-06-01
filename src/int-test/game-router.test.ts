@@ -322,4 +322,66 @@ describe('game endpoint', function () {
     const games = list.data as any[];
     return expect(games.find(o => o.id == game.id)).to.be.undefined;
   });
+
+
+
+
+
+
+
+  
+
+  it('supports difficulty-from search', async () => {
+    const game = await createGame();
+    const user = await createUser(false);
+    const review = await addReview(user,game)
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, difficultyFrom: 40}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('supports difficulty-to search', async () => {
+    const game = await createGame();
+    const user = await createUser(false);
+    const review = await addReview(user,game)
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, difficultyTo: 60}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('supports difficulty range search', async () => {
+    const game = await createGame();
+    const user = await createUser(false);
+    const review = await addReview(user,game)
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, difficultyFrom: 40, difficultyTo: 60}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.not.be.undefined;
+  });
+
+  it('does not return games outside range for difficulty range search', async () => {
+    const game = await createGame();
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {id: game.id, difficultyFrom: 10, difficultyTo: 20}
+    });
+    expect(list).to.have.property('status').and.equal(200);
+    expect(list).to.have.property('data').and.be.an('array');
+    const games = list.data as any[];
+    return expect(games.find(o => o.id == game.id)).to.be.undefined;
+  });
 });

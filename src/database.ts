@@ -60,6 +60,7 @@ export class Database {
       await this.createListTable(connection)
       await this.createListGameTable(connection)
       await this.createScreenshotTable(connection)
+      await this.createNewsTable(connection)
     } finally {
       if (connection) connection.end()
     }
@@ -280,6 +281,26 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         approved tinyint(1) DEFAULT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         removed tinyint(1) NOT NULL DEFAULT '0',
+        PRIMARY KEY (id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createNewsTable(connection: mysql.Connection) {
+    console.log('Creating news table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.News (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        poster_id int(11) NOT NULL,
+        title varchar(100) CHARACTER SET utf8 NOT NULL,
+        short text CHARACTER SET utf8 NOT NULL,
+        news text CHARACTER SET utf8 NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id)
       ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
       `,[],(err,rows)=>{

@@ -13,6 +13,9 @@ import { GetScreenshotParms } from './model/GetScreenshotParms';
 import { GetGamesParms } from './model/GetGamesParms';
 import { GetListsParms } from './model/GetListsParms';
 import { getTagsParms } from './model/getTagsParms';
+import { News } from './model/News';
+import { GetNewsParms } from './model/GetNewsParms';
+import whitelist from './lib/whitelist';
 
 export default {
   /**
@@ -125,6 +128,53 @@ export default {
 
       if (!g) throw 'game failed to be created';
       return g;
+    } finally {
+      database.close();
+    }
+  },
+
+  async addNews(article: News, adderId: number): Promise<Game> {
+    const database = new Database();
+    try {
+      const insertList = new InsertList();
+      insertList.add('poster_id',adderId);
+      insertList.add('title',article.title);
+      insertList.add('short',article.short);
+      insertList.add('news',article.news);
+      insertList.add('date_created',article.dateCreated);
+
+      const result = await database.execute(
+        `INSERT INTO News ${insertList.getClause()}`, 
+        insertList.getParams());
+
+      const n = await this.getNewses({id: result.insertId as number,page:0,limit:1});
+
+      if (!n || n.length == 0) throw 'news failed to be created';
+      return n[0];
+    } finally {
+      database.close();
+    }
+  },
+
+  async getNewses(params: GetNewsParms): Promise<News[]> {
+    const database = new Database();
+
+    const whereList = new WhereList();
+    whereList.add("n.id", params.id);
+
+    const orderCol = whitelist(params.orderCol,['id','date_created'],'id');
+    const orderDir = whitelist(params.orderDir,['ASC','DESC'],'DESC');
+
+    var query = `
+      SELECT n.*, n.poster_id as posterId, n.date_created as dateCreated
+      FROM News n
+      ${whereList.getClause()}
+      ORDER BY ${orderCol} ${orderDir}
+      LIMIT ?,?
+    `;
+    try {
+      return await database.execute(query, 
+        whereList.getParams().concat(params.page,params.limit));
     } finally {
       database.close();
     }

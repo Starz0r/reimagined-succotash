@@ -3,3 +3,5 @@ src/config/config.ts
 node_modules
 build
 uploads
+coverage
+.nyc_output

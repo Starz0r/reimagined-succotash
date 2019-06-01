@@ -46,6 +46,7 @@
     "form-data": "^2.3.3",
     "mocha": "^6.1.4",
     "nodemon": "^1.19.0",
+    "nyc": "^14.1.1",
     "supertest": "^4.0.2",
     "ts-mocha": "^6.0.0",
     "ts-node": "^8.1.0"

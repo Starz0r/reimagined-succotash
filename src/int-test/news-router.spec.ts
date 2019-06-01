@@ -5,8 +5,23 @@ import { createUser, createGame, getConTest, addReview } from './test-lib';
 import FormData from 'form-data';
 import fs from 'fs';
 import { hashSync } from 'bcrypt';
+import { News } from '../model/News';
 
 var expect = chai.expect;
+
+async function createNews(): Promise<News> {
+  const admin = await createUser(true);
+    
+  const rsp = await axios.post('http://localhost:4201/api/news', {
+      title:"news title",
+      short:"check me out",
+      news:"long news article"
+    },
+    {headers: {'Authorization': "Bearer " + admin.token}});
+  expect(rsp).to.have.property('status').and.equal(200);
+  expect(rsp).to.have.property('data');
+  return rsp.data as News;
+}
 
 describe('news endpoint', function () {
   before(getConTest(this.ctx));
@@ -65,6 +80,31 @@ describe('news endpoint', function () {
     fail('post should have failed')
   });
   
-  it('returns a list of news for anons');
-  it('returns the single, latest article');
+  it('returns a list of news for anons', async() => {
+    await createNews();
+    
+    const rsp = await axios.get('http://localhost:4201/api/news');
+    expect(rsp).to.have.property('status').and.equal(200);
+    expect(rsp).to.have.property('data').and.be.an('array');
+  });
+
+  it('returns an article by id for anons', async() => {
+    const article = await createNews();
+    
+    const rsp = await axios.get(`http://localhost:4201/api/news/${article.id}`);
+    expect(rsp).to.have.property('status').and.equal(200);
+    expect(rsp).to.have.property('data')
+    expect(rsp.data).to.have.property('id').and.equal(article.id);
+  });
+
+  it('returns the single, latest article', async() => {
+    await createNews();
+    
+    const rsp = await axios.get('http://localhost:4201/api/news',{
+      params: {limit: 1, orderCol: 'date_created', orderDir: 'DESC'}
+    });
+    expect(rsp).to.have.property('status').and.equal(200);
+    expect(rsp).to.have.property('data').and.be.an('array');
+    expect(rsp.data.length).to.equal(1);
+  });
 });

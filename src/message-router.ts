@@ -1,31 +1,12 @@
 import express from 'express';
 import { Database } from './database';
-import AuthModule from './auth';
 import InsertList from './lib/insert-list';
 import WhereList from './lib/where-list';
+import { Message } from './model/Message';
+import { MessageQueryParams } from './model/MessageQueryParams';
 
 const app = express.Router();
-const auth = new AuthModule();
 export default app;
-
-export interface Message {
-  id?: number;
-  isRead?: boolean;
-  userFromId?: number;
-  userToId?: number;
-  subject?: string;
-  body?: string;
-  dateCreated?: string;
-  deleted?: boolean;
-
-  replyToId?: number;
-  threadId?: number;
-}
-
-export interface MessageQueryParams {
-  userToId?: number;
-  threadId?: number;
-}
 
 app.route('/inbox').get(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);

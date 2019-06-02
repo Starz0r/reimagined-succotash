@@ -264,31 +264,6 @@ export default {
     return users[0];
   },
 
-  async getUser(id: number): Promise<any> {
-    const database = new Database();
-    const isAdmin = false;
-    const removedClause = isAdmin?'':'AND banned = 0';
-    const query = `
-      SELECT u.id, u.name, u.date_created
-           , u.twitch_link, u.youtube_link
-           , u.nico_link, u.twitter_link
-           , u.bio, u.email, u.is_admin
-      FROM User u 
-      WHERE u.id = ? ${removedClause}
-    `;
-    try {
-      const rows = await database.query(query,[id]);
-      if (rows.length == 0) return null;
-
-      rows[0].isAdmin = (rows[0].is_admin===1);
-      delete rows[0].is_admin;
-
-      return rows[0];
-    } finally {
-      database.close();
-    }
-  },
-
   async getLists(params: GetListsParms): Promise<any[]> {
     const database = new Database();
 
@@ -784,6 +759,12 @@ export default {
     }
   },
 
+  async getUser(id: number): Promise<any> {
+    const users = await this.getUsers({id,page:0,limit:1});
+    if (!users || users.length == 0) return null;
+    return users[0];
+  },
+
   async getUsers(params: GetUsersParms): Promise<any[]> {
     const database = new Database();
 
@@ -801,23 +782,21 @@ export default {
     const orderDir = whitelist(params.orderDir,['ASC','DESC'],'DESC');
 
     const query = `
-      SELECT * FROM User
+      SELECT u.id, u.name, u.date_created as dateCreated
+      , u.twitch_link as twitchLink, u.youtube_link as youtubeLink
+      , u.nico_link as nicoLink, u.twitter_link as twitterLink
+      , u.bio, u.is_admin as isAdmin, u.email
+      FROM User u
       ${whereList.getClause()}
       ORDER BY ${orderCol} ${orderDir}
       LIMIT ?,?
     `;
-    //console.log(query);
-    //console.log(whereList.getParams());
-    //WHERE gg.removed = 0 AND gg.url IS NOT NULL and gg.url != '' FOR TOP 10 LATEST
     try {
       const rows = await database.query(query,
         whereList.getParams()
-          .concat([params.page*params.limit,params.limit]));
-      rows.forEach(game => {
-        if (!moment(game.date_created).isValid()) game.date_created = null;
-        if (game.collab == 1) game.author = game.author.split(" ");
-        else game.author = [game.author];
-      });
+        .concat([params.page*params.limit,params.limit])
+      );
+      rows.forEach(u => {u.isAdmin = (u.isAdmin===1);})
       return rows;
     } finally {
       database.close();

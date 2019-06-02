@@ -173,4 +173,49 @@ describe('user endpoint', function () {
         {headers: {'Authorization': "Bearer " + user.token}});
       expect(rsp).to.have.property('status').and.equal(204);
     });
+
+    it('does not expose sensitive user data to other users', async () => {
+      const hacker = await createUser(false);
+      const victim = await createUser(false);
+      
+      let rsp = await axios.get(`http://localhost:4201/api/users/${victim.id}`,
+        {headers: {'Authorization': "Bearer " + hacker.token}});
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+
+      //complete whitelist
+      //add members if public data is added to the user
+      expect(Object.keys(rsp.data)).to.have.members([
+        'id','name','dateCreated','isAdmin','twitchLink',
+        'nicoLink','youtubeLink','twitterLink','bio']);
+    });
+
+    it('does not expose sensitive user data to anons', async () => {
+      const victim = await createUser(false);
+      
+      let rsp = await axios.get(`http://localhost:4201/api/users/${victim.id}`);
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+
+      //complete whitelist
+      //add members if public data is added to the user
+      expect(Object.keys(rsp.data)).to.have.members([
+        'id','name','dateCreated','isAdmin','twitchLink',
+        'nicoLink','youtubeLink','twitterLink','bio']);
+    });
+
+    it('does not expose sensitive user data on the user list to anons', async () => {
+      await createUser(false);
+      
+      let rsp = await axios.get(`http://localhost:4201/api/users`);
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data').and.be.an('array');
+      expect(rsp.data.length).to.be.greaterThan(0);
+
+      //complete whitelist
+      //add members if public data is added to the user
+      expect(Object.keys(rsp.data[0])).to.have.members([
+        'id','name','dateCreated','isAdmin','twitchLink',
+        'nicoLink','youtubeLink','twitterLink','bio']);
+    });
   });

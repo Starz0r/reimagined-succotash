@@ -1,7 +1,5 @@
 import express from 'express';
 import datastore from './datastore';
-import { resolveTxt } from 'dns';
-
 import AuthModule from './auth';
 import { GetUsersParms } from './model/GetUsersParms';
 const auth = new AuthModule();
@@ -29,7 +27,9 @@ app.route('/').get(async (req,res,next) => {
   if (!req.user || !req.user.isAdmin) params.banned = false;
   if (req.query.following && req.user && req.user.sub) params.followerUserId = req.user.sub;
   try {
-    res.send(await datastore.getUsers(params));
+    const users = await datastore.getUsers(params);
+    users.forEach(u => {delete u.email});
+    return res.send(users);
   } catch (err) {
     next(err);
   }
@@ -60,9 +60,18 @@ app.route('/:id/reviews').get((req,res,next) => {
 
 app.route('/:id').get(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
-  const user = await datastore.getUser(id);
-  if (user == null) res.sendStatus(404);
-  else res.send(user);
+  const params: GetUsersParms = {id,page:0,limit:1};
+  if (!req.user || !req.user.isAdmin) params.banned = false;
+
+  try {
+    const users = await datastore.getUsers(params);
+    if (users == null || users.length == 0) res.sendStatus(404);
+    const user = users[0];
+    if (!req.user || req.user.sub != id) delete user.email;
+    res.send(user);
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.route('/:id').patch(async (req,res,next) => {

@@ -297,9 +297,9 @@ export default {
     whereList.add("l.game_id", params.gameId);
 
     var query = `
-      SELECT l.list_id, l.game_id, n.list_name
-      FROM lists l
-      JOIN LIST_NAMES n ON n.list_id=l.list_id
+      SELECT *
+      FROM List l
+      JOIN ListGame g on g.list_id = l.id
       ${whereList.getClause()}
     `;
     try {

@@ -27,18 +27,12 @@ describe('user endpoint', function () {
     });
   
     it('rejects existing users', async () => {
-      const usernameB = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-      //first registration
-      const firstRegistration = await axios.post('http://localhost:4201/api/users',
-          {username:usernameB,password:"test-pw",email:"test@example.com"});
-
-      expect(firstRegistration ).to.have.property('status').and.equal(200);
+      const user = await createUser(false);
 
       //second, should fail
       try {
         await axios.post('http://localhost:4201/api/users',
-          {username:usernameB,password:"test-pw",email:"test@example.com"});
+          {username:user.username,password:"test-pw",email:"test@example.com"});
         fail("second registration should not have been successful");
       } catch (err) {
         expect(err).to.have.property('response');
@@ -55,63 +49,34 @@ describe('user endpoint', function () {
     });
 
     it('allows modification of your own user', async () => {
-      const usernameC = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-      //register
-      const reg = await axios.post('http://localhost:4201/api/users',
-          {username:usernameC,password:"test-pw",email:"test@example.com"});
-      expect(reg).to.have.property('status').and.equal(200);
-      expect(reg).to.have.property('data');
-      expect(reg.data).to.have.property('id').and.be.a('number');
-      expect(reg.data).to.have.property('email').and.equal('test@example.com');
-
-      //login
-      const login = await axios.post('http://localhost:4201/api/auth/login',
-          {username:usernameC,password:"test-pw"});
-      expect(login).to.have.property('status').and.equal(200);
-      expect(login).to.have.property('data');
-      expect(login.data).to.have.property('token').and.be.a('string');
+      const u = await createUser(false);
 
       //update
-      const patch = await axios.patch(`http://localhost:4201/api/users/${reg.data.id}`,
+      const patch = await axios.patch(`http://localhost:4201/api/users/${u.id}`,
           {email:"new@example.com"},
-          {headers: {'Authorization': "Bearer " + login.data.token}});
+          {headers: {'Authorization': "Bearer " + u.token}});
       expect(patch).to.have.property('status').and.equal(200);
       expect(patch).to.have.property('data');
       expect(patch.data).to.have.property('email').and.equal('new@example.com');
-      expect(patch.data).to.have.property('id').and.equal(reg.data.id);
+      expect(patch.data).to.have.property('id').and.equal(u.id);
 
       //verify
-      const user = await axios.get(`http://localhost:4201/api/users/${reg.data.id}`,
-          {headers: {'Authorization': "Bearer " + login.data.token}});
+      const user = await axios.get(`http://localhost:4201/api/users/${u.id}`,
+          {headers: {'Authorization': "Bearer " + u.token}});
       expect(user).to.have.property('status').and.equal(200);
       expect(user).to.have.property('data');
       expect(user.data).to.have.property('email').and.equal('new@example.com');
-      expect(user.data).to.have.property('id').and.equal(reg.data.id);
+      expect(user.data).to.have.property('id').and.equal(u.id);
     });
 
     it('does not allow modification of a different user', async () => {
-      const usernameD = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      const usernameE = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-      //register
-      const reg = await axios.post('http://localhost:4201/api/users',
-          {username:usernameD,password:"test-pw",email:"test@example.com"});
-      expect(reg).to.have.property('status').and.equal(200);
-      expect(reg).to.have.property('data');
-      expect(reg.data).to.have.property('id').and.be.a('number');
-
-      //register
-      const reg2 = await axios.post('http://localhost:4201/api/users',
-          {username:usernameE,password:"test-pw",email:"test@example.com"});
-      expect(reg2).to.have.property('status').and.equal(200);
-      expect(reg2).to.have.property('data');
-      expect(reg2.data).to.have.property('id').and.be.a('number');
+      const Alice = await createUser(false);
+      const Bob = await createUser(false);
 
       try {
-        await axios.patch(`http://localhost:4201/api/users/${reg2.data.id}`,
+        await axios.patch(`http://localhost:4201/api/users/${Alice.id}`,
           {email:"new@example.com"},
-          {headers: {'Authorization': "Bearer " + reg.data.token}});
+          {headers: {'Authorization': "Bearer " + Bob.token}});
         fail("modify should not have been successful");
       } catch (err) {
         expect(err).to.have.property('response');
@@ -120,17 +85,10 @@ describe('user endpoint', function () {
     });
 
     it('does not allow modification user if not logged in', async () => {
-      const usernameF = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
-      //register
-      const reg = await axios.post('http://localhost:4201/api/users',
-          {username:usernameF,password:"test-pw",email:"test@example.com"});
-      expect(reg).to.have.property('status').and.equal(200);
-      expect(reg).to.have.property('data');
-      expect(reg.data).to.have.property('id').and.be.a('number');
+      const user = await createUser(false);
 
       try {
-        await axios.patch(`http://localhost:4201/api/users/${reg.data.id}`,
+        await axios.patch(`http://localhost:4201/api/users/${user.id}`,
             {email:"new@example.com"});
         fail("modify should not have been successful");
       } catch (err) {
@@ -140,44 +98,28 @@ describe('user endpoint', function () {
     });
 
     it('allows password change', async () => {
-      const username = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-      //register
-      const reg = await axios.post('http://localhost:4201/api/users',
-          {username:username,password:"test-pw",email:"test@example.com"});
-      expect(reg).to.have.property('status').and.equal(200);
-      expect(reg).to.have.property('data');
-      expect(reg.data).to.have.property('id').and.be.a('number');
-      expect(reg.data).to.have.property('email').and.equal('test@example.com');
+      const user = await createUser(false);
 
       //update
-      const patch = await axios.patch(`http://localhost:4201/api/users/${reg.data.id}`,
+      const patch = await axios.patch(`http://localhost:4201/api/users/${user.id}`,
           {password:"new-pw", currentPassword:"test-pw"},
-          {headers: {'Authorization': "Bearer " + reg.data.token}});
+          {headers: {'Authorization': "Bearer " + user.token}});
       expect(patch).to.have.property('status').and.equal(200);
 
       //verify login
       const login = await axios.post('http://localhost:4201/api/auth/login',
-          {username:username,password:"new-pw"});
+          {username:user.username,password:"new-pw"});
       expect(login).to.have.property('status').and.equal(200);
     });
 
     it('rejects password change if current password incorrect', async () => {
-      const username = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-      //register
-      const reg = await axios.post('http://localhost:4201/api/users',
-          {username:username,password:"test-pw",email:"test@example.com"});
-      expect(reg).to.have.property('status').and.equal(200);
-      expect(reg).to.have.property('data');
-      expect(reg.data).to.have.property('id').and.be.a('number');
-      expect(reg.data).to.have.property('email').and.equal('test@example.com');
+      const user = await createUser(false);
 
       //update
       try {
-        const patch = await axios.patch(`http://localhost:4201/api/users/${reg.data.id}`,
+        const patch = await axios.patch(`http://localhost:4201/api/users/${user.id}`,
           {password:"new-pw", currentPassword:"not-correct-password"},
-          {headers: {'Authorization': "Bearer " + reg.data.token}});
+          {headers: {'Authorization': "Bearer " + user.token}});
           fail("modify should not have been successful");
       } catch (err) {
         expect(err).to.have.property('response');
@@ -186,21 +128,13 @@ describe('user endpoint', function () {
     });
 
     it('rejects password change if current password not provided', async () => {
-      const username = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-      //register
-      const reg = await axios.post('http://localhost:4201/api/users',
-          {username:username,password:"test-pw",email:"test@example.com"});
-      expect(reg).to.have.property('status').and.equal(200);
-      expect(reg).to.have.property('data');
-      expect(reg.data).to.have.property('id').and.be.a('number');
-      expect(reg.data).to.have.property('email').and.equal('test@example.com');
+      const user = await createUser(false);
 
       //update
       try {
-        const patch = await axios.patch(`http://localhost:4201/api/users/${reg.data.id}`,
+        const patch = await axios.patch(`http://localhost:4201/api/users/${user.id}`,
           {password:"new-pw"},
-          {headers: {'Authorization': "Bearer " + reg.data.token}});
+          {headers: {'Authorization': "Bearer " + user.token}});
           fail("modify should not have been successful");
       } catch (err) {
         expect(err).to.have.property('response');

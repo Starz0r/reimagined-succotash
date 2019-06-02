@@ -3,6 +3,7 @@ import datastore from './datastore';
 import { resolveTxt } from 'dns';
 
 import AuthModule from './auth';
+import { GetUsersParms } from './model/GetUsersParms';
 const auth = new AuthModule();
 const app = express.Router();
 export default app;
@@ -16,6 +17,17 @@ app.route('/').post(async (req,res,next) => {
 
     user.token = auth.getToken(user.name,user.id,user.isAdmin);
     res.send(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.route('/').get(async (req,res,next) => {
+  var page = +req.query.page || 0;
+  var limit = +req.query.limit || 50;
+  const params: GetUsersParms = {page,limit};
+  try {
+    const user = await datastore.getUsers(params)
   } catch (err) {
     next(err);
   }

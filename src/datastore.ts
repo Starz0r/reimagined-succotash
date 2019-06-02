@@ -18,6 +18,7 @@ import { GetNewsParms } from './model/GetNewsParms';
 import whitelist from './lib/whitelist';
 import { Report } from './model/Report';
 import { GetReportParams } from './model/GetReportParams';
+import { GetUsersParms } from './model/GetUsersParms';
 
 export default {
   /**
@@ -185,7 +186,7 @@ export default {
     `;
     try {
       return await database.execute(query, 
-        whereList.getParams().concat(params.page,params.limit));
+        whereList.getParams().concat(params.page*params.limit,params.limit));
     } finally {
       database.close();
     }
@@ -238,7 +239,7 @@ export default {
     `;
     try {
       return await database.execute(query, 
-        whereList.getParams().concat(params.page,params.limit));
+        whereList.getParams().concat(params.page*params.limit,params.limit));
     } finally {
       database.close();
     }
@@ -323,7 +324,7 @@ export default {
 
       let params = [];
       if (options.page !== undefined) {
-        params.push(options.page);
+        params.push(options.page*options.limit!);
         params.push(options.limit);
       }
 
@@ -771,6 +772,42 @@ export default {
       const rows = await database.query(query,
         whereList.getParams()
           .concat(havingList.getParams())
+          .concat([params.page*params.limit,params.limit]));
+      rows.forEach(game => {
+        if (!moment(game.date_created).isValid()) game.date_created = null;
+        if (game.collab == 1) game.author = game.author.split(" ");
+        else game.author = [game.author];
+      });
+      return rows;
+    } finally {
+      database.close();
+    }
+  },
+
+  async getUsers(params: GetUsersParms): Promise<any[]> {
+    const database = new Database();
+
+    const whereList = new WhereList();
+    whereList.add("u.id",params.id);
+    if (params.followerUserId !== undefined) {
+      whereList.add2("u.id IN (SELECT user_follow_id FROM UserFollow WHERE user_id = ?)",params.followerUserId);
+    }
+    
+    const orderCol = whitelist(params.orderCol,['id','date_created'],'id');
+    const orderDir = whitelist(params.orderDir,['ASC','DESC'],'DESC');
+
+    const query = `
+      SELECT * FROM User
+      ${whereList.getClause()}
+      ORDER BY ${orderCol} ${orderDir}
+      LIMIT ?,?
+    `;
+    //console.log(query);
+    //console.log(whereList.getParams());
+    //WHERE gg.removed = 0 AND gg.url IS NOT NULL and gg.url != '' FOR TOP 10 LATEST
+    try {
+      const rows = await database.query(query,
+        whereList.getParams()
           .concat([params.page*params.limit,params.limit]));
       rows.forEach(game => {
         if (!moment(game.date_created).isValid()) game.date_created = null;

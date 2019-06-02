@@ -3,6 +3,7 @@ import { Database } from './database';
 import AuthModule from './auth';
 import datastore from './datastore';
 import moment = require('moment');
+import crypto from 'crypto';
 
 const app = express.Router();
 const auth = new AuthModule();
@@ -68,3 +69,21 @@ app.route('/login').post(async (req,res,next) => {
     }
   });
   
+app.route('/request-reset').post(async (req,res,next) => {
+  const username = req.body.username;
+  if (!username) return res.sendStatus(400);
+
+  const token = crypto.randomBytes(128).toString('hex');
+
+  const database = new Database();
+  try {
+    await database.execute(
+      `UPDATE User SET reset_token = ?, reset_token_set_time = CURRENT_TIMESTAMP
+      WHERE name = ? AND `,[token,username]);
+    res.sendStatus(204);
+  } catch(err) {
+    next(err);
+  } finally {
+    database.close();
+  }
+});

@@ -23,4 +23,6 @@ describe('auth endpoint', function () {
       expect(login).to.have.property('data');
       expect(login.data).to.have.property('token').and.be.a('string');
     });
+
+    it('allows the user to request a password reset');
   });

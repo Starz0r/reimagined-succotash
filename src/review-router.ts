@@ -35,7 +35,7 @@ app.route('/:id').post(async (req,res,next) => {
   const ogReview = await datastore.getReview(rid);
   if (ogReview === null) return res.sendStatus(404);
 
-  const isReviewer = ogReview.userId === req.user.sub;
+  const isReviewer = ogReview.userId == req.user.sub;
 
   if (!(isAdmin || isReviewer)) return res.sendStatus(403);
 

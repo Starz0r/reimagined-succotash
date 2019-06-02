@@ -62,6 +62,7 @@ export class Database {
       await this.createScreenshotTable(connection);
       await this.createNewsTable(connection);
       await this.createReportTable(connection);
+      await this.createUserFollowTable(connection);
     } finally {
       if (connection) connection.end()
     }
@@ -312,7 +313,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
   }
 
   static createReportTable(connection: mysql.Connection) {
-    console.log('Creating news table...')
+    console.log('Creating report table...')
     return new Promise((resolve,reject) => {
       connection.query(`
       CREATE TABLE IF NOT EXISTS delfruit.Report (
@@ -332,4 +333,24 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
       });
     });
   }
+
+  static createUserFollowTable(connection: mysql.Connection) {
+    console.log('Creating user follow table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.UserFollow (
+        user_id int(11) NOT NULL,
+        user_follow_id int(11) NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id,user_follow_id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
 }
+
+
+

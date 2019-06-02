@@ -89,3 +89,39 @@ app.route('/:id').patch(async (req,res,next) => {
     next(err);
   }
 });
+
+app.route('/:id/follow').put(async (req,res,next) => {
+  if (!req.user || !req.user.sub) return res.sendStatus(401);
+
+  if (isNaN(req.params.id)) 
+    return res.status(400).send({error:'id must be a number'});
+  const uid = req.params.id;
+
+  const targetUser = await datastore.getUser(uid);
+  if (!targetUser) return res.sendStatus(404);
+
+  try {
+    await datastore.addFollowToUser(uid,req.user.sub);
+    return res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.route('/:id/follow').delete(async (req,res,next) => {
+  if (!req.user || !req.user.sub) return res.sendStatus(401);
+
+  if (isNaN(req.params.id)) 
+    return res.status(400).send({error:'id must be a number'});
+  const uid = req.params.id;
+
+  const targetUser = await datastore.getUser(uid);
+  if (!targetUser) return res.sendStatus(404);
+
+  try {
+    await datastore.removeFollowFromUser(uid,req.user.sub);
+    return res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+});

@@ -428,6 +428,32 @@ export default {
     }
   },
 
+  async addFollowToUser(targetUserId: number, userId: number): Promise<boolean> {
+    const database = new Database();
+  
+    try {
+      await database.execute(
+        ` INSERT IGNORE INTO UserFollow (user_id, user_follow_id) VALUES (?,?)`,
+        [targetUserId,userId]);
+      return true;
+    } finally {
+      database.close();
+    }
+  },
+
+  async removeFollowFromUser(targetUserId: number, userId: number): Promise<boolean> {
+    const database = new Database();
+  
+    try {
+      await database.execute(
+        ` DELETE FROM UserFollow WHERE user_id = ? AND user_follow_id = ?`,
+        [targetUserId,userId]);
+      return true;
+    } finally {
+      database.close();
+    }
+  },
+
   async addList(list: List, userId: number): Promise<List> {
     const database = new Database();
     try {

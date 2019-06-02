@@ -217,4 +217,26 @@ describe('user endpoint', function () {
       expect(rsp).to.have.property('data');
       expect(rsp.data).to.be.an('array');
     });
+
+    it('allows a user to follow another user', async () => {
+      const user = await createUser(false);
+      const targetUser = await createUser(false);
+      
+      const rsp = await axios.put(`http://localhost:4201/api/users/${targetUser.id}/follow`,{},
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+    });
+
+    it('allows a user to unfollow another user', async () => {
+      const user = await createUser(false);
+      const targetUser = await createUser(false);
+      
+      let rsp = await axios.put(`http://localhost:4201/api/users/${targetUser.id}/follow`,{},
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+      
+      rsp = await axios.delete(`http://localhost:4201/api/users/${targetUser.id}/follow`,
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(rsp).to.have.property('status').and.equal(204);
+    });
   });

@@ -26,8 +26,10 @@ app.route('/').get(async (req,res,next) => {
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
   const params: GetUsersParms = {page,limit};
+  if (!req.user || !req.user.isAdmin) params.banned = false;
+  if (req.query.following && req.user && req.user.sub) params.followerUserId = req.user.sub;
   try {
-    const user = await datastore.getUsers(params)
+    res.send(await datastore.getUsers(params));
   } catch (err) {
     next(err);
   }

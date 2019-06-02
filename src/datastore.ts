@@ -792,6 +792,10 @@ export default {
     if (params.followerUserId !== undefined) {
       whereList.add2("u.id IN (SELECT user_follow_id FROM UserFollow WHERE user_id = ?)",params.followerUserId);
     }
+    if (params.banned !== undefined) {
+      if (!params.banned) whereList.add("u.banned",0)
+      else whereList.add("u.banned",1)
+    }
     
     const orderCol = whitelist(params.orderCol,['id','date_created'],'id');
     const orderDir = whitelist(params.orderDir,['ASC','DESC'],'DESC');

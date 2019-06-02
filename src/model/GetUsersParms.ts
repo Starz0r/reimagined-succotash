@@ -6,4 +6,5 @@ export interface GetUsersParms {
 
   id?: number;
   followerUserId?: number;
+  banned?: boolean;
 }

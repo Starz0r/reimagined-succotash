@@ -8,6 +8,30 @@ const app = express.Router();
 const auth = new AuthModule();
 export default app;
 
+/**
+ * @swagger
+ * 
+ * /login:
+ *   post:
+ *     description: Login
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: username
+ *         in: formData
+ *         required: true
+ *         type: string
+ *       - name: password
+ *         in: formData
+ *         required: true
+ *         type: string
+ *     responses:
+ *       200:
+ *         description: logged in
+ *       401:
+ *         description: username/password invalid
+ * 
+ */
 app.route('/login').post(async (req,res,next) => {
     const username = req.body.username;
     const password = req.body.password;

@@ -74,6 +74,26 @@ app.use('/api/screenshots',screenshot_router);
 app.use('/api/news',news_router);
 app.use('/api/reports',report_router);
 
+import swaggerJsdoc from 'swagger-jsdoc';
+
+const options = {
+  swaggerDefinition: {
+    // Like the one described here: https://swagger.io/specification/#infoObject
+    info: {
+      title: 'Delicious Fruit API',
+      version: '2.0.0',
+      description: 'The API you should use instead of throwing your monitor out the window',
+    },
+  },
+  // List of files to be processes. You can also set globs './routes/*.js'
+  apis: [__dirname+'/*.ts'],
+  basePath: '/api/',
+};
+
+const specs = swaggerJsdoc(options);
+import swaggerUi from 'swagger-ui-express';
+app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(specs));
+
 app.listen(config.app_port,  () => {
   console.log('Server started at localhost:4201!');
 });

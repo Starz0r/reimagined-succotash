@@ -18,7 +18,12 @@ import news_router from './news-router';
 import report_router from './report-router';
 
 import { Database } from './database';
+
+console.log('Welcome to delfruit server 2.0!');
+
 Database.init();
+
+console.log('Initializing express...');
 
 const app = express();
 /*app.use(function (req,res,next) {
@@ -28,29 +33,21 @@ const app = express();
 
 app.use(bodyParser.json({type:"application/json"}));
 
+console.log('Initializing jwt middleware...');
+
 app.use(jwt_middleware({
   secret: config.app_jwt_secret,
   credentialsRequired: false
 }));
 
-const c: RequestHandler = (req,res,next) => {
+console.log('Initializing role middleware...');
+
+app.use((req,res,next) => {
   if (req.user) { 
     req.user.roles = ['game_update'];
   }
   next();
-}
-app.use(c);
-
-//if !req.user throw error if required
-/*app.use(function (err, req, res, next) {
-  if (err.name === 'UnauthorizedError') {
-    res.status(401).send({
-      error: 'Authorization Required - please visit /auth/login'
-    });
-  } else {
-    next(err);
-  }
-});*/
+});
 
 const e: ErrorRequestHandler = (err,req,res,next) => {
   const id = uuid();
@@ -63,6 +60,8 @@ const e: ErrorRequestHandler = (err,req,res,next) => {
 }
 app.use(e);
 
+console.log('Initializing routers...');
+
 app.use('/api/games',game_router);
 app.use('/api/users',user_router);
 app.use('/api/reviews',review_router);
@@ -73,6 +72,8 @@ app.use('/api/message',message_router);
 app.use('/api/screenshots',screenshot_router);
 app.use('/api/news',news_router);
 app.use('/api/reports',report_router);
+
+console.log('Initializing swagger...');
 
 import swaggerJsdoc from 'swagger-jsdoc';
 
@@ -85,7 +86,6 @@ const options = {
       description: 'The API you should use instead of throwing your monitor out the window',
     },
   },
-  // List of files to be processes. You can also set globs './routes/*.js'
   apis: [__dirname+'/*.ts'],
   basePath: '/api/',
 };
@@ -94,6 +94,8 @@ const specs = swaggerJsdoc(options);
 import swaggerUi from 'swagger-ui-express';
 app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(specs));
 
+console.log('Starting app...');
+
 app.listen(config.app_port,  () => {
-  console.log('Server started at localhost:4201!');
+  console.log(`Server started at localhost:${config.app_port}!`);
 });

@@ -88,6 +88,32 @@ describe('report endpoint', function () {
     expect(rsp.data).to.have.property('id').and.equal(report.id);
   });
 
-  it('allows admins to update reports');
-  it('prevents users from updating reports');
+  it('allows admins to update reports', async() => {
+    const admin = await createUser(true);
+    const report = await createReport();
+    
+    const rsp = await axios.patch(`http://localhost:4201/api/reports/${report.id}`,
+      {answeredById: admin.id},
+      {headers: {'Authorization': "Bearer " + admin.token}});
+    expect(rsp).to.have.property('status').and.equal(200);
+    expect(rsp).to.have.property('data')
+    expect(rsp.data).to.have.property('id').and.equal(report.id);
+    expect(rsp.data).to.have.property('answeredById').and.equal(admin.id);
+  });
+
+  it('prevents users from updating reports', async() => {
+    const user = await createUser(false);
+    const report = await createReport();
+    
+    try {
+      await axios.patch(`http://localhost:4201/api/reports/${report.id}`,
+        {answeredById: user.id},
+        {headers: {'Authorization': "Bearer " + user.token}});
+    } catch (err) {
+      expect(err).to.have.property('response');
+      expect(err.response).to.have.property('status').and.equal(403);
+      return;
+    }
+    fail('get should have failed')
+  });
 });

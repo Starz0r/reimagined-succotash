@@ -198,6 +198,27 @@ export default {
     return reports[0];
   },
 
+  async updateReport(report: Report): Promise<boolean> {
+    const database = new Database();
+  
+    const updateList = new UpdateList();
+  
+    updateList.add('answered_by_id',report.answeredById);
+    updateList.add('date_answered',report.dateAnswered);
+
+    if (!updateList.hasAny()) return true;
+  
+    try {
+      let params = updateList.getParams();
+      params.push(report.id);
+      const rows = await database.execute(
+        ` UPDATE Report ${updateList.getSetClause()} WHERE id = ?`,params);
+      return (rows.affectedRows == 1);
+    } finally {
+      database.close();
+    }
+  },
+
   async addNews(article: News, adderId: number): Promise<Game> {
     const database = new Database();
     try {

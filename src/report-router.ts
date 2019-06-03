@@ -28,13 +28,33 @@ app.route('/:id').get(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   try {
-    const n = await datastore.getReports({
-      id: +req.params.id,
-      page: +req.query.page || 0,
-      limit: +req.query.limit || 1
-    });
-    if (!n || n.length == 0) return res.sendStatus(404);
-    return res.send(n[0]);
+    const report = await datastore.getReport(+req.params.id);
+    if (!report) return res.sendStatus(404);
+    return res.send(report);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.route('/:id').patch(async (req,res,next) => {
+  if (!req.user || !req.user.sub || !req.user.isAdmin) return res.sendStatus(403);
+  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+
+  const rid = +req.params.id;
+
+  try {
+    const ogReport = await datastore.getReport(rid);
+    if (!ogReport) return res.sendStatus(404);
+
+    const report = req.body as Report;
+
+    report.id = rid;
+    delete report.report; //not even admins can change the report content
+    delete report.reporterId;
+
+    const success = await datastore.updateReport(report);
+    if (success) return res.send(await datastore.getReport(rid));
+    else throw 'failed to update report';
   } catch (err) {
     next(err);
   }

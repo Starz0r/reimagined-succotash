@@ -25,7 +25,7 @@ Auto-redeployment and breakpoint support are included through the use of nodemon
 
 ## Test the app
 
-Once the app and database are running and connected, you can run the integration tests with `npm run test`
+Once the app and database are running and connected, you can run the integration tests with `npm run test-int`
 
 To start the database:
 

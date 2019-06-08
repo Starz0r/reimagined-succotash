@@ -85,9 +85,9 @@ const options = {
       version: '2.0.0',
       description: 'The API you should use instead of throwing your monitor out the window',
     },
+    basePath: '/api',
   },
   apis: [__dirname+'/*.ts'],
-  basePath: '/api/',
 };
 
 const specs = swaggerJsdoc(options);

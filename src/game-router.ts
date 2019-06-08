@@ -13,6 +13,54 @@ const upload = multer({ dest: 'uploads/' }) //TODO
 const app = express.Router();
 export default app;
 
+
+/**
+ * @swagger
+ * 
+ * /games/{id}:
+ *   post:
+ *     summary: Add Game (Admin Only)
+ *     description: Add Game (Admin Only)
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the game to return
+ * 
+ *     requestBody:
+ *       description: Optional description in *Markdown*
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: 
+ *                 type: string
+ *               url: 
+ *                 type: string
+ *               urlSpdrn: 
+ *                 type: string
+ *               author: 
+ *                 type: string
+ *               collab: 
+ *                 type: boolean
+ *               dateCreated: 
+ *                 type: string
+ *               ownerId: 
+ *                 type: integer
+ * 
+ *     responses:
+ *       200:
+ *         description: The Game object, after creation
+ *       403:
+ *         description: Insufficient privileges (requires an admin account)
+ */
 app.route('/').post(async (req,res,next) => {
   if (!req.user || !req.user.sub || !req.user.isAdmin) {
     res.status(403).send({error:'unauthorized access'});
@@ -33,6 +81,7 @@ app.route('/').post(async (req,res,next) => {
  * 
  * /games:
  *   get:
+ *     summary: Game List
  *     description: Game List
  *     produces:
  *       - application/json
@@ -111,11 +160,14 @@ app.route('/').post(async (req,res,next) => {
  *         name: page
  *         schema:
  *           type: integer
+ *           minimum: 0
  *         description: The page of results to return (default 0)
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *           minimum: 1
+ *           maximum: 50
  *         description: The number of results per page (default 50, maximum 50)
  *     responses:
  *       200:
@@ -165,6 +217,29 @@ app.route('/').get(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /games/{id}:
+ *   get:
+ *     summary: Get Game
+ *     description: Get Game
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the game to return (or the literal 'random' for a random game)
+ *     responses:
+ *       200:
+ *         description: Object describing the game
+ *       404:
+ *         description: Game not found
+ */
 app.route('/:id').get(async (req,res,next) => {
   let game;
   if (req.params.id === 'random') {
@@ -211,6 +286,44 @@ app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /games/{id}/reviews:
+ *   get:
+ *     summary: Get Reviews for Game
+ *     description: Get Reviews for Game
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the game to return
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *         description: The page of results to return (default 0)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: The number of results per page (default 50, maximum 50)
+ *     responses:
+ *       200:
+ *         description: List of reviews for the game (or empty array if none)
+ *       400:
+ *         description: Invalid game id
+ *       404:
+ *         description: Game not found
+ */
 app.route('/:id/reviews').get(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     res.status(400).send({error:'id must be a number'});
@@ -247,6 +360,44 @@ app.route('/:id/reviews').post(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /games/{id}/screenshots:
+ *   get:
+ *     summary: Get Screenshots for Game
+ *     description: Get Screenshots for Game
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the game to return
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *         description: The page of results to return (default 0)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: The number of results per page (default 50)
+ *     responses:
+ *       200:
+ *         description: List of screenshots for the game (or empty array if none)
+ *       400:
+ *         description: Invalid game id
+ *       404:
+ *         description: Game not found
+ */
 app.route('/:id/screenshots').get(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     res.status(400).send({error:'id must be a number'});
@@ -295,6 +446,31 @@ app.route('/:id/screenshots').post(upload.single('screenshot'), async (req,res,n
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /games/{id}/screenshots:
+ *   get:
+ *     summary: Get Tags Associated to Game
+ *     description: Get Tags Associated to Game
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the game to return
+ *     responses:
+ *       200:
+ *         description: List of screenshots for the game (or empty array if none)
+ *       400:
+ *         description: Invalid game id
+ *       404:
+ *         description: Game not found
+ */
 app.route('/:id/tags').get(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     res.status(400).send({error:'invalid game id'});
@@ -314,6 +490,55 @@ app.route('/:id/tags').get(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /games/{id}:
+ *   patch:
+ *     summary: Update Game (Admin Only)
+ *     description: Update Game (Admin Only)
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the game to return
+ * 
+ *     requestBody:
+ *       description: Optional description in *Markdown*
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: 
+ *                 type: string
+ *               url: 
+ *                 type: string
+ *               urlSpdrn: 
+ *                 type: string
+ *               author: 
+ *                 type: string
+ *               collab: 
+ *                 type: boolean
+ *               dateCreated: 
+ *                 type: string
+ *               ownerId: 
+ *                 type: integer
+ * 
+ *     responses:
+ *       200:
+ *         description: The Game object, after update
+ *       400:
+ *         description: Invalid game id
+ *       403:
+ *         description: Insufficient privileges (requires an admin account)
+ */
 app.route('/:id').patch(async (req,res,next) => {
   //restrict to admins
   if (!req.user || !req.user.isAdmin) return res.status(403).send({error:'Unauthorized'});

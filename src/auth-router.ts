@@ -12,9 +12,12 @@ export default app;
 /**
  * @swagger
  * 
- * /login:
+ * /auth/login:
  *   post:
+ *     summary: Login
  *     description: Login
+ *     tags: 
+ *       - Authentication
  *     produces:
  *       - application/json
  *     parameters:
@@ -64,11 +67,36 @@ app.route('/login').post(async (req,res,next) => {
         user.token = auth.getToken(user.name,user.id,user.isAdmin);
         return res.send(user);
       }
+    } catch(err) {
+      next(err);
     } finally {
       database.close();
     }
-  });
+});
   
+/**
+ * @swagger
+ * 
+ * /auth/reset-request:
+ *   post:
+ *     summary: Request Password Reset
+ *     description: Request Password Reset
+ *     tags: 
+ *       - Authentication
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: username
+ *         in: formData
+ *         required: true
+ *         type: string
+ *     responses:
+ *       204:
+ *         description: request accepted
+ *       400:
+ *         description: invalid username or username missing
+ * 
+ */
 app.route('/request-reset').post(async (req,res,next) => {
   const username = req.body.username;
   if (!username) return res.sendStatus(400);

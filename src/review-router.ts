@@ -4,6 +4,33 @@ import express from 'express';
 const app = express.Router();
 export default app;
 
+/**
+ * @swagger
+ * 
+ * /reviews/{id}:
+ *   get:
+ *     summary: Get Review
+ *     description: Get Review
+ *     tags: 
+ *       - Reviews
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the review to return
+ *     responses:
+ *       200:
+ *         description: Object describing the review
+ *       400:
+ *         description: Invalid review id
+ *       404:
+ *         description: Review not found
+ */
 app.route('/:id').get(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
 
@@ -17,7 +44,37 @@ app.route('/:id').get(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /reviews:
+ *   get:
+ *     summary: Get Reviews
+ *     description: Get Reviews
+ *     tags: 
+ *       - Reviews
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *         description: The page of results to return (default 0)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: The number of results per page (default 50)
+ *     responses:
+ *       200:
+ *         description: List of matching reviews (or an empty array if no match)
+ */
 app.route('/').get((req,res,next) => {
+  //TODO: order by & dir
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
   datastore.getReviews({page:page,limit:limit})
@@ -25,7 +82,54 @@ app.route('/').get((req,res,next) => {
     .catch(err => next(err));
 });
 
-app.route('/:id').post(async (req,res,next) => {
+/**
+ * @swagger
+ * 
+ * /reviews/{id}:
+ *   patch:
+ *     summary: Update Patch (User Only)
+ *     description: Update Game (User Only)
+ *     tags: 
+ *       - Reviews
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the game to return
+ * 
+ *     requestBody:
+ *       description: Optional description in *Markdown*
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating: 
+ *                 type: number
+ *               difficulty: 
+ *                 type: number
+ *               comment: 
+ *                 type: string
+ *               removed: 
+ *                 type: boolean
+ * 
+ *     responses:
+ *       204:
+ *         description: The review was updated
+ *       400:
+ *         description: Invalid review id
+ *       401:
+ *         description: Unauthorized (must log in to edit reviews)
+ *       403:
+ *         description: Insufficient privileges (must be an admin or the reviewer)
+ */
+app.route('/:id').patch(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
   const isAdmin = req.user.isAdmin;
 
@@ -54,6 +158,44 @@ app.route('/:id').post(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /reviews/{id}/likes/{userId}:
+ *   put:
+ *     summary: Like Review
+ *     description: Indicates a user likes a review. Is idempotent - additional likes do nothing
+ *     tags: 
+ *       - Reviews
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the review to like
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The id of the user performing the like
+ *     responses:
+ *       204:
+ *         description: Like was accepted
+ *       400:
+ *         description: Invalid review id or user id (check the error in response)
+ *       401:
+ *         description: Unauthenticated (log in first)
+ *       403:
+ *         description: Insufficient priviliges (must be an admin, or the user indicated in the url)
+ *       404:
+ *         description: Review not found
+ */
 app.route('/:id/likes/:userId').put(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
   const isAdmin = req.user.isAdmin;
@@ -79,6 +221,44 @@ app.route('/:id/likes/:userId').put(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /reviews/{id}/likes/{userId}:
+ *   put:
+ *     summary: Unlike Review
+ *     description: Removes the user's like from a review. Is idempotent - additional unlikes do nothing
+ *     tags: 
+ *       - Reviews
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the review to unlike
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The id of the user performing the unlike
+ *     responses:
+ *       204:
+ *         description: Unlike was accepted
+ *       400:
+ *         description: Invalid review id or user id (check the error in response)
+ *       401:
+ *         description: Unauthenticated (log in first)
+ *       403:
+ *         description: Insufficient priviliges (must be an admin, or the user indicated in the url)
+ *       404:
+ *         description: Review not found
+ */
 app.route('/:id/likes/:userId').delete(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
   const isAdmin = req.user.isAdmin;

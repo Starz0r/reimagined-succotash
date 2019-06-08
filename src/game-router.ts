@@ -21,6 +21,8 @@ export default app;
  *   post:
  *     summary: Add Game (Admin Only)
  *     description: Add Game (Admin Only)
+ *     tags: 
+ *       - Games
  *     produces:
  *       - application/json
  *     parameters:
@@ -83,6 +85,8 @@ app.route('/').post(async (req,res,next) => {
  *   get:
  *     summary: Game List
  *     description: Game List
+ *     tags: 
+ *       - Games
  *     produces:
  *       - application/json
  *     parameters:
@@ -224,6 +228,8 @@ app.route('/').get(async (req,res,next) => {
  *   get:
  *     summary: Get Game
  *     description: Get Game
+ *     tags: 
+ *       - Games
  *     produces:
  *       - application/json
  *     parameters:
@@ -293,6 +299,9 @@ app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
  *   get:
  *     summary: Get Reviews for Game
  *     description: Get Reviews for Game
+ *     tags: 
+ *       - Games
+ *       - Reviews
  *     produces:
  *       - application/json
  *     parameters:
@@ -367,6 +376,9 @@ app.route('/:id/reviews').post(async (req,res,next) => {
  *   get:
  *     summary: Get Screenshots for Game
  *     description: Get Screenshots for Game
+ *     tags: 
+ *       - Games
+ *       - Screenshots
  *     produces:
  *       - application/json
  *     parameters:
@@ -449,10 +461,12 @@ app.route('/:id/screenshots').post(upload.single('screenshot'), async (req,res,n
 /**
  * @swagger
  * 
- * /games/{id}/screenshots:
+ * /games/{id}/tags:
  *   get:
  *     summary: Get Tags Associated to Game
  *     description: Get Tags Associated to Game
+ *     tags: 
+ *       - Games
  *     produces:
  *       - application/json
  *     parameters:
@@ -497,6 +511,8 @@ app.route('/:id/tags').get(async (req,res,next) => {
  *   patch:
  *     summary: Update Game (Admin Only)
  *     description: Update Game (Admin Only)
+ *     tags: 
+ *       - Games
  *     produces:
  *       - application/json
  *     parameters:

@@ -87,8 +87,8 @@ app.route('/').get((req,res,next) => {
  * 
  * /reviews/{id}:
  *   patch:
- *     summary: Update Patch (User Only)
- *     description: Update Game (User Only)
+ *     summary: Update Review (User Only)
+ *     description: Update Review (User Only)
  *     tags: 
  *       - Reviews
  *     produces:
@@ -100,7 +100,7 @@ app.route('/').get((req,res,next) => {
  *           type: integer
  *           minimum: 1
  *         required: true
- *         description: The exact id of the game to return
+ *         description: The id of the review to update
  * 
  *     requestBody:
  *       description: Optional description in *Markdown*
@@ -163,7 +163,7 @@ app.route('/:id').patch(async (req,res,next) => {
  * 
  * /reviews/{id}/likes/{userId}:
  *   put:
- *     summary: Like Review
+ *     summary: Like Review (User/Admin only)
  *     description: Indicates a user likes a review. Is idempotent - additional likes do nothing
  *     tags: 
  *       - Reviews
@@ -226,7 +226,7 @@ app.route('/:id/likes/:userId').put(async (req,res,next) => {
  * 
  * /reviews/{id}/likes/{userId}:
  *   put:
- *     summary: Unlike Review
+ *     summary: Unlike Review (User/Admin only)
  *     description: Removes the user's like from a review. Is idempotent - additional unlikes do nothing
  *     tags: 
  *       - Reviews

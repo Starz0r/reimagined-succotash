@@ -355,12 +355,63 @@ app.route('/:id/reviews').get(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /games/{id}/reviews:
+ *   post:
+ *     summary: Add Review for Game (User/Admin Only)
+ *     description: Add Review for Game (User/Admin Only)
+ *     tags: 
+ *       - Games
+ *       - Reviews
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The id of the game to review
+ * 
+ *     requestBody:
+ *       description: Optional description in *Markdown*
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating: 
+ *                 type: number
+ *               difficulty: 
+ *                 type: number
+ *               comment: 
+ *                 type: string
+ *               removed: 
+ *                 type: boolean
+ * 
+ *     responses:
+ *       200:
+ *         description: The review that was just added
+ *       400:
+ *         description: Invalid game id
+ *       401:
+ *         description: Unauthorized (must log in to add reviews)
+ *       404:
+ *         description: Game not found
+ */
 app.route('/:id/reviews').post(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
   if (!req.user) return res.sendStatus(401);
   
   var gameId = parseInt(req.params.id,10);
 
+  const game = await datastore.gameExists(gameId);
+  if (!game) return res.sendStatus(404);
+  
   try {
     const newReview = await datastore.addReview(req.body,gameId,req.user.sub);
     res.send(newReview);
@@ -435,6 +486,53 @@ app.route('/:id/screenshots').get(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /games/{id}/screenshots:
+ *   post:
+ *     summary: Add Screenshot for Game (User/Admin Only)
+ *     description: Add Screenshot for Game (User/Admin Only)
+ *     tags: 
+ *       - Games
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The id of the game to add a screenshot to
+ * 
+ *     requestBody:
+ *       description: Optional description in *Markdown*
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating: 
+ *                 type: number
+ *               difficulty: 
+ *                 type: number
+ *               comment: 
+ *                 type: string
+ *               removed: 
+ *                 type: boolean
+ * 
+ *     responses:
+ *       200:
+ *         description: The screenshot that was just added
+ *       400:
+ *         description: Invalid game id
+ *       401:
+ *         description: Unauthorized (must log in to add reviews)
+ *       404:
+ *         description: Game not found
+ */
 app.route('/:id/screenshots').post(upload.single('screenshot'), async (req,res,next) => {
   if (isNaN(req.params.id)) {
     return res.status(400).send({error:'id must be a number'});

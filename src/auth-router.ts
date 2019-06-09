@@ -1,6 +1,6 @@
 import express from 'express';
 import { Database } from './database';
-import AuthModule from './auth';
+import AuthModule from './lib/auth';
 import datastore from './datastore';
 import moment = require('moment');
 import crypto from 'crypto';

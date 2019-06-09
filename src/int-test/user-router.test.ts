@@ -103,7 +103,7 @@ describe('user endpoint', function () {
         fail("modify should not have been successful");
       } catch (err) {
         expect(err).to.have.property('response');
-        expect(err.response).to.have.property('status').and.equal(403);
+        expect(err.response).to.have.property('status').and.equal(401);
       }
     });
 

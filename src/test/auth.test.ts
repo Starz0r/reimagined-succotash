@@ -1,5 +1,5 @@
 import chai from 'chai';
-import AuthModule from '../auth';
+import AuthModule from '../lib/auth';
 
 var expect = chai.expect;
 

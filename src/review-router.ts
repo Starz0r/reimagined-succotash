@@ -1,6 +1,7 @@
 import datastore from './datastore';
 import express from 'express';
 import handle from './lib/express-async-catch';
+import { userCheck } from './lib/auth-check';
 
 const app = express.Router();
 export default app;
@@ -125,8 +126,7 @@ app.route('/').get(handle(async (req,res,next) => {
  *       403:
  *         description: Insufficient privileges (must be an admin or the reviewer)
  */
-app.route('/:id').patch(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
+app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
   const isAdmin = req.user.isAdmin;
 
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
@@ -188,10 +188,7 @@ app.route('/:id').patch(handle(async (req,res,next) => {
  *       404:
  *         description: Review not found
  */
-app.route('/:id/likes/:userId').put(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
-  const isAdmin = req.user.isAdmin;
-
+app.route('/:id/likes/:userId').put(userCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const rid = req.params.id;
@@ -247,10 +244,7 @@ app.route('/:id/likes/:userId').put(handle(async (req,res,next) => {
  *       404:
  *         description: Review not found
  */
-app.route('/:id/likes/:userId').delete(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
-  const isAdmin = req.user.isAdmin;
-
+app.route('/:id/likes/:userId').delete(userCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const rid = req.params.id;

@@ -2,6 +2,7 @@ import express from 'express';
 import datastore from './datastore';
 import { News } from './model/News';
 import handle from './lib/express-async-catch';
+import { adminCheck } from './lib/auth-check';
 
 const app = express.Router();
 export default app;
@@ -23,8 +24,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
   return res.send(n[0]);
 }));
 
-app.route('/').post(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub || !req.user.isAdmin) return res.sendStatus(403);
+app.route('/').post(adminCheck(), handle(async (req,res,next) => {
   const uid = req.user.sub;
 
   const article = req.body as News;

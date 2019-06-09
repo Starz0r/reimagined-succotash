@@ -1,8 +1,9 @@
 import express from 'express';
 import datastore from './datastore';
-import AuthModule from './auth';
+import AuthModule from './lib/auth';
 import { GetUsersParms } from './model/GetUsersParms';
 import handle from './lib/express-async-catch';
+import { userCheck } from './lib/auth-check';
 const auth = new AuthModule();
 const app = express.Router();
 export default app;
@@ -158,14 +159,14 @@ app.route('/:id').get(handle(async (req,res,next) => {
  *       404:
  *         description: User not found
  */
-app.route('/:id').patch(handle(async (req,res,next) => {
+app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   var uid = parseInt(req.params.id, 10);
-
+  
   const isAdmin = false;
   //if not admin (and if not, uid is not uid in token)
-  if (!isAdmin && (!req.user || req.user.sub == null || req.user.sub != uid)) {
+  if (!isAdmin && req.user.sub != uid) {
     return res.status(403).send({error:'unauthorized access to this user'});
   }
 
@@ -228,9 +229,7 @@ app.route('/:id').patch(handle(async (req,res,next) => {
  *       404:
  *         description: User not found
  */
-app.route('/:followerId/follows/:id').put(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
-
+app.route('/:followerId/follows/:id').put(userCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const uid = req.params.id;
@@ -282,9 +281,7 @@ app.route('/:followerId/follows/:id').put(handle(async (req,res,next) => {
  *       404:
  *         description: User not found
  */
-app.route('/:followerId/follows/:id').delete(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
-  
+app.route('/:followerId/follows/:id').delete(userCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const uid = req.params.id;

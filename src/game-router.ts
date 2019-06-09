@@ -9,6 +9,7 @@ import whitelist from './lib/whitelist';
 
 import multer from 'multer';
 import handle from './lib/express-async-catch';
+import { adminCheck, userCheck } from './lib/auth-check';
 const upload = multer({ dest: 'uploads/' }) //TODO
 
 const app = express.Router();
@@ -64,7 +65,7 @@ export default app;
  *       403:
  *         description: Insufficient privileges (requires an admin account)
  */
-app.route('/').post(handle(async (req,res,next) => {
+app.route('/').post(adminCheck(), handle(async (req,res,next) => {
   if (!req.user || !req.user.sub || !req.user.isAdmin) {
     res.status(403).send({error:'unauthorized access'});
     return;
@@ -290,9 +291,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id').delete(handle(async (req,res,next) => { //TODO: keep this?
-  if (!req.user || !req.user.isAdmin) return res.sendStatus(403);
-
+app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   var id = parseInt(req.params.id, 10);
@@ -420,9 +419,8 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id/reviews').post(handle(async (req,res,next) => {
+app.route('/:id/reviews').post(userCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
-  if (!req.user) return res.sendStatus(401);
   
   var gameId = parseInt(req.params.id,10);
 
@@ -542,13 +540,11 @@ app.route('/:id/screenshots').get(handle(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id/screenshots').post(upload.single('screenshot'), handle(async (req,res,next) => {
+app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     return res.status(400).send({error:'id must be a number'});
   }
   const gameId = parseInt(req.params.id,10);
-
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
 
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
@@ -660,10 +656,10 @@ app.route('/:id/tags').get(handle(async (req,res,next) => {
  *       403:
  *         description: Insufficient privileges (requires an admin account)
  */
-app.route('/:id').patch(handle(async (req,res,next) => {
-  //restrict to admins
-  if (!req.user || !req.user.isAdmin) return res.sendStatus(403);
-
+app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
+  if (isNaN(req.params.id)) {
+    return res.status(400).send({error:'invalid game id'});
+  }
   var gid = parseInt(req.params.id, 10);
 
   let game = req.body as Game;

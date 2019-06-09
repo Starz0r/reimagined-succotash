@@ -150,7 +150,7 @@ describe('screenshot endpoint', function () {
         });
       } catch (err) {
         expect(err).to.have.property('response');
-        expect(err.response).to.have.property('status').and.equal(403);
+        expect(err.response).to.have.property('status').and.equal(401);
         return;
       }
       fail("get should not have been successful");

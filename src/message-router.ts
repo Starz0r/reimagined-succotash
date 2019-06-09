@@ -5,13 +5,12 @@ import WhereList from './lib/where-list';
 import { Message } from './model/Message';
 import { MessageQueryParams } from './model/MessageQueryParams';
 import handle from './lib/express-async-catch';
+import { userCheck } from './lib/auth-check';
 
 const app = express.Router();
 export default app;
 
-app.route('/inbox').get(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
-    
+app.route('/inbox').get(userCheck(), handle(async (req,res,next) => {
   let parms = {} as MessageQueryParams;
   parms.userToId = req.user.sub; //force to for inbox
 
@@ -30,9 +29,7 @@ app.route('/inbox').get(handle(async (req,res,next) => {
   }
 }));
 
-app.route('/thread/:id').get(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
-    
+app.route('/thread/:id').get(userCheck(), handle(async (req,res,next) => {
   let parms = {} as MessageQueryParams;
   parms.threadId = req.params.id;
 
@@ -53,9 +50,7 @@ app.route('/thread/:id').get(handle(async (req,res,next) => {
   }
 }));
   
-app.route('/').post(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
-
+app.route('/').post(userCheck(), handle(async (req,res,next) => {
   const msg = req.body as Message;
 
   const insertList = new InsertList();

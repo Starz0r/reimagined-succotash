@@ -52,7 +52,7 @@ describe('game endpoint', function () {
         });
     } catch (err) {
       expect(err).to.have.property('response');
-      expect(err.response).to.have.property('status').and.equal(403);
+      expect(err.response).to.have.property('status').and.equal(401);
       return;
     }
     fail("add should not have been successful");
@@ -87,7 +87,7 @@ describe('game endpoint', function () {
       await axios.delete(`http://localhost:4201/api/games/${game.id}`);
     } catch (err) {
       expect(err).to.have.property('response');
-      expect(err.response).to.have.property('status').and.equal(403);
+      expect(err.response).to.have.property('status').and.equal(401);
       return;
     }
     fail("delete should not have been successful");

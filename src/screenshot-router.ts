@@ -3,6 +3,7 @@ import datastore from './datastore';
 import { GetScreenshotParms } from "./model/GetScreenshotParms";
 import { Screenshot } from "./model/Screenshot";
 import handle from './lib/express-async-catch';
+import { adminCheck } from './lib/auth-check';
 
 const app = express.Router();
 export default app;
@@ -33,8 +34,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
   res.send(screenshot);
 }));
 
-app.route('/:id').delete(handle(async (req,res,next) => {
-  if (!req.user || !req.user.isAdmin) return res.status(403).send({error:'Unauthorized'});
+app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
   var id = parseInt(req.params.id, 10);
   let screenshot = await datastore.getScreenshot(id);
@@ -52,7 +52,7 @@ app.route('/:id').delete(handle(async (req,res,next) => {
   res.sendStatus(204);
 }));
 
-app.route('/:id').patch(handle(async (req,res,next) => {
+app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
   //restrict to admins
   if (!req.user || !req.user.isAdmin) return res.status(403).send({error:'Unauthorized'});
 

@@ -6,7 +6,33 @@ const auth = new AuthModule();
 const app = express.Router();
 export default app;
 
-//register
+/**
+ * @swagger
+ * 
+ * /users:
+ *   post:
+ *     summary: Register new user
+ *     description: URegisters a new user
+ *     tags: 
+ *       - Users
+ *     parameters:
+ *       - name: username
+ *         in: formData
+ *         required: true
+ *         type: string
+ *       - name: password
+ *         in: formData
+ *         required: true
+ *         type: string
+ *       - name: email
+ *         in: formData
+ *         type: string
+ *     responses:
+ *       200:
+ *         description: The newly created user, with a token to use for authentication
+ *       400:
+ *         description: User already exists
+ */
 app.route('/').post(async (req,res,next) => {
   try {
     const phash = await auth.hashPassword(req.body.password);
@@ -20,12 +46,55 @@ app.route('/').post(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /users:
+ *   get:
+ *     summary: User List
+ *     description: User List
+ *     tags: 
+ *       - Users
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: query
+ *         name: following
+ *         schema:
+ *           type: boolean
+ *         description: If true, and user is logged in, limits results to 
+ *           users followed by the current user
+ *       - in: query
+ *         name: banned
+ *         schema:
+ *           type: boolean
+ *         description: (Admin only) If specified, limits results to users who are 
+ *           banned/unbanned (true/false)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *         description: The page of results to return (default 0)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: The number of results per page (default 50, maximum 50)
+ *     responses:
+ *       200:
+ *         description: returns a list of games matching filters
+ */
 app.route('/').get(async (req,res,next) => {
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
   const params: GetUsersParms = {page,limit};
   if (!req.user || !req.user.isAdmin) params.banned = false;
+  else params.banned = req.query.banned;
   if (req.query.following && req.user && req.user.sub) params.followerUserId = req.user.sub;
+  //TODO: order by
   try {
     const users = await datastore.getUsers(params);
     users.forEach(u => {delete u.email});
@@ -74,8 +143,42 @@ app.route('/:id').get(async (req,res,next) => {
   }
 });
 
+/**
+ * @swagger
+ * 
+ * /users/{id}:
+ *   patch:
+ *     summary: Modify User (User/Admin only)
+ *     description: Updates a user. If a password is provided, 
+ *       then the old password must also be provided to prevent impersonation 
+ *       with a stolen token.
+ *     tags: 
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The user to modify
+ *     responses:
+ *       200:
+ *         description: The updated user
+ *       400:
+ *         description: Invalid user id
+ *       401:
+ *         description: Unauthenticated (attempted to modify password without old password)
+ *       403:
+ *         description: Unauthorized attempt to modify another user
+ *       404:
+ *         description: User not found
+ */
 app.route('/:id').patch(async (req,res,next) => {
+  if (isNaN(req.params.id)) 
+    return res.status(400).send({error:'id must be a number'});
   var uid = parseInt(req.params.id, 10);
+
   const isAdmin = false;
   //if not admin (and if not, uid is not uid in token)
   if (!isAdmin && (!req.user || req.user.sub == null || req.user.sub != uid)) {
@@ -113,12 +216,52 @@ app.route('/:id').patch(async (req,res,next) => {
   }
 });
 
-app.route('/:id/follow').put(async (req,res,next) => {
+/**
+ * @swagger
+ * 
+ * /users/{id}/follows/{userId}:
+ *   put:
+ *     summary: Follow User (User/Admin only)
+ *     description: Adds a user to your following list. Is idempotent - following the same user again does nothing
+ *     tags: 
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The user whose following list is being modified
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: The user to follow
+ *     responses:
+ *       204:
+ *         description: Follower added
+ *       400:
+ *         description: Invalid user id (either one)
+ *       401:
+ *         description: Unauthenticated (must log in to follow a user)
+ *       403:
+ *         description: Unauthorized attempt to modify another user's follow list
+ *       404:
+ *         description: User not found
+ */
+app.route('/:followerId/follows/:id').put(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
 
   if (isNaN(req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const uid = req.params.id;
+  if (isNaN(req.params.followerId)) 
+    return res.status(400).send({error:'followerId must be a number'});
+  const followerId = req.params.followerId;
+  
+  if (req.user.sub != followerId) return res.sendStatus(403);
 
   const targetUser = await datastore.getUser(uid);
   if (!targetUser) return res.sendStatus(404);
@@ -131,12 +274,52 @@ app.route('/:id/follow').put(async (req,res,next) => {
   }
 });
 
-app.route('/:id/follow').delete(async (req,res,next) => {
+/**
+ * @swagger
+ * 
+ * /users/{id}/follows/{userId}:
+ *   delete:
+ *     summary: Unfollow User (User/Admin only)
+ *     description: Removes a user from your following list. Is idempotent - unfollowing the same user again does nothing
+ *     tags: 
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The user whose following list is being modified
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: The user to unfollow
+ *     responses:
+ *       204:
+ *         description: Follower removed
+ *       400:
+ *         description: Invalid user id (either one)
+ *       401:
+ *         description: Unauthenticated (must log in to unfollow a user)
+ *       403:
+ *         description: Unauthorized attempt to modify another user's unfollow list
+ *       404:
+ *         description: User not found
+ */
+app.route('/:followerId/follows/:id').delete(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
-
+  
   if (isNaN(req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const uid = req.params.id;
+  if (isNaN(req.params.followerId)) 
+    return res.status(400).send({error:'followerId must be a number'});
+  const followerId = req.params.followerId;
+  
+  if (req.user.sub != followerId) return res.sendStatus(403);
 
   const targetUser = await datastore.getUser(uid);
   if (!targetUser) return res.sendStatus(404);

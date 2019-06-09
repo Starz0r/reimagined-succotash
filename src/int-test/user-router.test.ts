@@ -156,7 +156,7 @@ describe('user endpoint', function () {
       const user = await createUser(false);
       const targetUser = await createUser(false);
       
-      const rsp = await axios.put(`http://localhost:4201/api/users/${targetUser.id}/follow`,{},
+      const rsp = await axios.put(`http://localhost:4201/api/users/${user.id}/follows/${targetUser.id}`,{},
         {headers: {'Authorization': "Bearer " + user.token}});
       expect(rsp).to.have.property('status').and.equal(204);
     });
@@ -165,11 +165,11 @@ describe('user endpoint', function () {
       const user = await createUser(false);
       const targetUser = await createUser(false);
       
-      let rsp = await axios.put(`http://localhost:4201/api/users/${targetUser.id}/follow`,{},
+      let rsp = await axios.put(`http://localhost:4201/api/users/${user.id}/follows/${targetUser.id}`,{},
         {headers: {'Authorization': "Bearer " + user.token}});
       expect(rsp).to.have.property('status').and.equal(204);
       
-      rsp = await axios.delete(`http://localhost:4201/api/users/${targetUser.id}/follow`,
+      rsp = await axios.delete(`http://localhost:4201/api/users/${user.id}/follows/${targetUser.id}`,
         {headers: {'Authorization': "Bearer " + user.token}});
       expect(rsp).to.have.property('status').and.equal(204);
     });

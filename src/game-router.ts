@@ -411,7 +411,7 @@ app.route('/:id/reviews').post(async (req,res,next) => {
 
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
-  
+
   try {
     const newReview = await datastore.addReview(req.body,gameId,req.user.sub);
     res.send(newReview);
@@ -620,30 +620,34 @@ app.route('/:id/tags').get(async (req,res,next) => {
  *           type: integer
  *           minimum: 1
  *         required: true
- *         description: The exact id of the game to return
- * 
- *     requestBody:
- *       description: Optional description in *Markdown*
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name: 
- *                 type: string
- *               url: 
- *                 type: string
- *               urlSpdrn: 
- *                 type: string
- *               author: 
- *                 type: string
- *               collab: 
- *                 type: boolean
- *               dateCreated: 
- *                 type: string
- *               ownerId: 
- *                 type: integer
+ *         description: The id of the game to edit
+ *       - in: body
+ *         description: The data to set
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             name: 
+ *               type: string
+ *             url: 
+ *               type: string
+ *             urlSpdrn: 
+ *               type: string
+ *             author: 
+ *               type: string
+ *             collab: 
+ *               type: boolean
+ *             dateCreated: 
+ *               type: string
+ *             ownerId: 
+ *               type: integer
+ *           example:
+ *             name: Crimson Needle 3
+ *             url: http://fangam.es/crimsonneedle3
+ *             author: Kalemandu, Plasmanapkin, Zero-G
+ *             collab: true
+ *             dateCreated: 2019-06-07
+ *             ownerId: 1
  * 
  *     responses:
  *       200:

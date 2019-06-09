@@ -239,7 +239,8 @@ app.route('/').get(async (req,res,next) => {
  *           type: integer
  *           minimum: 1
  *         required: true
- *         description: The exact id of the game to return (or the literal 'random' for a random game)
+ *         description: The exact id of the game to return 
+ *           (or the literal 'random' for a random game)
  *     responses:
  *       200:
  *         description: Object describing the game

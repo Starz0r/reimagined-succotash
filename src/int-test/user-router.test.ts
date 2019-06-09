@@ -13,6 +13,16 @@ describe('user endpoint', function () {
 
     });
   
+    it('returns a 401 if the token is invalid', async () => {
+      try {
+        await axios.get('http://localhost:4201/api/users',
+          {headers: {'Authorization': "Bearer xyz"}});
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(401);
+      }
+    });
+  
     it('allows a user to be registered', async () => {
       const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 

@@ -36,7 +36,7 @@ describe('review endpoint', function () {
       const game = await createGame();
       const rv = await addReview(admin,game);
 
-      const rsp = await axios.post(`http://localhost:4201/api/reviews/${rv.id}`,
+      const rsp = await axios.patch(`http://localhost:4201/api/reviews/${rv.id}`,
         {
           removed: true
         },
@@ -49,12 +49,12 @@ describe('review endpoint', function () {
       const game = await createGame();
       const rv = await addReview(admin,game);
 
-      let rsp = await axios.post(`http://localhost:4201/api/reviews/${rv.id}`,
+      let rsp = await axios.patch(`http://localhost:4201/api/reviews/${rv.id}`,
         { removed: true },
         {headers: {'Authorization': "Bearer " + admin.token}});
       expect(rsp).to.have.property('status').and.equal(204);
 
-      rsp = await axios.post(`http://localhost:4201/api/reviews/${rv.id}`,
+      rsp = await axios.patch(`http://localhost:4201/api/reviews/${rv.id}`,
         { removed: false },
         {headers: {'Authorization': "Bearer " + admin.token}});
       expect(rsp).to.have.property('status').and.equal(204);
@@ -65,7 +65,7 @@ describe('review endpoint', function () {
       const game = await createGame();
       const rv = await addReview(user,game);
 
-      const rsp = await axios.post(`http://localhost:4201/api/reviews/${rv.id}`,
+      const rsp = await axios.patch(`http://localhost:4201/api/reviews/${rv.id}`,
         { removed: true },
         {headers: {'Authorization': "Bearer " + user.token}});
       expect(rsp).to.have.property('status').and.equal(204);
@@ -77,7 +77,7 @@ describe('review endpoint', function () {
       const game = await createGame();
       const rv = await addReview(admin,game);
 
-      const rsp = await axios.post(`http://localhost:4201/api/reviews/${rv.id}`,
+      const rsp = await axios.patch(`http://localhost:4201/api/reviews/${rv.id}`,
         { removed: true },
         {headers: {'Authorization': "Bearer " + admin.token}});
       expect(rsp).to.have.property('status').and.equal(204);
@@ -100,7 +100,7 @@ describe('review endpoint', function () {
       const rv = await addReview(user,game);
       
       try {
-        await axios.post(`http://localhost:4201/api/reviews/${rv.id}`,
+        await axios.patch(`http://localhost:4201/api/reviews/${rv.id}`,
           { removed: true },
           {headers: {'Authorization': "Bearer " + otherUser.token}});
       } catch (err) {

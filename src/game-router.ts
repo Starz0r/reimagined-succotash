@@ -266,8 +266,39 @@ app.route('/:id').get(async (req,res,next) => {
   res.send(game); 
 });
 
+/**
+ * @swagger
+ * 
+ * /games/{id}:
+ *   delete:
+ *     summary: Remove Game (Admin only)
+ *     description: Remove Game. This is idempotent - repeated deletions of the 
+ *       same game have no effect.
+ *     tags: 
+ *       - Games
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the game to return 
+ *           (or the literal 'random' for a random game)
+ *     responses:
+ *       204:
+ *         description: Object describing the game
+ *       400:
+ *         description: Invalid game id
+ *       403:
+ *         description: Insufficient privileges (requires an admin account)
+ *       404:
+ *         description: Game not found
+ */
 app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
-  if (!req.user || !req.user.isAdmin) return res.status(403).send({error:'Unauthorized'});
+  if (!req.user || !req.user.isAdmin) return res.sendStatus(403);
 
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
 
@@ -277,7 +308,7 @@ app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
   if (!game) return res.sendStatus(404);
   game = game!;
 
-  if (game.removed) return res.send({message:'Game is already deleted'});
+  if (game.removed) return res.sendStatus(204);
 
   let gamePatch: Game = {
     id: req.params.id,

@@ -1,46 +1,34 @@
 import express from 'express';
-import AuthModule from './auth';
 import datastore from './datastore';
 import { News } from './model/News';
+import handle from './lib/express-async-catch';
 
 const app = express.Router();
 export default app;
 
-app.route('/').get(async (req,res,next) => {  
-  try {
-    const n = await datastore.getNewses({
-      page: +req.query.page || 0,
-      limit: +req.query.limit || 50
-    });
+app.route('/').get(handle(async (req,res,next) => {  
+  const n = await datastore.getNewses({
+    page: +req.query.page || 0,
+    limit: +req.query.limit || 50
+  });
 
-    return res.send(n);
-  } catch (err) {
-    next(err);
-  }
-});
+  return res.send(n);
+}));
 
-app.route('/:id').get(async (req,res,next) => {
+app.route('/:id').get(handle(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
 
-  try {
-    const n = await datastore.getNewses({id: +req.params.id, page: 0, limit: 1});
-    if (!n || n.length == 0) return res.sendStatus(404);
-    return res.send(n[0]);
-  } catch (err) {
-    next(err);
-  }
-});
+  const n = await datastore.getNewses({id: +req.params.id, page: 0, limit: 1});
+  if (!n || n.length == 0) return res.sendStatus(404);
+  return res.send(n[0]);
+}));
 
-app.route('/').post(async (req,res,next) => {
+app.route('/').post(handle(async (req,res,next) => {
   if (!req.user || !req.user.sub || !req.user.isAdmin) return res.sendStatus(403);
   const uid = req.user.sub;
 
   const article = req.body as News;
 
-  try {
-    const news = await datastore.addNews(article,uid);
-    res.send(news);
-  } catch (err) {
-    next(err);
-  }
-});
+  const news = await datastore.addNews(article,uid);
+  res.send(news);
+}));

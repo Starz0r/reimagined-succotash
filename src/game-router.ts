@@ -8,6 +8,7 @@ import whitelist from './lib/whitelist';
 
 
 import multer from 'multer';
+import handle from './lib/express-async-catch';
 const upload = multer({ dest: 'uploads/' }) //TODO
 
 const app = express.Router();
@@ -63,20 +64,16 @@ export default app;
  *       403:
  *         description: Insufficient privileges (requires an admin account)
  */
-app.route('/').post(async (req,res,next) => {
+app.route('/').post(handle(async (req,res,next) => {
   if (!req.user || !req.user.sub || !req.user.isAdmin) {
     res.status(403).send({error:'unauthorized access'});
     return;
   }
   const uid = req.user.sub;
 
-  try {
-    const game = await datastore.addGame(req.body,uid);
-    res.send(game);
-  } catch (err) {
-    next(err);
-  }
-});
+  const game = await datastore.addGame(req.body,uid);
+  res.send(game);
+}));
 
 /**
  * @swagger
@@ -177,7 +174,7 @@ app.route('/').post(async (req,res,next) => {
  *       200:
  *         description: returns a list of games matching filters
  */
-app.route('/').get(async (req,res,next) => {
+app.route('/').get(handle(async (req,res,next) => {
   var order_col = whitelist(
     req.query.order_col,
     ['sortname','date_created'],
@@ -213,13 +210,9 @@ app.route('/').get(async (req,res,next) => {
   params.difficultyFrom = req.query.difficultyFrom;
   params.difficultyTo = req.query.difficultyTo;
 
-  try {
-    const rows = await datastore.getGames(params);
-    res.send(rows);
-  } catch (err) {
-    next(err);
-  }
-});
+  const rows = await datastore.getGames(params);
+  res.send(rows);
+}));
 
 /**
  * @swagger
@@ -247,7 +240,7 @@ app.route('/').get(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id').get(async (req,res,next) => {
+app.route('/:id').get(handle(async (req,res,next) => {
   let game;
   if (req.params.id === 'random') {
     game = await datastore.getRandomGame();
@@ -264,7 +257,7 @@ app.route('/:id').get(async (req,res,next) => {
     return;
   }
   res.send(game); 
-});
+}));
 
 /**
  * @swagger
@@ -297,7 +290,7 @@ app.route('/:id').get(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
+app.route('/:id').delete(handle(async (req,res,next) => { //TODO: keep this?
   if (!req.user || !req.user.isAdmin) return res.sendStatus(403);
 
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
@@ -314,15 +307,11 @@ app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
     id: req.params.id,
     removed: true
   };
-  try {
-    const success = await datastore.updateGame(gamePatch,req.user.isAdmin);
-    if (!success) return res.sendStatus(404);
+  const success = await datastore.updateGame(gamePatch,req.user.isAdmin);
+  if (!success) return res.sendStatus(404);
 
-    res.sendStatus(204);
-  } catch (err) {
-    next(err);
-  }
-});
+  res.sendStatus(204);
+}));
 
 /**
  * @swagger
@@ -365,7 +354,7 @@ app.route('/:id').delete(async (req,res,next) => { //TODO: keep this?
  *       404:
  *         description: Game not found
  */
-app.route('/:id/reviews').get(async (req,res,next) => {
+app.route('/:id/reviews').get(handle(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     res.status(400).send({error:'id must be a number'});
     return;
@@ -379,13 +368,9 @@ app.route('/:id/reviews').get(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
-  try {
-    const rows = await datastore.getReviews({game_id:id,page:page,limit:limit});
-    res.send(rows);
-  } catch (err) {
-    next(err);
-  }
-});
+  const rows = await datastore.getReviews({game_id:id,page:page,limit:limit});
+  res.send(rows);
+}));
 
 /**
  * @swagger
@@ -435,7 +420,7 @@ app.route('/:id/reviews').get(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id/reviews').post(async (req,res,next) => {
+app.route('/:id/reviews').post(handle(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
   if (!req.user) return res.sendStatus(401);
   
@@ -444,13 +429,9 @@ app.route('/:id/reviews').post(async (req,res,next) => {
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
 
-  try {
-    const newReview = await datastore.addReview(req.body,gameId,req.user.sub);
-    res.send(newReview);
-  } catch (err) {
-    next(err);
-  }
-});
+  const newReview = await datastore.addReview(req.body,gameId,req.user.sub);
+  res.send(newReview);
+}));
 
 /**
  * @swagger
@@ -493,7 +474,7 @@ app.route('/:id/reviews').post(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id/screenshots').get(async (req,res,next) => {
+app.route('/:id/screenshots').get(handle(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     res.status(400).send({error:'id must be a number'});
     return;
@@ -510,13 +491,9 @@ app.route('/:id/screenshots').get(async (req,res,next) => {
 
   let parms: GetScreenshotParms = {gameId,page,limit};
   if (!isAdmin) parms.removed = false;
-  try {
-    const rows = await datastore.getScreenshots(parms);
-    res.send(rows);
-  } catch (err) {
-    next(err);
-  }
-});
+  const rows = await datastore.getScreenshots(parms);
+  res.send(rows);
+}));
 
 /**
  * @swagger
@@ -565,7 +542,7 @@ app.route('/:id/screenshots').get(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id/screenshots').post(upload.single('screenshot'), async (req,res,next) => {
+app.route('/:id/screenshots').post(upload.single('screenshot'), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) {
     return res.status(400).send({error:'id must be a number'});
   }
@@ -580,13 +557,9 @@ app.route('/:id/screenshots').post(upload.single('screenshot'), async (req,res,n
     description: req.body.description
   };
 
-  try {
-    const rows = await datastore.addScreenshot(ss,req.user.sub);
-    res.send(rows);
-  } catch (err) {
-    next(err);
-  }
-});
+  const rows = await datastore.addScreenshot(ss,req.user.sub);
+  res.send(rows);
+}));
 
 /**
  * @swagger
@@ -615,10 +588,9 @@ app.route('/:id/screenshots').post(upload.single('screenshot'), async (req,res,n
  *       404:
  *         description: Game not found
  */
-app.route('/:id/tags').get(async (req,res,next) => {
+app.route('/:id/tags').get(handle(async (req,res,next) => {
   if (isNaN(req.params.id)) {
-    res.status(400).send({error:'invalid game id'});
-    return;
+    return res.status(400).send({error:'invalid game id'});
   }
 
   var gameId = parseInt(req.params.id,10);
@@ -626,13 +598,9 @@ app.route('/:id/tags').get(async (req,res,next) => {
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
 
-  try {
-    const tags = datastore.getTags({gameId});
-    res.send(tags);
-  } catch (err) {
-    next(err);
-  }
-});
+  const tags = datastore.getTags({gameId});
+  res.send(tags);
+}));
 
 /**
  * @swagger
@@ -692,23 +660,19 @@ app.route('/:id/tags').get(async (req,res,next) => {
  *       403:
  *         description: Insufficient privileges (requires an admin account)
  */
-app.route('/:id').patch(async (req,res,next) => {
+app.route('/:id').patch(handle(async (req,res,next) => {
   //restrict to admins
-  if (!req.user || !req.user.isAdmin) return res.status(403).send({error:'Unauthorized'});
+  if (!req.user || !req.user.isAdmin) return res.sendStatus(403);
 
   var gid = parseInt(req.params.id, 10);
 
   let game = req.body as Game;
   game.id = gid;
 
-  try {
-    const gameFound = await datastore.updateGame(game,req.user.isAdmin);
-    if (!gameFound) return res.sendStatus(404);
+  const gameFound = await datastore.updateGame(game,req.user.isAdmin);
+  if (!gameFound) return res.sendStatus(404);
 
-    const newGame = await datastore.getGame(gid);
-    if (newGame == null) res.sendStatus(404);
-    else res.send(newGame);
-  } catch (err) {
-    next(err);
-  }
-});
+  const newGame = await datastore.getGame(gid);
+  if (newGame == null) return res.sendStatus(404);
+  else res.send(newGame);
+}));

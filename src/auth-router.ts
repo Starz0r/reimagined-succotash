@@ -4,6 +4,7 @@ import AuthModule from './auth';
 import datastore from './datastore';
 import moment = require('moment');
 import crypto from 'crypto';
+import handle from './lib/express-async-catch';
 
 const app = express.Router();
 const auth = new AuthModule();
@@ -36,7 +37,7 @@ export default app;
  *         description: username/password invalid
  * 
  */
-app.route('/login').post(async (req,res,next) => {
+app.route('/login').post(handle(async (req,res,next) => {
     const username = req.body.username;
     const password = req.body.password;
     
@@ -67,12 +68,10 @@ app.route('/login').post(async (req,res,next) => {
         user.token = auth.getToken(user.name,user.id,user.isAdmin);
         return res.send(user);
       }
-    } catch(err) {
-      next(err);
     } finally {
       database.close();
     }
-});
+}));
   
 /**
  * @swagger
@@ -97,7 +96,7 @@ app.route('/login').post(async (req,res,next) => {
  *         description: invalid username or username missing
  * 
  */
-app.route('/request-reset').post(async (req,res,next) => {
+app.route('/request-reset').post(handle(async (req,res,next) => {
   const username = req.body.username;
   if (!username) return res.sendStatus(400);
 
@@ -109,9 +108,7 @@ app.route('/request-reset').post(async (req,res,next) => {
       `UPDATE User SET reset_token = ?, reset_token_set_time = CURRENT_TIMESTAMP
       WHERE name = ? AND `,[token,username]);
     res.sendStatus(204);
-  } catch(err) {
-    next(err);
   } finally {
     database.close();
   }
-});
+}));

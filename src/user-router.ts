@@ -2,6 +2,7 @@ import express from 'express';
 import datastore from './datastore';
 import AuthModule from './auth';
 import { GetUsersParms } from './model/GetUsersParms';
+import handle from './lib/express-async-catch';
 const auth = new AuthModule();
 const app = express.Router();
 export default app;
@@ -33,18 +34,14 @@ export default app;
  *       400:
  *         description: User already exists
  */
-app.route('/').post(async (req,res,next) => {
-  try {
-    const phash = await auth.hashPassword(req.body.password);
-    const user = await datastore.addUser(req.body.username,phash,req.body.email)
-    if (!user) return res.status(400).send({error:"User Exists"});
+app.route('/').post(handle(async (req,res,next) => {
+  const phash = await auth.hashPassword(req.body.password);
+  const user = await datastore.addUser(req.body.username,phash,req.body.email)
+  if (!user) return res.status(400).send({error:"User Exists"});
 
-    user.token = auth.getToken(user.name,user.id,user.isAdmin);
-    res.send(user);
-  } catch (err) {
-    next(err);
-  }
-});
+  user.token = auth.getToken(user.name,user.id,user.isAdmin);
+  res.send(user);
+}));
 
 /**
  * @swagger
@@ -87,7 +84,7 @@ app.route('/').post(async (req,res,next) => {
  *       200:
  *         description: returns a list of games matching filters
  */
-app.route('/').get(async (req,res,next) => {
+app.route('/').get(handle(async (req,res,next) => {
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
   const params: GetUsersParms = {page,limit};
@@ -95,53 +92,40 @@ app.route('/').get(async (req,res,next) => {
   else params.banned = req.query.banned;
   if (req.query.following && req.user && req.user.sub) params.followerUserId = req.user.sub;
   //TODO: order by
-  try {
-    const users = await datastore.getUsers(params);
-    users.forEach(u => {delete u.email});
-    return res.send(users);
-  } catch (err) {
-    next(err);
-  }
-});
+  const users = await datastore.getUsers(params);
+  users.forEach(u => {delete u.email});
+  return res.send(users);
+}));
 
-app.route('/:uid/lists').get(async (req,res,next) => {
+app.route('/:uid/lists').get(handle(async (req,res,next) => {
   var userId = parseInt(req.params.uid, 10);
   
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
 
-  try {
-    const lists = await datastore.getLists({userId,page,limit});
-    res.send(lists);
-  } catch (err) {
-    next(err);
-  }
-});
+  const lists = await datastore.getLists({userId,page,limit});
+  res.send(lists);
+}));
 
-app.route('/:id/reviews').get((req,res,next) => {
+app.route('/:id/reviews').get(handle(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
-  datastore.getReviews({user_id:id,page:page,limit:limit})
-  .then(rows => res.send(rows))
-  .catch(err => next(err));
-});
+  const rows = await datastore.getReviews({user_id:id,page:page,limit:limit});
+  res.send(rows);
+}));
 
-app.route('/:id').get(async (req,res,next) => {
+app.route('/:id').get(handle(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
   const params: GetUsersParms = {id,page:0,limit:1};
   if (!req.user || !req.user.isAdmin) params.banned = false;
 
-  try {
-    const users = await datastore.getUsers(params);
-    if (users == null || users.length == 0) res.sendStatus(404);
-    const user = users[0];
-    if (!req.user || req.user.sub != id) delete user.email;
-    res.send(user);
-  } catch (err) {
-    next(err);
-  }
-});
+  const users = await datastore.getUsers(params);
+  if (users == null || users.length == 0) res.sendStatus(404);
+  const user = users[0];
+  if (!req.user || req.user.sub != id) delete user.email;
+  res.send(user);
+}));
 
 /**
  * @swagger
@@ -174,7 +158,7 @@ app.route('/:id').get(async (req,res,next) => {
  *       404:
  *         description: User not found
  */
-app.route('/:id').patch(async (req,res,next) => {
+app.route('/:id').patch(handle(async (req,res,next) => {
   if (isNaN(req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   var uid = parseInt(req.params.id, 10);
@@ -182,8 +166,7 @@ app.route('/:id').patch(async (req,res,next) => {
   const isAdmin = false;
   //if not admin (and if not, uid is not uid in token)
   if (!isAdmin && (!req.user || req.user.sub == null || req.user.sub != uid)) {
-    res.status(403).send({error:'unauthorized access to this user'});
-    return;
+    return res.status(403).send({error:'unauthorized access to this user'});
   }
 
   let user = req.body;
@@ -194,27 +177,21 @@ app.route('/:id').patch(async (req,res,next) => {
     const targetUser = await datastore.getUserForLogin({id:uid});
     const pwVerified = await auth.verifyPassword(targetUser.phash2,req.body.currentPassword);
     if (!pwVerified) {
-      res.status(401).send({error:'invalid password'});
-      return;
+      return res.sendStatus(401);
     }
     const newPassHash = await auth.hashPassword(req.body.password);
     user.phash2 = newPassHash;
   }
 
-  try {
-    const success = await datastore.updateUser(user,isAdmin);
-    if (!success) {
-      res.sendStatus(404);
-      return;
-    }
-
-    const newUser = await datastore.getUser(uid);
-    if (newUser == null) res.sendStatus(404);
-    else res.send(newUser);
-  } catch (err) {
-    next(err);
+  const success = await datastore.updateUser(user,isAdmin);
+  if (!success) {
+    return res.sendStatus(404);
   }
-});
+
+  const newUser = await datastore.getUser(uid);
+  if (newUser == null) return res.sendStatus(404);
+  else res.send(newUser);
+}));
 
 /**
  * @swagger
@@ -251,7 +228,7 @@ app.route('/:id').patch(async (req,res,next) => {
  *       404:
  *         description: User not found
  */
-app.route('/:followerId/follows/:id').put(async (req,res,next) => {
+app.route('/:followerId/follows/:id').put(handle(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
 
   if (isNaN(req.params.id)) 
@@ -266,13 +243,9 @@ app.route('/:followerId/follows/:id').put(async (req,res,next) => {
   const targetUser = await datastore.getUser(uid);
   if (!targetUser) return res.sendStatus(404);
 
-  try {
-    await datastore.addFollowToUser(uid,req.user.sub);
-    return res.sendStatus(204);
-  } catch (err) {
-    next(err);
-  }
-});
+  await datastore.addFollowToUser(uid,req.user.sub);
+  return res.sendStatus(204);
+}));
 
 /**
  * @swagger
@@ -309,7 +282,7 @@ app.route('/:followerId/follows/:id').put(async (req,res,next) => {
  *       404:
  *         description: User not found
  */
-app.route('/:followerId/follows/:id').delete(async (req,res,next) => {
+app.route('/:followerId/follows/:id').delete(handle(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
   
   if (isNaN(req.params.id)) 
@@ -324,10 +297,6 @@ app.route('/:followerId/follows/:id').delete(async (req,res,next) => {
   const targetUser = await datastore.getUser(uid);
   if (!targetUser) return res.sendStatus(404);
 
-  try {
-    await datastore.removeFollowFromUser(uid,req.user.sub);
-    return res.sendStatus(204);
-  } catch (err) {
-    next(err);
-  }
-});
+  await datastore.removeFollowFromUser(uid,req.user.sub);
+  return res.sendStatus(204);
+}));

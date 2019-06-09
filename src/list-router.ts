@@ -1,21 +1,18 @@
 import express from 'express';
 import datastore from './datastore';
+import handle from './lib/express-async-catch';
 
 const app = express.Router();
 export default app;
 
-app.route('/').post(async (req, res, next) => {
+app.route('/').post(handle(async (req, res, next) => {
   if (!req.user) return res.sendStatus(401);
 
-  try {
-    const list = await datastore.addList(req.body, req.user.sub);
-    res.send(list);
-  } catch (err) {
-    next(err);
-  }
-});
+  const list = await datastore.addList(req.body, req.user.sub);
+  res.send(list);
+}));
 
-app.route('/:listId/games').put(async (req, res, next) => {
+app.route('/:listId/games').put(handle(async (req, res, next) => {
   const gid = req.body.gameId;
   const lid = parseInt(req.params.listId, 10);
 
@@ -31,4 +28,4 @@ app.route('/:listId/games').put(async (req, res, next) => {
 
   await datastore.addGameToList(lid,gid);
   return res.sendStatus(204);
-});
+}));

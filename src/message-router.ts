@@ -4,11 +4,12 @@ import InsertList from './lib/insert-list';
 import WhereList from './lib/where-list';
 import { Message } from './model/Message';
 import { MessageQueryParams } from './model/MessageQueryParams';
+import handle from './lib/express-async-catch';
 
 const app = express.Router();
 export default app;
 
-app.route('/inbox').get(async (req,res,next) => {
+app.route('/inbox').get(handle(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
     
   let parms = {} as MessageQueryParams;
@@ -24,14 +25,12 @@ app.route('/inbox').get(async (req,res,next) => {
       FROM Message 
       ${whereList.getClause()}`,whereList.getParams());
     return res.send(messages);
-  } catch (err) {
-    next(err);
   } finally {
     database.close();
   }
-});
+}));
 
-app.route('/thread/:id').get(async (req,res,next) => {
+app.route('/thread/:id').get(handle(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
     
   let parms = {} as MessageQueryParams;
@@ -49,14 +48,12 @@ app.route('/thread/:id').get(async (req,res,next) => {
       FROM Message 
       ${whereList.getClause()}`,whereList.getParams());
     return res.send(messages);
-  } catch (err) {
-    next(err);
   } finally {
     database.close();
   }
-});
+}));
   
-app.route('/').post(async (req,res,next) => {
+app.route('/').post(handle(async (req,res,next) => {
   if (!req.user || !req.user.sub) return res.sendStatus(401);
 
   const msg = req.body as Message;
@@ -88,9 +85,7 @@ app.route('/').post(async (req,res,next) => {
     }
 
     return res.sendStatus(204);
-  } catch (err) {
-    next(err);
   } finally {
     database.close();
   }
-});
+}));

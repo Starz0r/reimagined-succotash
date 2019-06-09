@@ -50,6 +50,14 @@ app.use((req,res,next) => {
 });
 
 const e: ErrorRequestHandler = (err,req,res,next) => {
+  if (err && err.name && err.name === 'UnauthorizedError') {
+    //invalid token, jwt middleware returns more info in the err
+    //but we don't want the client to see
+    // message: 'jwt malformed',
+    // code: 'invalid_token',
+    return res.sendStatus(401);
+  }
+
   const id = uuid();
   console.log(`severe error: id ${id}`);
   console.log(err);

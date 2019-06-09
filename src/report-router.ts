@@ -1,11 +1,8 @@
 import express from 'express';
-import AuthModule from './auth';
 import datastore from './datastore';
-import { News } from './model/News';
 import { Report } from './model/Report';
 
 const app = express.Router();
-const auth = new AuthModule();
 export default app;
 
 app.route('/').get(async (req,res,next) => {  

@@ -1,4 +1,4 @@
-import express, { RequestHandler, ErrorRequestHandler } from 'express';
+import express, { ErrorRequestHandler } from 'express';
 import bodyParser from 'body-parser';
 import uuid from 'uuid/v4';
 

@@ -86,6 +86,19 @@ const options = {
       description: 'The API you should use instead of throwing your monitor out the window',
     },
     basePath: '/api',
+    components: {
+      securitySchemes: {
+        bearerAuth: {       
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',  
+        }
+      }
+    },
+    openapi: "3.0.0",
+    security: [{
+      bearerAuth: []
+    }]
   },
   apis: [__dirname+'/*.ts'],
 };

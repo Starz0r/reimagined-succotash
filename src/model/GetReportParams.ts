@@ -6,5 +6,6 @@ export interface GetReportParams {
 
   id?: number;
 
+  type?: string;
   answered?: boolean;
 }

@@ -169,6 +169,8 @@ export default {
       else whereList.addDirect("r.answered_By_id IS NULL");
     }
 
+    whereList.add("r.type",params.type);
+
     const orderCol = whitelist(params.orderCol,['id','date_created'],'id');
     const orderDir = whitelist(params.orderDir,['ASC','DESC'],'DESC');
 

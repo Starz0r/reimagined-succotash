@@ -6,10 +6,46 @@ import handle from './lib/express-async-catch';
 const app = express.Router();
 export default app;
 
+/**
+ * @swagger
+ * 
+ * /games:
+ *   get:
+ *     summary: Game List
+ *     description: Game List
+ *     tags: 
+ *       - Games
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *         description: The type of reports to return
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *         description: The page of results to return (default 0)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: The number of results per page (default 50, maximum 50)
+ *     responses:
+ *       200:
+ *         description: returns a list of games matching filters
+ */
 app.route('/').get(handle(async (req,res,next) => {  
   if (!req.user || !req.user.sub || !req.user.isAdmin) return res.sendStatus(403);
 
   const n = await datastore.getReports({
+    type: req.query.type,
+    answered: req.query.answered,
     page: +req.query.page || 0,
     limit: +req.query.limit || 50
   });

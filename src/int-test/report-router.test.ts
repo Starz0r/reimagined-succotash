@@ -52,7 +52,7 @@ describe('report endpoint', function () {
       await axios.get('http://localhost:4201/api/reports');
     } catch (err) {
       expect(err).to.have.property('response');
-      expect(err.response).to.have.property('status').and.equal(403);
+      expect(err.response).to.have.property('status').and.equal(401);
       return;
     }
     fail('get should have failed')

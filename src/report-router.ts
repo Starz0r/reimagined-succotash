@@ -2,6 +2,7 @@ import express from 'express';
 import datastore from './datastore';
 import { Report } from './model/Report';
 import handle from './lib/express-async-catch';
+import { adminCheck, userCheck } from './lib/auth-check';
 
 const app = express.Router();
 export default app;
@@ -44,12 +45,12 @@ export default app;
  *     responses:
  *       200:
  *         description: returns a list of games matching filters
+ *       401:
+ *         description: unauthenticated (must log in to view reports)
  *       403:
  *         description: insufficient permissions (must be admin to view reports)
  */
-app.route('/').get(handle(async (req,res,next) => {  
-  if (!req.user || !req.user.sub || !req.user.isAdmin) return res.sendStatus(403);
-
+app.route('/').get(adminCheck(), handle(async (req,res,next) => {  
   const n = await datastore.getReports({
     type: req.query.type,
     answered: req.query.answered,
@@ -83,13 +84,14 @@ app.route('/').get(handle(async (req,res,next) => {
  *         description: return the matching report
  *       400:
  *         description: invalid report id
+ *       401:
+ *         description: unauthenticated (must log in to view reports)
  *       403:
  *         description: insufficient permissions (must be admin to view reports)
  *       404:
  *         description: report not found
  */
-app.route('/:id').get(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub || !req.user.isAdmin) return res.sendStatus(403);
+app.route('/:id').get(adminCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   const report = await datastore.getReport(+req.params.id);
@@ -135,13 +137,14 @@ app.route('/:id').get(handle(async (req,res,next) => {
  *         description: return the updated report
  *       400:
  *         description: invalid report id
+ *       401:
+ *         description: unauthenticated (must log in to view reports)
  *       403:
  *         description: insufficient permissions (must be admin to view reports)
  *       404:
  *         description: report not found
  */
-app.route('/:id').patch(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub || !req.user.isAdmin) return res.sendStatus(403);
+app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
   if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   const rid = +req.params.id;
@@ -194,15 +197,10 @@ app.route('/:id').patch(handle(async (req,res,next) => {
  *     responses:
  *       200:
  *         description: return the updated report
- *       400:
- *         description: invalid report id, or invalid target id (based on the type)
  *       401:
  *         description: unauthenticated (must log in to submit a report)
- *       404:
- *         description: report not found
  */
-app.route('/').post(handle(async (req,res,next) => {
-  if (!req.user || !req.user.sub) return res.sendStatus(401);
+app.route('/').post(userCheck(), handle(async (req,res,next) => {
   const uid = req.user.sub;
 
   const report = req.body as Report;

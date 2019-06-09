@@ -6,15 +6,19 @@ import { Report } from '../model/Report';
 
 var expect = chai.expect;
 
-async function createReport(): Promise<Report> {
+async function createReport(parameters?: any): Promise<Report> {
   const user = await createUser(false);
   const game = await createGame();
-    
-  const rsp = await axios.post('http://localhost:4201/api/reports', {
+
+  if (parameters == undefined) {
+    parameters = {
       report:"game sux",
       type:"game",
       targetId:game.id
-    },
+    };
+  }
+  
+  const rsp = await axios.post('http://localhost:4201/api/reports', parameters,
     {headers: {'Authorization': "Bearer " + user.token}});
   expect(rsp).to.have.property('status').and.equal(200);
   expect(rsp).to.have.property('data');
@@ -75,6 +79,34 @@ describe('report endpoint', function () {
     {headers: {'Authorization': "Bearer " + admin.token}});
     expect(rsp).to.have.property('status').and.equal(200);
     expect(rsp).to.have.property('data').and.be.an('array');
+  });
+  
+  it('allows admins to filter reports by type', async() => {
+    const admin = await createUser(true);
+    const report = await createReport({
+      report:"admin sux",
+      type:"user",
+      targetId:admin.id
+    });
+    
+    let rsp = await axios.get('http://localhost:4201/api/reports', {
+      params: {type: 'user', id: report.id},
+      headers: {'Authorization': "Bearer " + admin.token}
+    });
+    expect(rsp).to.have.property('status').and.equal(200);
+    expect(rsp).to.have.property('data').and.be.an('array');
+    const matchedReports = rsp.data as Report[];
+    
+    rsp = await axios.get('http://localhost:4201/api/reports', {
+      params: {type: 'game', id: report.id},
+      headers: {'Authorization': "Bearer " + admin.token}
+    });
+    expect(rsp).to.have.property('status').and.equal(200);
+    expect(rsp).to.have.property('data').and.be.an('array');
+    const unmatchedReports = rsp.data as Report[];
+
+    return expect(matchedReports  .find(o => o.id == report.id)).to.not.be.undefined 
+        && expect(unmatchedReports.find(o => o.id == report.id)).to    .be.undefined;
   });
 
   it('returns a report by id for admins', async() => {

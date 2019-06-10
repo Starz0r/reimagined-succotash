@@ -11,6 +11,19 @@ app.route('/').post(userCheck(), handle(async (req, res, next) => {
   res.send(list);
 }));
 
+//update list
+app.route('/:listId').patch(handle(async (req, res, next) => {
+}));
+
+//get list
+app.route('/:listId').get(handle(async (req, res, next) => {
+}));
+
+//get list games
+app.route('/:listId/games').get(handle(async (req, res, next) => {
+}));
+
+//replace games in list
 app.route('/:listId/games').put(userCheck(), handle(async (req, res, next) => {
   const gid = req.body.gameId;
   const lid = parseInt(req.params.listId, 10);
@@ -25,4 +38,9 @@ app.route('/:listId/games').put(userCheck(), handle(async (req, res, next) => {
 
   await datastore.addGameToList(lid,gid);
   return res.sendStatus(204);
+}));
+
+//delete list
+app.route('/:listId').delete(userCheck(), handle(async (req, res, next) => {
+  //don't allow deleting lists 1,2 - favorites and clears
 }));

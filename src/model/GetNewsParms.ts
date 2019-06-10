@@ -5,4 +5,5 @@ export interface GetNewsParms {
   orderDir?: "ASC" | "DESC";
 
   id?: number;
+  removed?: boolean;
 }

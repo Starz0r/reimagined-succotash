@@ -46,7 +46,24 @@ describe('news endpoint', function () {
   });
 
   it('allows admins to edit news');
-  it('allows admins to remove news');
+
+  it('allows admins to remove news', async() => {
+    const news = await createNews();
+    const admin = await createUser(true);
+    
+    const rsp = await axios.delete(`http://localhost:4201/api/news/${news.id}`,
+    {headers: {'Authorization': "Bearer " + admin.token}});
+    expect(rsp).to.have.property('status').and.equal(204);
+
+    try {
+      await axios.get(`http://localhost:4201/api/news/${news.id}`);
+    } catch (err) {
+      expect(err).to.have.property('response');
+      expect(err.response).to.have.property('status').and.equal(404);
+      return;
+    }
+    fail('get should have failed')
+  });
 
   it('prevents anons from adding news', async() => {
     try {

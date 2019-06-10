@@ -5,4 +5,5 @@ export interface News {
   short?: string;
   news?: string;
   dateCreated?: string;
+  removed?: boolean;
 }

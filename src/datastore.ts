@@ -252,6 +252,9 @@ export default {
     updateList.add('title',article.title);
     updateList.add('short',article.short);
     updateList.add('news',article.news);
+    if (article.removed!==undefined) {
+      updateList.add('removed',article.removed?1:0);
+    }
 
     if (!updateList.hasAny()) return true;
   
@@ -271,6 +274,9 @@ export default {
 
     const whereList = new WhereList();
     whereList.add("n.id", params.id);
+    if (params.removed !== undefined) {
+      whereList.add("n.removed", params.removed?1:0);
+    }
 
     const orderCol = whitelist(params.orderCol,['id','date_created'],'id');
     const orderDir = whitelist(params.orderDir,['ASC','DESC'],'DESC');

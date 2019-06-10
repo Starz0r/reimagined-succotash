@@ -303,6 +303,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         short text CHARACTER SET utf8 NOT NULL,
         news text CHARACTER SET utf8 NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        removed tinyint(1) NOT NULL DEFAULT 0,
         PRIMARY KEY (id)
       ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
       `,[],(err,rows)=>{

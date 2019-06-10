@@ -24,6 +24,20 @@ app.route('/:id').get(handle(async (req,res,next) => {
   return res.send(n[0]);
 }));
 
+app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
+  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+
+  const oldNews = await datastore.getNewses({id: +req.params.id, page: 0, limit: 1});
+  if (!oldNews || oldNews.length == 0) return res.sendStatus(404);
+
+  const news = req.body as News;
+  news.id = +req.params.id;
+
+  const success = await datastore.updateNews(news);
+  if (!success) return res.sendStatus(404);
+  return res.sendStatus(204);
+}));
+
 app.route('/').post(adminCheck(), handle(async (req,res,next) => {
   const uid = req.user.sub;
 

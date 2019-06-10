@@ -244,6 +244,28 @@ export default {
     }
   },
 
+  async updateNews(article: News): Promise<boolean> {
+    const database = new Database();
+  
+    const updateList = new UpdateList();
+  
+    updateList.add('title',article.title);
+    updateList.add('short',article.short);
+    updateList.add('news',article.news);
+
+    if (!updateList.hasAny()) return true;
+  
+    try {
+      let params = updateList.getParams();
+      params.push(article.id);
+      const rows = await database.execute(
+        ` UPDATE News ${updateList.getSetClause()} WHERE id = ?`,params);
+      return (rows.affectedRows == 1);
+    } finally {
+      database.close();
+    }
+  },
+
   async getNewses(params: GetNewsParms): Promise<News[]> {
     const database = new Database();
 

@@ -185,6 +185,24 @@ app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
  *             properties:
  *               type: 
  *                 type: string
+ *                 enum:
+ *                   - screenshot_add
+ *                   - screenshot_approve
+ *                   - review_remove
+ *                   - screenshot_deny
+ *                   - review
+ *                   - game
+ *                   - game_add
+ *                   - game_remove
+ *                   - screenshot_remove
+ *                   - user_register
+ *                   - user
+ *                   - user_password_change
+ *                   - game_update_url
+ *                   - review_restore
+ *                   - screenshot
+ *                   - game_update_owner
+ *                   - game_update_creator
  *                 description: The report type
  *               targetId: 
  *                 type: integer
@@ -197,6 +215,8 @@ app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
  *     responses:
  *       200:
  *         description: return the updated report
+ *       400:
+ *         description: invalid type for role
  *       401:
  *         description: unauthenticated (must log in to submit a report)
  */

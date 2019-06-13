@@ -502,6 +502,7 @@ app.route('/:id/screenshots').get(handle(async (req,res,next) => {
  *     description: Add Screenshot for Game (User/Admin Only)
  *     tags: 
  *       - Games
+ *       - Screenshots
  *     produces:
  *       - application/json
  *     parameters:

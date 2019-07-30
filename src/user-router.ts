@@ -14,7 +14,7 @@ export default app;
  * /users:
  *   post:
  *     summary: Register new user
- *     description: URegisters a new user
+ *     description: Registers a new user
  *     tags: 
  *       - Users
  *     parameters:

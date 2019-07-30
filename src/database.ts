@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
 
   email varchar(100) CHARACTER SET latin1 DEFAULT NULL,
   date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  date_last_login timestamp DEFAULT NULL,
+  date_last_login timestamp NULL DEFAULT NULL,
 
   last_ip varchar(40) CHARACTER SET latin1 DEFAULT NULL,
   unsuccessful_logins int(11) NOT NULL DEFAULT '0',

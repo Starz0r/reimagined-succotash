@@ -21,14 +21,18 @@ export default app;
  *       - name: username
  *         in: formData
  *         required: true
- *         type: string
+ *         schema:
+ *           type: string
  *       - name: password
  *         in: formData
  *         required: true
- *         type: string
+ *         schema:
+ *           type: string
  *       - name: email
  *         in: formData
- *         type: string
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: The newly created user, with a token to use for authentication

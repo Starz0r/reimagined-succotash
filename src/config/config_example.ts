@@ -1,4 +1,4 @@
-module.exports = {
+export = {
   db_host: "localhost",
   db_database: "delfruit",
   db_user: "root",

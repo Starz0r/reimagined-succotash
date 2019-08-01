@@ -14,21 +14,25 @@ export default app;
  * /users:
  *   post:
  *     summary: Register new user
- *     description: URegisters a new user
+ *     description: Registers a new user
  *     tags: 
  *       - Users
  *     parameters:
  *       - name: username
- *         in: formData
+ *         in: query
  *         required: true
- *         type: string
+ *         schema:
+ *           type: string
  *       - name: password
- *         in: formData
+ *         in: query
  *         required: true
- *         type: string
+ *         schema:
+ *           type: string
  *       - name: email
- *         in: formData
- *         type: string
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: The newly created user, with a token to use for authentication

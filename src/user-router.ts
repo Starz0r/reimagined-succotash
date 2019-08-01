@@ -19,17 +19,17 @@ export default app;
  *       - Users
  *     parameters:
  *       - name: username
- *         in: formData
+ *         in: query
  *         required: true
  *         schema:
  *           type: string
  *       - name: password
- *         in: formData
+ *         in: query
  *         required: true
  *         schema:
  *           type: string
  *       - name: email
- *         in: formData
+ *         in: query
  *         required: true
  *         schema:
  *           type: string

@@ -36,6 +36,10 @@ export default app;
  *         description: User already exists
  */
 app.route('/').post(handle(async (req,res,next) => {
+  if (!req.is('application/json')) return res.status(400).send('Invalid request: expected a JSON body of the format {"username":"example","password":"example","email":"example@example.com"}');
+  if (!req.body.username) return res.status(400).send("invalid request: missing 'username' in request body");
+  if (!req.body.password) return res.status(400).send("invalid request: missing 'password' in request body");
+
   const phash = await auth.hashPassword(req.body.password);
   const user = await datastore.addUser(req.body.username,phash,req.body.email)
   if (!user) return res.status(400).send({error:"User Exists"});

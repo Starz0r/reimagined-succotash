@@ -18,10 +18,28 @@ import news_router from './news-router';
 import report_router from './report-router';
 
 import { Database } from './database';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
+
+/** Exit codes for fatal errors. */
+enum ExitCode {
+  /** Database initialization failed. */
+  DB_INIT_FAIL = 1
+}
+
+//self executing async function that allows the initialization to halt if a 
+//fatal error occurs in an asynchronous function (like database init)
+(async () => { 
 
 console.log('Welcome to delfruit server 2.0!');
 
-Database.init();
+try {
+  await Database.init();
+} catch (e) {
+  console.error("Database initialization failed!");
+  console.error(e);
+  process.exit(ExitCode.DB_INIT_FAIL);
+}
 
 console.log('Initializing express...');
 
@@ -83,7 +101,6 @@ app.use('/api/reports',report_router);
 
 console.log('Initializing swagger...');
 
-import swaggerJsdoc from 'swagger-jsdoc';
 
 const options = {
   swaggerDefinition: {
@@ -93,7 +110,6 @@ const options = {
       version: '2.0.0',
       description: 'The API you should use instead of throwing your monitor out the window',
     },
-    basePath: '/api',
     components: {
       securitySchemes: {
         bearerAuth: {       
@@ -106,13 +122,15 @@ const options = {
     openapi: "3.0.0",
     security: [{
       bearerAuth: []
-    }]
+    }],
+    basePath: '/api',
+    scheme: "http",
+    host: "localhost:4201",
   },
   apis: [__dirname+'/*.ts'],
 };
 
 const specs = swaggerJsdoc(options);
-import swaggerUi from 'swagger-ui-express';
 app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(specs));
 
 console.log('Starting app...');
@@ -120,3 +138,5 @@ console.log('Starting app...');
 app.listen(config.app_port,  () => {
   console.log(`Server started at localhost:${config.app_port}!`);
 });
+
+})();

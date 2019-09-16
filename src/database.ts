@@ -54,6 +54,8 @@ export class Database {
       await this.createDatabase(connection);
       await this.createUserTable(connection);
       await this.createGameTable(connection);
+      await this.createGameTagTable(connection);
+      await this.createTagTable(connection);
       await this.createRatingTable(connection);
       await this.createMessageTable(connection);
       await this.createLikeReviewTable(connection);
@@ -157,6 +159,41 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         KEY date_created (date_created)
       ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
       
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createGameTagTable(connection: mysql.Connection) {
+    console.log('Creating game tag table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.GameTag (
+        game_id int(11) NOT NULL,
+        tag_id int(11) NOT NULL,
+        user_id int(11) NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (game_id,tag_id,user_id)
+      ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createTagTable(connection: mysql.Connection) {
+    console.log('Creating game tag table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.Tag (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        name varchar(30) CHARACTER SET utf8 NOT NULL,
+        PRIMARY KEY (id),
+        KEY name (name)
+      ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();

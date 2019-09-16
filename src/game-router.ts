@@ -595,7 +595,7 @@ app.route('/:id/tags').get(handle(async (req,res,next) => {
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
 
-  const tags = datastore.getTags({gameId});
+  const tags = await datastore.getTags({gameId});
   res.send(tags);
 }));
 

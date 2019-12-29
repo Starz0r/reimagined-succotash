@@ -18,7 +18,7 @@ app.route('/').get(handle(async (req,res,next) => {
 }));
 
 app.route('/:id').get(handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   const n = await datastore.getNewses({id: +req.params.id, page: 0, limit: 1, removed: false});
   if (!n || n.length == 0) return res.sendStatus(404);
@@ -26,7 +26,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
 }));
 
 app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   const oldNews = await datastore.getNewses({id: +req.params.id, page: 0, limit: 1, removed: false});
   if (!oldNews || oldNews.length == 0) return res.sendStatus(404);
@@ -42,7 +42,7 @@ app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
 }));
 
 app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   const oldNews = await datastore.getNewses({id: +req.params.id, page: 0, limit: 1, removed: false});
   if (!oldNews || oldNews.length == 0) return res.sendStatus(404);

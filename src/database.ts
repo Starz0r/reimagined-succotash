@@ -185,7 +185,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
   }
 
   static createTagTable(connection: mysql.Connection) {
-    console.log('Creating game tag table...')
+    console.log('Creating tag table...')
     return new Promise((resolve,reject) => {
       connection.query(`
       CREATE TABLE IF NOT EXISTS delfruit.Tag (

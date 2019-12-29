@@ -54,7 +54,7 @@ app.route('/').get(adminCheck(), handle(async (req,res,next) => {
   const n = await datastore.getReports({
     type: req.query.type,
     answered: req.query.answered,
-    id: req.params.id,
+    id: +req.params.id,
     page: +req.query.page || 0,
     limit: +req.query.limit || 50
   });
@@ -92,7 +92,7 @@ app.route('/').get(adminCheck(), handle(async (req,res,next) => {
  *         description: report not found
  */
 app.route('/:id').get(adminCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   const report = await datastore.getReport(+req.params.id);
   if (!report) return res.sendStatus(404);
@@ -145,7 +145,7 @@ app.route('/:id').get(adminCheck(), handle(async (req,res,next) => {
  *         description: report not found
  */
 app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   const rid = +req.params.id;
 

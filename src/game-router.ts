@@ -245,7 +245,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
   let game;
   if (req.params.id === 'random') {
     game = await datastore.getRandomGame();
-  } else if (!isNaN(req.params.id)) {
+  } else if (!isNaN(+req.params.id)) {
     var id = parseInt(req.params.id, 10);
     game = await datastore.getGame(id);
   } else {
@@ -292,7 +292,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
  *         description: Game not found
  */
 app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   var id = parseInt(req.params.id, 10);
   let game = await datastore.getGame(id);
@@ -303,7 +303,7 @@ app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
   if (game.removed) return res.sendStatus(204);
 
   let gamePatch: Game = {
-    id: req.params.id,
+    id: +req.params.id,
     removed: true
   };
   const success = await datastore.updateGame(gamePatch,req.user.isAdmin);
@@ -354,7 +354,7 @@ app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
  *         description: Game not found
  */
 app.route('/:id/reviews').get(handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) {
+  if (isNaN(+req.params.id)) {
     res.status(400).send({error:'id must be a number'});
     return;
   }
@@ -420,7 +420,7 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
  *         description: Game not found
  */
 app.route('/:id/reviews').post(userCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
   
   var gameId = parseInt(req.params.id,10);
 
@@ -473,7 +473,7 @@ app.route('/:id/reviews').post(userCheck(), handle(async (req,res,next) => {
  *         description: Game not found
  */
 app.route('/:id/screenshots').get(handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) {
+  if (isNaN(+req.params.id)) {
     res.status(400).send({error:'id must be a number'});
     return;
   }
@@ -542,7 +542,7 @@ app.route('/:id/screenshots').get(handle(async (req,res,next) => {
  *         description: Game not found
  */
 app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) {
+  if (isNaN(+req.params.id)) {
     return res.status(400).send({error:'id must be a number'});
   }
   const gameId = parseInt(req.params.id,10);
@@ -550,7 +550,7 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
   const ss: Screenshot = {
-    gameId: req.params.id,
+    gameId: +req.params.id,
     description: req.body.description
   };
 
@@ -586,7 +586,7 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
  *         description: Game not found
  */
 app.route('/:id/tags').get(handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) {
+  if (isNaN(+req.params.id)) {
     return res.status(400).send({error:'invalid game id'});
   }
 
@@ -658,7 +658,7 @@ app.route('/:id/tags').get(handle(async (req,res,next) => {
  *         description: Insufficient privileges (requires an admin account)
  */
 app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) {
+  if (isNaN(+req.params.id)) {
     return res.status(400).send({error:'invalid game id'});
   }
   var gid = parseInt(req.params.id, 10);

@@ -34,7 +34,7 @@ export default app;
  *         description: Review not found
  */
 app.route('/:id').get(handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
 
   var id = parseInt(req.params.id, 10);
   const review = await datastore.getReview(id);
@@ -129,10 +129,10 @@ app.route('/').get(handle(async (req,res,next) => {
 app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
   const isAdmin = req.user.isAdmin;
 
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
   const rid = req.params.id;
 
-  const ogReview = await datastore.getReview(rid);
+  const ogReview = await datastore.getReview(+rid);
   if (ogReview === null) return res.sendStatus(404);
 
   const isReviewer = ogReview.userId == req.user.sub;
@@ -189,20 +189,20 @@ app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
  *         description: Review not found
  */
 app.route('/:id/likes/:userId').put(userCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) 
+  if (isNaN(+req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const rid = req.params.id;
 
-  if (isNaN(req.params.userId)) 
+  if (isNaN(+req.params.userId)) 
     return res.status(400).send({error:'userId must be a number'});
   const uid = parseInt(req.params.userId, 10);
   
   if (req.user.sub != uid) return res.sendStatus(403);
 
-  const ogReview = await datastore.getReview(rid);
+  const ogReview = await datastore.getReview(+rid);
   if (ogReview === null) return res.sendStatus(404);
 
-  await datastore.addLikeToReview(rid,uid);
+  await datastore.addLikeToReview(+rid,uid);
   return res.sendStatus(204);
 }));
 
@@ -245,19 +245,19 @@ app.route('/:id/likes/:userId').put(userCheck(), handle(async (req,res,next) => 
  *         description: Review not found
  */
 app.route('/:id/likes/:userId').delete(userCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) 
+  if (isNaN(+req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const rid = req.params.id;
 
-  if (isNaN(req.params.userId)) 
+  if (isNaN(+req.params.userId)) 
     return res.status(400).send({error:'userId must be a number'});
   const uid = parseInt(req.params.userId, 10);
   
   if (req.user.sub != uid) return res.sendStatus(403);
 
-  const ogReview = await datastore.getReview(rid);
+  const ogReview = await datastore.getReview(+rid);
   if (ogReview === null) return res.sendStatus(404);
 
-  await datastore.removeLikeFromReview(rid,uid);
+  await datastore.removeLikeFromReview(+rid,uid);
   return res.sendStatus(204);
 }));

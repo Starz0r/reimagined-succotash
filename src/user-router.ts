@@ -17,27 +17,25 @@ export default app;
  *     description: Registers a new user
  *     tags: 
  *       - Users
- *     parameters:
- *       - name: username
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *       - name: password
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *       - name: email
- *         in: query
- *         required: true
- *         schema:
- *           type: string
+ *     requestBody:
+ *       description: The user to create
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username: 
+ *                 type: string
+ *               password: 
+ *                 type: string
+ *               email: 
+ *                 type: string
  *     responses:
  *       200:
  *         description: The newly created user, with a token to use for authentication
  *       400:
- *         description: User already exists
+ *         description: Malformed request, or user already exists
  */
 app.route('/').post(handle(async (req,res,next) => {
   if (!req.is('application/json')) return res.status(400).send('Invalid request: expected a JSON body of the format {"username":"example","password":"example","email":"example@example.com"}');
@@ -168,7 +166,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
  *         description: User not found
  */
 app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) 
+  if (isNaN(+req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   var uid = parseInt(req.params.id, 10);
   
@@ -238,19 +236,19 @@ app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
  *         description: User not found
  */
 app.route('/:followerId/follows/:id').put(userCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) 
+  if (isNaN(+req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const uid = req.params.id;
-  if (isNaN(req.params.followerId)) 
+  if (isNaN(+req.params.followerId)) 
     return res.status(400).send({error:'followerId must be a number'});
   const followerId = req.params.followerId;
   
   if (req.user.sub != followerId) return res.sendStatus(403);
 
-  const targetUser = await datastore.getUser(uid);
+  const targetUser = await datastore.getUser(+uid);
   if (!targetUser) return res.sendStatus(404);
 
-  await datastore.addFollowToUser(uid,req.user.sub);
+  await datastore.addFollowToUser(+uid,req.user.sub);
   return res.sendStatus(204);
 }));
 
@@ -290,18 +288,18 @@ app.route('/:followerId/follows/:id').put(userCheck(), handle(async (req,res,nex
  *         description: User not found
  */
 app.route('/:followerId/follows/:id').delete(userCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) 
+  if (isNaN(+req.params.id)) 
     return res.status(400).send({error:'id must be a number'});
   const uid = req.params.id;
-  if (isNaN(req.params.followerId)) 
+  if (isNaN(+req.params.followerId)) 
     return res.status(400).send({error:'followerId must be a number'});
   const followerId = req.params.followerId;
   
   if (req.user.sub != followerId) return res.sendStatus(403);
 
-  const targetUser = await datastore.getUser(uid);
+  const targetUser = await datastore.getUser(+uid);
   if (!targetUser) return res.sendStatus(404);
 
-  await datastore.removeFollowFromUser(uid,req.user.sub);
+  await datastore.removeFollowFromUser(+uid,req.user.sub);
   return res.sendStatus(204);
 }));

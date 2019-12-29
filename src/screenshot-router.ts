@@ -76,7 +76,7 @@ app.route('/').get(handle(async (req,res,next) => {
  *         description: Screenshot not found
  */
 app.route('/:id').get(handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) {
+  if (isNaN(+req.params.id)) {
     return res.status(400).send({error:'id must be a number'});
   }
   var id = parseInt(req.params.id, 10);
@@ -91,7 +91,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
 }));
 
 app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
-  if (isNaN(req.params.id)) return res.status(400).send({error:'id must be a number'});
+  if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
   var id = parseInt(req.params.id, 10);
   let screenshot = await datastore.getScreenshot(id);
 

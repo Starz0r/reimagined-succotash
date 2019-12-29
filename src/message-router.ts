@@ -31,7 +31,7 @@ app.route('/inbox').get(userCheck(), handle(async (req,res,next) => {
 
 app.route('/thread/:id').get(userCheck(), handle(async (req,res,next) => {
   let parms = {} as MessageQueryParams;
-  parms.threadId = req.params.id;
+  parms.threadId = +req.params.id;
 
   const whereList = new WhereList();
   whereList.add("thread_id",parms.threadId);

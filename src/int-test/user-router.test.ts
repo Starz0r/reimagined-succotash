@@ -2,6 +2,7 @@ import axios from 'axios';
 import chai from 'chai';
 import { fail } from 'assert';
 import { getConTest, createUser } from './test-lib';
+import FormData from 'form-data';
 
 var expect = chai.expect;
 
@@ -34,6 +35,24 @@ describe('user endpoint', function () {
         expect(rsp.data).to.have.property('email').and.equal('test@example.com');
         expect(rsp.data).to.have.property('token').and.be.a('string');
         expect(rsp.data).to.have.property('isAdmin').and.equal(false);
+    });
+  
+    it('rejects registration via form parameters', async () => {
+      const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      let bodyFormData = new FormData();
+      bodyFormData.append('userName', usernameA);
+      bodyFormData.append('password', 'test-pw');
+      bodyFormData.append('email', 'test@example.com');
+
+      try {
+        const rsp = await axios.post('http://localhost:4201/api/users',
+          bodyFormData);
+        fail("registration should not have been successful");
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(400);
+        expect(err.response.data).to.equal('Invalid request: expected a JSON body of the format {"username":"example","password":"example","email":"example@example.com"}')
+      }
     });
   
     it('rejects existing users', async () => {

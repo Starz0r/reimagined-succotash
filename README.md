@@ -12,20 +12,11 @@ This project is the second iteration of Delfruit, which brings the application i
 This project goes hand-in-hand with the df-client project, which is the Angular frontend for the Delfruit website. They are kept separate to allow the client to be compiled and deployed on a CDN without bulking up the server project.
 
 # Local Development
-For local development, you should start up a mysql instance and the server, and put them on the same network.
+For local development, you should start up a mysql instance, minio instance, and the server, and put them on the same network.
 
 Auto-redeployment and breakpoint support are included through the use of nodemon and ts-node.
 
-## Start the app
-
-* Of course, always run `npm i` before starting to get your node modules
-* To run the development monitor: `npm run dev`
-* To run the app without the monitor: `npm run start`
-* To run the app with pure node, not ts-node: `tsc && npm run start-plain`
-
-## Test the app
-
-Once the app and database are running and connected, you can run the integration tests with `npm run test-int`
+## Mysql Test Instance
 
 To start the database for testing:
 
@@ -39,6 +30,25 @@ docker run --net=host \
 To find the database IP for Windows: `ipconfig /all` and find DockerNAT, the IP will be something like 10.0.75.1. The mysql IP will be 10.0.75.2 (yeah I know, totally obvious)
 
 For linux, it's just the host IP. ezpz
+
+## Minio Test Instance
+
+Delfruit uses an S3-compliant object storage service for storing uploaded content. For local development, you can use a Minio server.
+
+```
+docker run -p 9000:9000 minio/minio server /data
+```
+
+## Start the app
+
+* Of course, always run `npm i` before starting to get your node modules
+* To run the development monitor: `npm run dev`
+* To run the app without the monitor: `npm run start`
+* To run the app with pure node, not ts-node: `tsc && npm run start-plain`
+
+## Test the app
+
+Once the app and database are running and connected, you can run the integration tests with `npm run test-int`
 
 # Production Deployment
 For a production-like environment, you may spin up as many instances of the server as desired, as the server is stateless. This will allow the application to scale with request volume. The bottleneck then lies at the mysql instance.

@@ -6,11 +6,25 @@ import { Screenshot } from "./model/Screenshot";
 import { Game } from "./model/Game";
 import whitelist from './lib/whitelist';
 
+import * as Minio from 'minio';
 
 import multer from 'multer';
 import handle from './lib/express-async-catch';
 import { adminCheck, userCheck } from './lib/auth-check';
-const upload = multer({ dest: 'uploads/' }) //TODO
+import config from './config/config';
+const upload = multer({storage:multer.diskStorage({
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + '-' + Date.now())
+  }
+})}) //If no destination is given, the operating system's default directory for temporary files is used.
+
+const minioClient = new Minio.Client({
+  endPoint: config.s3_host,
+  port: config.s3_port,
+  useSSL: config.s3_ssl,
+  accessKey: config.s3_access,
+  secretKey: config.s3_secret
+});
 
 const app = express.Router();
 export default app;
@@ -518,18 +532,15 @@ app.route('/:id/screenshots').get(handle(async (req,res,next) => {
  *       description: Optional description in *Markdown*
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               rating: 
- *                 type: number
- *               difficulty: 
- *                 type: number
- *               comment: 
+ *               description:
  *                 type: string
- *               removed: 
- *                 type: boolean
+ *               screenshot: 
+ *                 type: string
+ *                 format: binary
  * 
  *     responses:
  *       200:
@@ -537,7 +548,7 @@ app.route('/:id/screenshots').get(handle(async (req,res,next) => {
  *       400:
  *         description: Invalid game id
  *       401:
- *         description: Unauthorized (must log in to add reviews)
+ *         description: Unauthorized (must log in to add screenshots)
  *       404:
  *         description: Game not found
  */
@@ -554,8 +565,22 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
     description: req.body.description
   };
 
-  const rows = await datastore.addScreenshot(ss,req.user.sub);
-  res.send(rows);
+  const ssres = await datastore.addScreenshot(ss,req.user.sub);
+
+  //TODO: stream images straight into s3 via multer-s3 storage?
+  var metaData = {
+      'Content-Type': 'image/png',
+      'X-Amz-Meta-Testing': 1234,
+      'gameId': ssres.gameId,
+      'id': ssres.id
+  }
+  console.log(req.file)
+  // Using fPutObject API upload your file to the bucket europetrip.
+  minioClient.fPutObject(config.s3_bucket, `${ssres.id}.png`, req.file.path, metaData, function(err, etag) {
+    if (err) return console.log(err)
+  });
+
+  res.send(ssres);
 }));
 
 /**

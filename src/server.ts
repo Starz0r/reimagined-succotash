@@ -20,11 +20,14 @@ import report_router from './report-router';
 import { Database } from './database';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import * as Minio from 'minio';
 
 /** Exit codes for fatal errors. */
 enum ExitCode {
   /** Database initialization failed. */
-  DB_INIT_FAIL = 1
+  DB_INIT_FAIL = 1,
+  /** S3 Object storage initialization failed. */
+  S3_INIT_FAIL = 2
 }
 
 //self executing async function that allows the initialization to halt if a 
@@ -99,8 +102,59 @@ app.use('/api/screenshots',screenshot_router);
 app.use('/api/news',news_router);
 app.use('/api/reports',report_router);
 
-console.log('Initializing swagger...');
+console.log('Initializing object storage...');
 
+try {
+  const minioClient = new Minio.Client({
+    endPoint: config.s3_host,
+    port: config.s3_port,
+    useSSL: config.s3_ssl,
+    accessKey: config.s3_access,
+    secretKey: config.s3_secret
+  });
+
+  const bucketJustCreated = await new Promise((res,rej) => {
+    minioClient.bucketExists(config.s3_bucket,(err,exists)=>{
+      if (err) return rej(err);
+      else if (exists) return res(false);
+      console.log(`Bucket ${config.s3_bucket} doesn't exist, intializing.`)
+      minioClient.makeBucket(config.s3_bucket, config.s3_region, (err) => {
+        if (err) return rej(err);
+        console.log(`Bucket ${config.s3_bucket} created successfully in ${config.s3_region}.`)
+        res(true);
+      });
+    });
+  });
+
+  if (bucketJustCreated) {
+    console.log(`Setting public read policy on ${config.s3_bucket}`)
+    await new Promise((res,rej)=>{
+      minioClient.setBucketPolicy(config.s3_bucket,`{
+          "Version": "2012-10-17",
+          "Id": "Public Access to Screenshots",
+          "Statement": [
+            {
+              "Sid": "PublicRead",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::${config.s3_bucket}/*"
+            }
+          ]
+        }`,(err) => {
+          if (err) return rej(err);
+          else res();
+        }
+      );
+    });
+  }
+} catch (e) {
+  console.error("S3 initialization failed!");
+  console.error(e);
+  process.exit(ExitCode.S3_INIT_FAIL);
+}
+
+console.log('Initializing swagger...');
 
 const options = {
   swaggerDefinition: {

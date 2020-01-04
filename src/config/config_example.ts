@@ -4,5 +4,11 @@ export = {
   db_user: "root",
   db_password: "",
   app_port: 4201,
-  app_jwt_secret: 'what_up_fam'
+  app_jwt_secret: 'what_up_fam',
+
+  s3_host:"",
+  s3_port:9000,
+  s3_ssl: true,
+  s3_access:"",
+  s3_secret:"",
 }

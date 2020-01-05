@@ -5,6 +5,7 @@ import datastore from './datastore';
 import moment = require('moment');
 import crypto from 'crypto';
 import handle from './lib/express-async-catch';
+import { userCheck } from './lib/auth-check';
 
 const app = express.Router();
 const auth = new AuthModule();
@@ -111,4 +112,29 @@ app.route('/request-reset').post(handle(async (req,res,next) => {
   } finally {
     database.close();
   }
+}));
+
+/**
+ * @swagger
+ * 
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh Token
+ *     description: Allows a user with a valid token to request a fresh token
+ *                  with a new expiration date.
+ *     tags: 
+ *       - Authentication
+ *     produces:
+ *       - application/json
+ *     responses:
+ *       200:
+ *         description: Latest user data with fresh token
+ *       401:
+ *         description: Unauthorized (Not logged in or token expired)
+ * 
+ */
+app.route('/refresh').post(userCheck(), handle(async (req,res,next) => {
+  const user = await datastore.getUser(req.user.sub);
+  user.token = auth.getToken(user.name,user.id,user.isAdmin);
+  return res.send(user);
 }));

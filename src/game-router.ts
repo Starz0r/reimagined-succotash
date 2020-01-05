@@ -13,10 +13,11 @@ import handle from './lib/express-async-catch';
 import { adminCheck, userCheck } from './lib/auth-check';
 import config from './config/config';
 const upload = multer({storage:multer.diskStorage({
+   //If no destination is given, the operating system's default directory for temporary files is used.
   filename: function (req, file, cb) {
     cb(null, file.fieldname + '-' + Date.now())
   }
-})}) //If no destination is given, the operating system's default directory for temporary files is used.
+})})
 
 const minioClient = new Minio.Client({
   endPoint: config.s3_host,
@@ -574,7 +575,6 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
       'gameId': ssres.gameId,
       'id': ssres.id
   }
-  console.log(req.file)
   // Using fPutObject API upload your file to the bucket europetrip.
   minioClient.fPutObject(config.s3_bucket, `${ssres.id}.png`, req.file.path, metaData, function(err, etag) {
     if (err) return console.log(err)

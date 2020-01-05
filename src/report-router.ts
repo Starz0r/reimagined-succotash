@@ -54,7 +54,7 @@ app.route('/').get(adminCheck(), handle(async (req,res,next) => {
   const n = await datastore.getReports({
     type: req.query.type,
     answered: req.query.answered,
-    id: +req.params.id,
+    id: req.params.id?+req.params.id:undefined,
     page: +req.query.page || 0,
     limit: +req.query.limit || 50
   });

@@ -1,4 +1,6 @@
 export interface GetGamesParms {
+  q?: string;
+
   page: number;
   limit: number;
   orderCol?: string;

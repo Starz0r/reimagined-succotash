@@ -210,6 +210,7 @@ app.route('/').get(handle(async (req,res,next) => {
   };
   if (!isAdmin) params.removed = false;
 
+  params.q = req.query.q;
   params.id = req.query.id;
   params.removed = false;
   params.name = req.query.name;

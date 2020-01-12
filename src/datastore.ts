@@ -732,6 +732,10 @@ export default {
     whereList.add("g.id",params.id);
     whereList.addIf("g.removed",params.removed?1:0,params.removed!==undefined);
 
+    if (params.q !== undefined) {
+      whereList.addPhrase("g.name LIKE ? OR g.author LIKE ?",'%'+params.q+'%','%'+params.q+'%');
+    }
+
     if (params.name !== undefined) {
       whereList.add2("g.name LIKE ?",'%'+params.name+'%');
     }

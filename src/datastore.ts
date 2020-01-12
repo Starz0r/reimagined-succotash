@@ -369,6 +369,7 @@ export default {
         JOIN Game g on r.game_id=g.id
         LEFT JOIN LikeReview AS l ON l.rating_id = r.id
         ${where.getClause()}
+        GROUP BY r.id
         ${options.textReviewsFirst
           ?`	CASE WHEN (r.comment IS NULL OR r.comment='') THEN 0 ELSE 1 END DESC, 
               COUNT(l.id) DESC,
@@ -376,7 +377,7 @@ export default {
           :'ORDER BY r.date_created DESC'}
         ${options.page !== undefined ? ' LIMIT ?,? ' : ''}
       `;
-
+      
       return await database.query(query, where.getParams().concat(params));
     } finally {
       database.close();

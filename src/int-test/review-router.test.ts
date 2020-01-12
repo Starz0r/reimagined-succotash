@@ -156,4 +156,18 @@ describe('review endpoint', function () {
         {headers: {'Authorization': "Bearer " + liker.token}});
       expect(rsp).to.have.property('status').and.equal(204);
     });
+
+    it('returns multiple reviews', async () => {
+      const user = await createUser(false);
+      const game = await createGame();
+      const game2 = await createGame();
+      const rv = await addReview(user,game);
+      const rv2 = await addReview(user,game2);
+      
+      const rsp = await axios.get(`http://localhost:4201/api/reviews`);
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data');
+      expect(rsp.data).to.be.an.instanceof(Array);
+      expect(rsp.data).to.have.length.above(1); //at least 2 results
+    });
   });

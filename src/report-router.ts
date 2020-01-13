@@ -20,7 +20,7 @@ export default app;
  *       - application/json
  *     parameters:
  *       - in: query
- *         name: type
+ *         name: id
  *         schema:
  *           type: string
  *         description: The id of the report to return (just use /reports/{id} you meme)
@@ -35,6 +35,11 @@ export default app;
  *           type: integer
  *           minimum: 0
  *         description: The page of results to return (default 0)
+ *       - in: query
+ *         name: answered
+ *         schema:
+ *           type: integer
+ *         description: If specified, whether to filter to answered (1) or unasnwered (0) reports
  *       - in: query
  *         name: limit
  *         schema:

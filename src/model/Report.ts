@@ -4,6 +4,7 @@ export interface Report {
   targetId?: string;
   report?: string;
   reporterId?: string;
+  reporterName?: string;
   answeredById?: string;
   dateCreated?: string;
   dateAnswered?: string;

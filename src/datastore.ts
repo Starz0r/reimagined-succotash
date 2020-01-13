@@ -185,7 +185,7 @@ export default {
       , ua.name as answeredByName
       FROM Report r
       LEFT JOIN User u ON u.id=r.reporter_id
-      LEFT JOIN User ua ON u.id=r.answered_by_id
+      LEFT JOIN User ua ON ua.id=r.answered_by_id
       ${whereList.getClause()}
       ORDER BY ${orderCol} ${orderDir}
       LIMIT ?,?

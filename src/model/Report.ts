@@ -6,6 +6,7 @@ export interface Report {
   reporterId?: string;
   reporterName?: string;
   answeredById?: string;
+  answeredByName?: string;
   dateCreated?: string;
   dateAnswered?: string;
 }

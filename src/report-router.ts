@@ -56,9 +56,14 @@ export default app;
  *         description: insufficient permissions (must be admin to view reports)
  */
 app.route('/').get(adminCheck(), handle(async (req,res,next) => {  
+  let answered = req.query.answered;
+  if (answered !== undefined) {
+    if (answered == "0") answered = false;
+    else answered = true;
+  }
   const n = await datastore.getReports({
     type: req.query.type,
-    answered: req.query.answered,
+    answered: answered,
     id: req.params.id?+req.params.id:undefined,
     page: +req.query.page || 0,
     limit: +req.query.limit || 50

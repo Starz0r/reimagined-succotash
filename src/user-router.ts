@@ -130,7 +130,7 @@ app.route('/:id').get(handle(async (req,res,next) => {
   const users = await datastore.getUsers(params);
   if (users == null || users.length == 0) res.sendStatus(404);
   const user = users[0];
-  if (!req.user || req.user.sub != id) delete user.email;
+  if (user && (!req.user || req.user.sub != id)) delete user.email;
   res.send(user);
 }));
 

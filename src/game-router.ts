@@ -391,7 +391,7 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
  * @swagger
  * 
  * /games/{id}/reviews:
- *   post:
+ *   put:
  *     summary: Add Review for Game (User/Admin Only)
  *     description: Add Review for Game (User/Admin Only)
  *     tags: 
@@ -435,7 +435,7 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
  *       404:
  *         description: Game not found
  */
-app.route('/:id/reviews').post(userCheck(), handle(async (req,res,next) => {
+app.route('/:id/reviews').put(userCheck(), handle(async (req,res,next) => {
   if (isNaN(+req.params.id)) return res.status(400).send({error:'id must be a number'});
   
   var gameId = parseInt(req.params.id,10);

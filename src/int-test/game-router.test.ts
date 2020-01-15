@@ -157,7 +157,7 @@ describe('game endpoint', function () {
     const game = await createGame();
 
     //review game
-    const upd = await axios.post(`http://localhost:4201/api/games/${game.id}/reviews`,
+    const upd = await axios.put(`http://localhost:4201/api/games/${game.id}/reviews`,
       {
         rating: 69,
         difficulty: 50,
@@ -172,12 +172,46 @@ describe('game endpoint', function () {
     expect(upd.data).to.have.property('comment').and.equal('good game very good');
   });
 
+  it('allows users to review the game idempotently', async () => {
+    const user = await createUser(false);
+    const game = await createGame();
+
+    //review game
+    const upd = await axios.put(`http://localhost:4201/api/games/${game.id}/reviews`,
+      {
+        rating: 69,
+        difficulty: 50,
+        comment: 'good game very good'
+      },
+      {headers: {'Authorization': "Bearer " + user.token}});
+    expect(upd).to.have.property('status').and.equal(200);
+    expect(upd).to.have.property('data');
+    expect(upd.data).to.have.property('id').and.be.a('number');
+    expect(upd.data).to.have.property('rating').and.equal(69);
+    expect(upd.data).to.have.property('difficulty').and.equal(50);
+    expect(upd.data).to.have.property('comment').and.equal('good game very good');
+
+    const upd2 = await axios.put(`http://localhost:4201/api/games/${game.id}/reviews`,
+      {
+        rating: 50,
+        difficulty: 69,
+        comment: 'good game very good'
+      },
+      {headers: {'Authorization': "Bearer " + user.token}});
+    expect(upd2).to.have.property('status').and.equal(200);
+    expect(upd2).to.have.property('data');
+    expect(upd2.data).to.have.property('id').and.be.a('number');
+    expect(upd2.data).to.have.property('rating').and.equal(50);
+    expect(upd2.data).to.have.property('difficulty').and.equal(69);
+    expect(upd2.data).to.have.property('comment').and.equal('good game very good');
+  });
+
   it('returns reviews for a game', async () => {
     const user = await createUser(false);
     const game = await createGame();
 
     //review game
-    const upd = await axios.post(`http://localhost:4201/api/games/${game.id}/reviews`,
+    const upd = await axios.put(`http://localhost:4201/api/games/${game.id}/reviews`,
       {
         rating: 69,
         difficulty: 50,

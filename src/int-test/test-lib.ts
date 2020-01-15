@@ -81,7 +81,7 @@ export async function addScreenshot(user: TestUser, game: any): Promise<any> {
 
 export async function addReview(user: TestUser, game: any): Promise<any> {
     //review game
-    const upd = await axios.post(`http://localhost:4201/api/games/${game.id}/reviews`,
+    const upd = await axios.put(`http://localhost:4201/api/games/${game.id}/reviews`,
       {
         rating: 69,
         difficulty: 50,

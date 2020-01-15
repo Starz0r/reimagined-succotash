@@ -391,6 +391,10 @@ export default {
   async addReview(review: Review, gameId: number, userId: number): Promise<Review> {
     const database = new Database();
     try {
+      await database.execute(
+        `DELETE FROM Rating WHERE game_id=? AND user_id=?`, 
+        [gameId,userId]);
+
       const insertList = new InsertList();
       insertList.add('game_id',gameId);
       insertList.add('user_id',userId);

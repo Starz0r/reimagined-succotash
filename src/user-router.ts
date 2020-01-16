@@ -190,7 +190,15 @@ app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
     user.phash2 = newPassHash;
   }
 
-  const success = await datastore.updateUser(user,isAdmin);
+  if (!req.user.isAdmin) {
+    delete user.canReport;
+    delete user.canSubmit;
+    delete user.canReview;
+    delete user.canScreenshot;
+    delete user.banned;
+  }
+
+  const success = await datastore.updateUser(user);
   if (!success) {
     return res.sendStatus(404);
   }

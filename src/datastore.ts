@@ -41,23 +41,23 @@ export default {
     }
   },
 
-  async updateUser(user: any, isAdmin: boolean): Promise<boolean> {
+  async updateUser(user: any): Promise<boolean> {
     const database = new Database();
   
     const updateList = new UpdateList();
   
     updateList.add('phash2',user.phash2);
     updateList.add('email',user.email);
-    updateList.addIf('can_report',user.canReport,isAdmin);
-    updateList.addIf('can_submit',user.canSubmit,isAdmin);
-    updateList.addIf('can_review',user.canReview,isAdmin);
-    updateList.addIf('can_screenshot',user.canScreenshot,isAdmin);
+    updateList.add('can_report',user.canReport);
+    updateList.add('can_submit',user.canSubmit);
+    updateList.add('can_review',user.canReview);
+    updateList.add('can_screenshot',user.canScreenshot);
     updateList.add('twitch_link',user.twitchLink);
     updateList.add('nico_link',user.nicoLink);
     updateList.add('youtube_link',user.youtubeLink);
     updateList.add('twitterLink',user.twitterLink);
     updateList.add('bio',user.bio);
-    updateList.addIf('banned',user.banned,isAdmin);
+    updateList.add('banned',user.banned);
     updateList.add('locale',user.locale);
     updateList.add('unsuccessful_logins',user.unsuccessfulLogins);
     updateList.add('last_ip',user.lastIp);

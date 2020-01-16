@@ -383,7 +383,9 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
-  const rows = await datastore.getReviews({game_id:id,page:page,limit:limit});
+
+  var byUserId = (+req.query.byUserId) || undefined;
+  const rows = await datastore.getReviews({game_id:id,user_id:byUserId,page:page,limit:limit});
   res.send(rows);
 }));
 

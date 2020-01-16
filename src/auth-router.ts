@@ -49,7 +49,6 @@ app.route('/login').post(handle(async (req,res,next) => {
         res.status(401).send({error: 'Invalid Credentials'});
       }
       const user = users[0];
-
       const verified = await auth.verifyPassword(user.phash2,password)
           
       if (!verified) {
@@ -57,7 +56,7 @@ app.route('/login').post(handle(async (req,res,next) => {
         datastore.updateUser({
           id: user.id,
           unsuccessfulLogins: u.unsuccessfulLogins+1
-        },true);
+        });
         return res.status(401).send({error: 'Invalid Credentials'});
       } else {
         datastore.updateUser({
@@ -65,7 +64,7 @@ app.route('/login').post(handle(async (req,res,next) => {
           dateLastLogin:moment().format('YYYY-MM-DD HH:mm:ss'),
           lastIp: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
           unsuccessfulLogins:0
-        },true);
+        });
         user.token = auth.getToken(user.name,user.id,user.isAdmin);
         return res.send(user);
       }
@@ -135,6 +134,7 @@ app.route('/request-reset').post(handle(async (req,res,next) => {
  */
 app.route('/refresh').post(userCheck(), handle(async (req,res,next) => {
   const user = await datastore.getUser(req.user.sub);
+  if (!user) return res.sendStatus(401);
   user.token = auth.getToken(user.name,user.id,user.isAdmin);
   return res.send(user);
 }));

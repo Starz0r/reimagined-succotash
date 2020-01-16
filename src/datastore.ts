@@ -850,6 +850,13 @@ export default {
       , u.twitch_link as twitchLink, u.youtube_link as youtubeLink
       , u.nico_link as nicoLink, u.twitter_link as twitterLink
       , u.bio, u.is_admin as isAdmin, u.email
+
+      ,u.can_report as canReport
+      ,u.can_submit as canSubmit
+      ,u.can_review as canReview
+      ,u.can_screenshot as canScreenshot
+      ,u.banned as banned
+
       FROM User u
       ${whereList.getClause()}
       ORDER BY ${orderCol} ${orderDir}

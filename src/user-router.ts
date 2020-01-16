@@ -196,6 +196,9 @@ app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
     delete user.canReview;
     delete user.canScreenshot;
     delete user.banned;
+    delete user.unsuccessfulLogins;
+    delete user.lastIp;
+    delete user.dateLastLogin;
   }
 
   const success = await datastore.updateUser(user);

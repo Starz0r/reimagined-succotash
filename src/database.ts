@@ -12,6 +12,11 @@ export class Database {
       user: config.db_user,
       password: config.db_password
     });
+
+    this.connection.on('error', function(err) {
+      console.log('Error occurred on DB connection!')
+      console.log(err); // 'ER_BAD_DB_ERROR'
+    });
   }
 
   query(sql: string, args?: any[]): Promise<any[]> {

@@ -464,6 +464,19 @@ export default {
     }
   },
 
+  async isLiked(reviewId: number, userId: number): Promise<boolean> {
+    const database = new Database();
+  
+    try {
+      const results = await database.execute(
+        ` SELECT 1 FROM LikeReview WHERE rating_id = ? AND user_id = ?`,
+        [reviewId,userId]);
+      return results.length == 1;
+    } finally {
+      database.close();
+    }
+  },
+
   async addFollowToUser(targetUserId: number, userId: number): Promise<boolean> {
     const database = new Database();
   

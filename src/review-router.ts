@@ -261,3 +261,59 @@ app.route('/:id/likes/:userId').delete(userCheck(), handle(async (req,res,next) 
   await datastore.removeLikeFromReview(+rid,uid);
   return res.sendStatus(204);
 }));
+
+/**
+ * @swagger
+ * 
+ * /reviews/{id}/likes/{userId}:
+ *   get:
+ *     summary: Returns whether user likes review (User/Admin only)
+ *     description: Returns whether user likes review (User/Admin only)
+ *     tags: 
+ *       - Reviews
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The exact id of the review
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The id of the user to check
+ *     responses:
+ *       200:
+ *         description: User's like status
+ *       400:
+ *         description: Invalid review id or user id (check the error in response)
+ *       401:
+ *         description: Unauthenticated (log in first)
+ *       403:
+ *         description: Insufficient priviliges (must be an admin, or the user indicated in the url)
+ *       404:
+ *         description: Review not found
+ */
+app.route('/:id/likes/:userId').get(userCheck(), handle(async (req,res,next) => {
+  if (isNaN(+req.params.id)) 
+    return res.status(400).send({error:'id must be a number'});
+  const rid = req.params.id;
+
+  if (isNaN(+req.params.userId)) 
+    return res.status(400).send({error:'userId must be a number'});
+  const uid = parseInt(req.params.userId, 10);
+  
+  if (req.user.sub != uid) return res.sendStatus(403);
+
+  const ogReview = await datastore.getReview(+rid);
+  if (ogReview === null) return res.sendStatus(404);
+
+  const liked = await datastore.isLiked(+rid,uid);
+  return res.send({liked});
+}));

@@ -156,12 +156,50 @@ describe('game endpoint', function () {
     const user = await createUser(false);
     const game = await createGame();
 
+    const nm = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+    const tres = await axios.post('http://localhost:4201/api/tags',
+      {name:nm},
+      {headers: {'Authorization': "Bearer " + user.token}});
+    expect(tres).to.have.property('status').and.equal(200);
+    const tid = tres.data.id;
+
     const res = await axios.post(`http://localhost:4201/api/games/${game.id}/tags`,
-      [1,2,3],
+      [tid],
       {headers: {'Authorization': "Bearer " + user.token}});
       expect(res).to.have.property('status').and.equal(200);
       expect(res).to.have.property('data');
-      expect(res.data).to.deep.equal([1,2,3]);
+      expect(res.data[0].name).to.equal(nm);
+      expect(res.data[0].id).to.equal(tid);
+      expect(res.data[0].count).to.equal(1);
+  });
+
+  it('allows user to clear tags', async () => {
+    const user = await createUser(false);
+    const game = await createGame();
+
+    const nm = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+    const tres = await axios.post('http://localhost:4201/api/tags',
+      {name:nm},
+      {headers: {'Authorization': "Bearer " + user.token}});
+    expect(tres).to.have.property('status').and.equal(200);
+    const tid = tres.data.id;
+
+    const res = await axios.post(`http://localhost:4201/api/games/${game.id}/tags`,
+      [tid],
+      {headers: {'Authorization': "Bearer " + user.token}});
+      expect(res).to.have.property('status').and.equal(200);
+      expect(res).to.have.property('data');
+      expect(res.data[0].id).to.equal(tid);
+      expect(res.data[0].count).to.equal(1);
+
+    const res2 = await axios.post(`http://localhost:4201/api/games/${game.id}/tags`,
+      [],
+      {headers: {'Authorization': "Bearer " + user.token}});
+      expect(res2).to.have.property('status').and.equal(200);
+      expect(res2).to.have.property('data');
+      expect(res2.data.length).to.equal(0);
   });
 
   it('prevents adding nonexistent tags to a game', async () => {

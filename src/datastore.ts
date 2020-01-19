@@ -732,13 +732,12 @@ export default {
     whereList.add('gt.user_id',userId);
 
     var query = `
-      SELECT gt.*, t.name, t.id
+      SELECT t.name, t.id, count(1) as count
       FROM GameTag gt
       JOIN Game g on g.id = gt.game_id AND g.removed = 0
-      INNER JOIN Rating AS r ON r.user_id = gt.user_id AND r.game_id = gt.game_id AND r.removed=0
       JOIN Tag t on t.id = gt.tag_id
       ${whereList.getClause()}
-      GROUP BY t.id
+      GROUP BY t.id, t.name
     `;
 
     const database = new Database();
@@ -797,7 +796,7 @@ export default {
     try {
       const qs = tagIds.map(_=>"?").join(",")
       const res = await database.execute(
-        `SELECT COUNT(1) as cnt FROM GameTag WHERE tag_id in (${qs})`, 
+        `SELECT COUNT(1) as cnt FROM Tag WHERE id in (${qs})`, 
         tagIds);
       return res.length == 1 && res[0].cnt == tagIds.length;
     } finally {

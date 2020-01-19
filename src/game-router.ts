@@ -670,11 +670,13 @@ app.route('/:id/tags').post(userCheck(),handle(async (req,res,next) => {
   if (!(req.body instanceof Array)) 
     return res.status(400).send({error:'invalid body: expected array of tag ids'});
 
-  const tagsok = await datastore.tagsExist(req.body)
-  if (!tagsok)
-    return res.status(400).send({error:'invalid body: all tag ids must exist'});
-
-  await datastore.setTags(gameId,req.user.id,req.body)
+  if (req.body.length > 0) {
+    const tagsok = await datastore.tagsExist(req.body)
+    if (!tagsok)
+      return res.status(400).send({error:'invalid body: all tag ids must exist'});
+  }
+  
+  await datastore.setTags(gameId,req.user.sub,req.body)
   
   const tags = await datastore.getTagsForGame(gameId);
   res.send(tags);

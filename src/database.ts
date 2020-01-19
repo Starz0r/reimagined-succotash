@@ -197,6 +197,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         id int(11) NOT NULL AUTO_INCREMENT,
         name varchar(30) CHARACTER SET utf8 NOT NULL,
         PRIMARY KEY (id),
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         KEY name (name)
       ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
       `,[],(err,rows)=>{

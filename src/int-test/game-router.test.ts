@@ -152,6 +152,34 @@ describe('game endpoint', function () {
     fail("get should not have been successful");
   });
 
+  it('allows setting tags on a game', async () => {
+    const user = await createUser(false);
+    const game = await createGame();
+
+    const res = await axios.post(`http://localhost:4201/api/games/${game.id}/tags`,
+      [1,2,3],
+      {headers: {'Authorization': "Bearer " + user.token}});
+      expect(res).to.have.property('status').and.equal(200);
+      expect(res).to.have.property('data');
+      expect(res.data).to.deep.equal([1,2,3]);
+  });
+
+  it('prevents adding nonexistent tags to a game', async () => {
+    const user = await createUser(false);
+    const game = await createGame();
+    
+    try {
+      await axios.post(`http://localhost:4201/api/games/${game.id}/tags`,
+        [-1,-2,-3],
+        {headers: {'Authorization': "Bearer " + user.token}});
+    } catch (err) {
+      expect(err).to.have.property('response');
+      expect(err.response).to.have.property('status').and.equal(400);
+      return;
+    }
+    fail("post should not have been successful");
+  });
+
   it('allows users to review the game', async () => {
     const user = await createUser(false);
     const game = await createGame();

@@ -19,6 +19,7 @@ import whitelist from './lib/whitelist';
 import { Report } from './model/Report';
 import { GetReportParams } from './model/GetReportParams';
 import { GetUsersParms } from './model/GetUsersParms';
+import { createTracing } from 'trace_events';
 
 export default {
   /**
@@ -725,10 +726,10 @@ export default {
     }
   },
 
-  async getTags(params: getTagsParms) {
-
+  async getTagsForGame(gameId: number, userId?: number) {
     const whereList = new WhereList();
-    whereList.add('gt.game_id',params.gameId);
+    whereList.add('gt.game_id',gameId);
+    whereList.add('gt.user_id',userId);
 
     var query = `
       SELECT gt.*, t.name, t.id
@@ -737,11 +738,84 @@ export default {
       INNER JOIN Rating AS r ON r.user_id = gt.user_id AND r.game_id = gt.game_id AND r.removed=0
       JOIN Tag t on t.id = gt.tag_id
       ${whereList.getClause()}
+      GROUP BY t.id
     `;
 
     const database = new Database();
     try {
       return await database.query(query,whereList.getParams());
+    } finally {
+      database.close();
+    }
+  },
+
+  async getTags(tagId?: number, q?: string) {
+    const whereList = new WhereList();
+    whereList.add('gt.tag_id',tagId);
+    if (q !== undefined) {
+      whereList.add2("t.name LIKE ?",'%'+q+'%');
+    }
+
+    var query = `
+      SELECT t.name, t.id
+      FROM Tag t
+      ${whereList.getClause()}
+    `;
+
+    const database = new Database();
+    try {
+      return await database.query(query,whereList.getParams());
+    } finally {
+      database.close();
+    }
+  },
+
+  async setTags(gameId: number, userId: number, tags: number[]) {
+    const database = new Database();
+    try {
+      await database.execute(
+        `DELETE FROM GameTag WHERE game_id=? AND user_id=?`, 
+        [gameId,userId]);
+
+      for (let tagId of tags) {
+        const insertList = new InsertList();
+        insertList.add('game_id',gameId);
+        insertList.add('user_id',userId);
+        insertList.add('tag_id',tagId);
+  
+        await database.execute(
+          `INSERT INTO GameTag ${insertList.getClause()}`, 
+          insertList.getParams());
+      }
+    } finally {
+      database.close();
+    }
+  },
+
+  async tagsExist(tagIds: number[]) {
+    const database = new Database();
+    try {
+      const qs = tagIds.map(_=>"?").join(",")
+      const res = await database.execute(
+        `SELECT COUNT(1) as cnt FROM GameTag WHERE tag_id in (${qs})`, 
+        tagIds);
+      return res.length == 1 && res[0].cnt == tagIds.length;
+    } finally {
+      database.close();
+    }
+  },
+
+  async createTag(name: string) {
+    const database = new Database();
+    try {
+      const insertList = new InsertList();
+      insertList.add('name',name);
+
+      const result = await database.execute(
+        `INSERT INTO Tag ${insertList.getClause()}`, 
+        insertList.getParams());
+
+      return {id: result.insertId, name}
     } finally {
       database.close();
     }

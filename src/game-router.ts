@@ -604,7 +604,7 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
  *           type: integer
  *           minimum: 1
  *         required: true
- *         description: The exact id of the game to return
+ *         description: The id of the game to get tags for
  *     responses:
  *       200:
  *         description: List of screenshots for the game (or empty array if none)
@@ -623,7 +623,60 @@ app.route('/:id/tags').get(handle(async (req,res,next) => {
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
 
-  const tags = await datastore.getTags({gameId});
+  const tags = await datastore.getTagsForGame(gameId);
+  res.send(tags);
+}));
+
+
+/**
+ * @swagger
+ * 
+ * /games/{id}/tags:
+ *   post:
+ *     summary: Set Tags Associated to Game
+ *     description: Clears and sets an array of tag IDs for a game on a user-by-user basis.
+ *     tags: 
+ *       - Games
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: The id of the game to add tags to
+ *     responses:
+ *       200:
+ *         description: Full list of tags for the game (or empty array if none)
+ *       400:
+ *         description: Invalid game id
+ *       401:
+ *         description: Unauthorized (must log in to add tags)
+ *       404:
+ *         description: Game not found
+ */
+app.route('/:id/tags').post(userCheck(),handle(async (req,res,next) => {
+  if (isNaN(+req.params.id)) {
+    return res.status(400).send({error:'invalid game id'});
+  }
+
+  var gameId = parseInt(req.params.id,10);
+
+  const game = await datastore.gameExists(gameId);
+  if (!game) return res.sendStatus(404);
+
+  if (!(req.body instanceof Array)) 
+    return res.status(400).send({error:'invalid body: expected array of tag ids'});
+
+  const tagsok = await datastore.tagsExist(req.body)
+  if (!tagsok)
+    return res.status(400).send({error:'invalid body: all tag ids must exist'});
+
+  await datastore.setTags(gameId,req.user.id,req.body)
+  
+  const tags = await datastore.getTagsForGame(gameId);
   res.send(tags);
 }));
 

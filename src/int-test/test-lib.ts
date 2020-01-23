@@ -95,6 +95,17 @@ export async function addReview(user: TestUser, game: any): Promise<any> {
     return upd.data;
 }
 
+export async function addTag(user: TestUser): Promise<any> {
+    const nm = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+    const tres = await axios.post('http://localhost:4201/api/tags',
+      {name:nm},
+      {headers: {'Authorization': "Bearer " + user.token}});
+    expect(tres).to.have.property('status').and.equal(200);
+
+    return tres.data;
+}
+
 export function getConTest(ctx: Mocha.Context): Mocha.HookFunction {
     return () => axios.get('http://localhost:4201/api/ping')
     .then(ctx.done)

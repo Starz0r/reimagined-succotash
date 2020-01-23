@@ -100,7 +100,14 @@ app.route('/').get(handle(async (req,res,next) => {
   if (req.query.following && req.user && req.user.sub) params.followerUserId = req.user.sub;
   //TODO: order by
   const users = await datastore.getUsers(params);
-  users.forEach(u => {delete u.email});
+  users.forEach(u => {
+    delete u.email;
+    delete u.canReport;
+    delete u.canSubmit;
+    delete u.canReview;
+    delete u.canScreenshot;
+    delete u.banned;
+  });
   return res.send(users);
 }));
 
@@ -130,7 +137,14 @@ app.route('/:id').get(handle(async (req,res,next) => {
   const users = await datastore.getUsers(params);
   if (users == null || users.length == 0) res.sendStatus(404);
   const user = users[0];
-  if (user && (!req.user || req.user.sub != id)) delete user.email;
+  if (user && (!req.user || req.user.sub != id)) {
+    delete user.email;
+    delete user.canReport;
+    delete user.canSubmit;
+    delete user.canReview;
+    delete user.canScreenshot;
+    delete user.banned;
+  }
   res.send(user);
 }));
 

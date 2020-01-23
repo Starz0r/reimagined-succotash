@@ -1,7 +1,7 @@
 import axios from 'axios';
 import chai from 'chai';
 import { fail, ok } from 'assert';
-import { createUser, createGame, getConTest, addReview } from './test-lib';
+import { createUser, createGame, getConTest, addReview, addTag } from './test-lib';
 import FormData from 'form-data';
 import fs from 'fs';
 import { hashSync } from 'bcrypt';
@@ -152,25 +152,35 @@ describe('game endpoint', function () {
     fail("get should not have been successful");
   });
 
+  it('fails when adding malformed tags', async () => {
+    const user = await createUser(false);
+    const game = await createGame();
+
+    try {
+      await axios.post(`http://localhost:4201/api/games/${game.id}/tags`,
+        ["reeee"],
+        {headers: {'Authorization': "Bearer " + user.token}});
+    } catch (err) {
+      expect(err).to.have.property('response');
+      expect(err.response).to.have.property('status').and.equal(400);
+      return;
+    }
+    fail("post should not have been successful");
+  });
+
   it('allows setting tags on a game', async () => {
     const user = await createUser(false);
     const game = await createGame();
 
-    const nm = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-    const tres = await axios.post('http://localhost:4201/api/tags',
-      {name:nm},
-      {headers: {'Authorization': "Bearer " + user.token}});
-    expect(tres).to.have.property('status').and.equal(200);
-    const tid = tres.data.id;
+    const tag = await addTag(user);
 
     const res = await axios.post(`http://localhost:4201/api/games/${game.id}/tags`,
-      [tid],
+      [tag.id],
       {headers: {'Authorization': "Bearer " + user.token}});
       expect(res).to.have.property('status').and.equal(200);
       expect(res).to.have.property('data');
-      expect(res.data[0].name).to.equal(nm);
-      expect(res.data[0].id).to.equal(tid);
+      expect(res.data[0].name).to.equal(tag.name);
+      expect(res.data[0].id).to.equal(tag.id);
       expect(res.data[0].count).to.equal(1);
   });
 

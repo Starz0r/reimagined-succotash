@@ -732,12 +732,11 @@ export default {
     whereList.add('gt.user_id',userId);
 
     var query = `
-      SELECT t.name, t.id, count(1) as count
+      SELECT t.name, t.id
       FROM GameTag gt
       JOIN Game g on g.id = gt.game_id AND g.removed = 0
       JOIN Tag t on t.id = gt.tag_id
       ${whereList.getClause()}
-      GROUP BY t.id, t.name
     `;
 
     const database = new Database();
@@ -748,12 +747,13 @@ export default {
     }
   },
 
-  async getTags(tagId?: number, q?: string) {
+  async getTags(tagId?: number, q?: string, name?: string) {
     const whereList = new WhereList();
-    whereList.add('gt.tag_id',tagId);
+    whereList.add('t.id',tagId);
     if (q !== undefined) {
       whereList.add2("t.name LIKE ?",'%'+q+'%');
     }
+    whereList.add('t.name',name);
 
     var query = `
       SELECT t.name, t.id

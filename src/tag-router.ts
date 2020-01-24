@@ -16,7 +16,8 @@ app.route('/').get(handle(async (req,res,next) => {
   const tagId = +req.query.tag_id||undefined
   const userId = +req.query.user_id||undefined
   const q = req.query.q||undefined
+  const name = req.query.name||undefined
 
-  const rows = await datastore.getTags(tagId,q);
+  const rows = await datastore.getTags(tagId,q,name);
   res.send(rows);
 }));

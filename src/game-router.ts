@@ -607,7 +607,7 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
  *         description: The id of the game to get tags for
  *     responses:
  *       200:
- *         description: List of screenshots for the game (or empty array if none)
+ *         description: List of tags for the game (or empty array if none)
  *       400:
  *         description: Invalid game id
  *       404:
@@ -619,11 +619,13 @@ app.route('/:id/tags').get(handle(async (req,res,next) => {
   }
 
   var gameId = parseInt(req.params.id,10);
+  
+  var userId = +req.query.uid || undefined;
 
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
 
-  const tags = await datastore.getTagsForGame(gameId);
+  const tags = await datastore.getTagsForGame(gameId,userId);
   res.send(tags);
 }));
 

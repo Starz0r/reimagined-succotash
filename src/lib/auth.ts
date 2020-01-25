@@ -1,23 +1,39 @@
 import config from '../config/config';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import ms from 'ms';
 
 export default class AuthModule {
-    public getToken(username: string, id: number, isAdmin: boolean) {
-        return jwt.sign({username,isAdmin},
-          config.app_jwt_secret,
-          {
-            expiresIn: "1 day",
-            subject: ""+id
-          });
-    }
+  public getSecret(): string {
+    return config.app_jwt_secret;
+  }
 
-    public async hashPassword(password: string): Promise<string> {
-        return await bcrypt.hash(password,10);
-    }
+  public getToken(username: string, id: number, isAdmin: boolean) {
+    return jwt.sign(
+        {
+          username,
+          isAdmin,
+          //useExp is when the token can actually be used
+          //if before now, then a new token should be regenerated
+          //based on user's current access and sent back
+          useExp:Math.floor((Date.now() + ms("15 minutes")) / 1000)
+        },
+        this.getSecret(),
+        {
+          //after this much time, the token needs to be discarded and the
+          //user must log in again with username/password
+          expiresIn: "7 days",
+          subject: ""+id
+        }
+    );
+  }
 
-    public async verifyPassword(hash: string, password: string): Promise<boolean> {
-        if (!password) return false;
-        return await bcrypt.compare(password,hash.replace(/^\$2y/, "$2a"));
-    }
+  public async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password,10);
+  }
+
+  public async verifyPassword(hash: string, password: string): Promise<boolean> {
+    if (!password) return false;
+    return await bcrypt.compare(password,hash.replace(/^\$2y/, "$2a"));
+  }
 }

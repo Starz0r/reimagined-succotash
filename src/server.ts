@@ -22,6 +22,7 @@ import { Database } from './database';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import * as Minio from 'minio';
+import { refreshToken } from './lib/auth-check';
 
 /** Exit codes for fatal errors. */
 enum ExitCode {
@@ -61,6 +62,7 @@ app.use(jwt_middleware({
   secret: config.app_jwt_secret,
   credentialsRequired: false
 }));
+app.use(refreshToken());
 
 console.log('Initializing role middleware...');
 

@@ -18,6 +18,12 @@ export default app;
  *   post:
  *     summary: Login
  *     description: Login
+ *     headers:
+ *      token:
+ *        schema:
+ *          type: string
+ *        description: User's token. Send in the Authorization header 
+ *                     as 'Bearer {token}' to execute requests as this user.
  *     tags: 
  *       - Authentication
  *     produces:
@@ -66,6 +72,7 @@ app.route('/login').post(handle(async (req,res,next) => {
           unsuccessfulLogins:0
         });
         user.token = auth.getToken(user.name,user.id,user.isAdmin);
+        res.setHeader('token',user.token);
         return res.send(user);
       }
     } finally {
@@ -120,7 +127,15 @@ app.route('/request-reset').post(handle(async (req,res,next) => {
  *   post:
  *     summary: Refresh Token
  *     description: Allows a user with a valid token to request a fresh token
- *                  with a new expiration date.
+ *                  with a new expiration date. This should be invoked whenever
+ *                  the 'useExp' timestamp in the token payload has been
+ *                  exceeded.
+ *     headers:
+ *      token:
+ *        schema:
+ *          type: string
+ *        description: User's token. Send in the Authorization header 
+ *                     as 'Bearer {token}' to execute requests as this user.
  *     tags: 
  *       - Authentication
  *     produces:
@@ -136,5 +151,6 @@ app.route('/refresh').post(userCheck(), handle(async (req,res,next) => {
   const user = await datastore.getUser(req.user.sub);
   if (!user) return res.sendStatus(401);
   user.token = auth.getToken(user.name,user.id,user.isAdmin);
+  res.setHeader('token',user.token);
   return res.send(user);
 }));

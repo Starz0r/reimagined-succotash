@@ -181,7 +181,6 @@ describe('game endpoint', function () {
       expect(res).to.have.property('data');
       expect(res.data[0].name).to.equal(tag.name);
       expect(res.data[0].id).to.equal(tag.id);
-      expect(res.data[0].count).to.equal(1);
   });
 
   it('allows user to clear tags', async () => {
@@ -202,7 +201,6 @@ describe('game endpoint', function () {
       expect(res).to.have.property('status').and.equal(200);
       expect(res).to.have.property('data');
       expect(res.data[0].id).to.equal(tid);
-      expect(res.data[0].count).to.equal(1);
 
     const res2 = await axios.post(`http://localhost:4201/api/games/${game.id}/tags`,
       [],

@@ -1,6 +1,8 @@
 import axios from 'axios';
 import chai from 'chai';
 import { getConTest, createUser } from './test-lib';
+import AuthModule from '../lib/auth';
+import jwt from 'jsonwebtoken';
 
 var expect = chai.expect;
 
@@ -36,6 +38,36 @@ describe('auth endpoint', function () {
       expect(result.data).to.have.property('token').and.be.a('string');
       expect(user.token).to.not.equal(result.data.token)
       //TODO: assert expiration date is newer than original token
+    });
+    
+    it('sends a new token in the response header', async () => {
+      const user = await createUser(false);
+  
+      //login
+      const login = await axios.post('http://localhost:4201/api/auth/login',
+          {username:user.username,password:user.password});
+      expect(login).to.have.property('status').and.equal(200);
+      expect(login).to.have.property('data');
+      expect(login.data).to.have.property('token').and.be.a('string');
+      expect(login.headers).to.have.property('token').and.be.a('string');
+    });
+    
+    it('refreshes the token with each request', async () => {
+      const user = await createUser(false);
+      
+      const auth = new AuthModule();
+      const originalToken = <any>jwt.verify(user.token,auth.getSecret());
+  
+      //wait a second so the new timeout is later
+      await new Promise(res => setTimeout(res, 1100));
+
+      const rsp = await axios.get('http://localhost:4201/api/users',
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp.headers).to.have.property('token').and.be.a('string');
+      const newToken = <any>jwt.verify(rsp.headers.token,auth.getSecret());
+      expect(newToken.useExp).to.be.greaterThan(originalToken.useExp);
+      expect(newToken.exp).to.be.greaterThan(originalToken.exp);
     });
 
     it('allows the user to request a password reset');

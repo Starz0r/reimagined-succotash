@@ -214,7 +214,17 @@ app.route('/').get(handle(async (req,res,next) => {
   params.id = req.query.id;
   params.removed = false;
   params.name = req.query.name;
-  params.tags = req.query.tags;
+
+  if (req.query.tags) {
+    try {
+      params.tags = <string[]>JSON.parse(req.query.tags);
+      params.tags.forEach((s,i)=> {
+        if (+s === NaN) throw 'tag #'+i+' was not a number -> '+s
+      });
+    } catch (e) {
+      res.status(400).send({error:'tags must be an array of numbers'});
+    }
+  }
   params.author = req.query.author;
   params.hasDownload = req.query.hasDownload;
   params.createdFrom = req.query.createdFrom;

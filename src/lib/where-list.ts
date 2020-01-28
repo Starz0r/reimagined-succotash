@@ -23,7 +23,7 @@ export default class WhereList {
     
     public addPhrase(phrase: string, ...value: any[]): boolean {
         if (value === undefined || !value || value.length == 0) return false;
-        this.columns.push(phrase);
+        this.columns.push("("+phrase+")");
         this.params = this.params.concat(value);
         return true;
     }

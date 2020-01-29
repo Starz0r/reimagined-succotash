@@ -56,6 +56,8 @@ For a production-like environment, you may spin up as many instances of the serv
 
 # Docker Commands
 
+This stuff might be a little outdated, see coreos tutorial below
+
 ## Build the server
 ```
 docker build -t delfruit-server .
@@ -79,4 +81,103 @@ docker run -d --name df-server --network df-network -p 4201:4201 -v D:\Projects\
 ## Rebuild and redeploy
 ```
 docker build -t delfruit-server . && docker kill df-server && docker rm df-server && docker run -d --name df-server --network df-network -p 4201:4201 -v D:\Projects\delfruit2-server\config:/home/node/app/config delfruit-server
+```
+
+# Starting from scratch in coreos
+
+## Create swapfile
+https://coreos.com/os/docs/latest/adding-swap.html
+
+## Login to docker
+Log in with an account that has access to my repo on docker.io
+```
+docker login
+```
+
+## Start minio
+keys are keyboard mashings, but don't use a dollar sign! fucks up in linux
+```
+docker run -p 9000:9000 --name minio \
+  -e "MINIO_ACCESS_KEY=AKKAIOSSFROD3NN7EXAMPSLE" \
+  -e "MINIO_SECRET_KEY=wJala4rXUtnFf#jEMI/K77645MDEgfsdNG/bPxRfliCY" \
+  -v /mnt/data:/data \
+  minio/minio server /data
+```
+
+## Start mysql
+password is keyboard mashing, but don't use a dollar sign! fucks up in linux
+```
+docker run -p 3306:3306 \
+  -v /mnt/mysql:/var/lib/mysql \
+  -e MYSQL_ROOT_PASSWORD=U0yBVBSKdnnEGoAXLRxc \
+  --name mysql -d mysql:latest \
+  mysqld --default-authentication-plugin=mysql_native_password
+```
+
+## Import database
+Copy a delfruit backup over via winscp
+```
+docker exec -i mysql mysql -u root -pU0yBVBSKdnnEGoAXLRxc delfruit < delfruit.sql
+```
+
+## Migrate datatypes
+```sql
+docker exec -i mysql mysql -u root -pU0yBVBSKdnnEGoAXLRxc
+
+-- allow non-local connections
+GRANT ALL ON *.* to user@'%'
+
+-- don't freak out at zero dates
+SET SESSION sql_mode = '';
+
+USE delfruit;
+
+-- alter phash, salt
+ALTER TABLE User MODIFY phash varchar(128) DEFAULT NULL;
+ALTER TABLE User MODIFY salt varchar(100) DEFAULT NULL;
+ALTER TABLE User MODIFY date_last_login timestamp DEFAULT NULL;
+UPDATE User SET date_last_login='2001-01-01 00:00:00' WHERE date_last_login<'2001-01-01 00:00:00';
+-- clear sensitive data
+UPDATE User SET email='';
+UPDATE User SET phash2='';
+UPDATE User SET last_ip='';
+```
+
+## Setup Server Config
+
+```
+mkdir config
+vim config/config.ts
+```
+
+```ts
+export = {
+  db_host: "", //ip of droplet
+  db_database: "delfruit",
+  db_user: "root",
+  db_password: "", //keyboard mashings from above
+  app_port: 4201,
+  app_jwt_secret: '', //keyboard mashings
+
+  s3_host:"", //ip of droplet
+  s3_port:9000,
+  s3_ssl: false,
+  s3_access:"", //keyboard mashings from above
+  s3_secret:"", //keyboard mashings from above
+  s3_bucket:"df2images",
+  s3_region:"us-east-1"
+}
+```
+
+## Start server
+
+```
+docker run -d --name df-server -p 4201:4201 \
+-v /home/core/config:/home/node/app/src/config klazen108/df2-server
+```
+
+## Start client
+proxy needs to be configured correctly
+```
+docker run -d --name df-client -p 80:80 klazen108/df2-client
 ```

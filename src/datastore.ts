@@ -362,13 +362,11 @@ export default {
       var query = `
         SELECT r.*, 
         u.name user_name,
-        u.id AS uid, 
         g.name game_name,
-        g.id AS game_id,
         COUNT(l.id) AS like_count,
         r.user_id = g.owner_id AS owner_review,
-        r.user_id as userId,
-        r.game_id as gameId
+        r.user_id,
+        r.game_id
         FROM Rating r
         JOIN User u ON r.user_id=u.id
         JOIN Game g on r.game_id=g.id
@@ -606,6 +604,9 @@ export default {
       if (game.collab && game.author_raw) game.author = (game.author_raw).split(" ");
       else game.author = game.author_raw?[game.author_raw]:[];
       delete game.author_raw;
+
+      game.urlSpdrn = game.url_spdrn;
+      delete game.url_spdrn;
 
       return game;
     } finally {

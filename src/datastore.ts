@@ -83,11 +83,14 @@ export default {
     updateList.addIf('removed',game.removed?1:0,game.removed !== undefined);
     updateList.add('name',game.name);
     updateList.add('url',game.url);
-    updateList.add('urlSpdrn',game.urlSpdrn);
+    updateList.add('url_spdrn',game.urlSpdrn);
     if (game.author) {
       updateList.add('author',game.author.join(' '));
     }
-    updateList.add('date_created',game.dateCreated);
+    if (game.dateCreated) {
+      const newdate = moment(game.dateCreated).format('YYYY-MM-DD 00:00:00')
+      updateList.add('date_created',newdate);
+    }
     updateList.add('owner_id',game.ownerId);
     updateList.add('owner_bio',game.ownerBio);
   
@@ -587,7 +590,9 @@ export default {
     const doClose = !database;
     const db = database || new Database();
     const query = `
-      SELECT g.*, g.author as author_raw
+      SELECT g.*
+          , g.date_created as dateCreated
+          , g.author as author_raw
           , AVG(r.rating) AS rating
           , AVG(r.difficulty) AS difficulty 
       FROM Game g 
@@ -607,6 +612,8 @@ export default {
 
       game.urlSpdrn = game.url_spdrn;
       delete game.url_spdrn;
+
+      delete game.date_created; //dateCreated
 
       return game;
     } finally {
@@ -877,10 +884,21 @@ export default {
     if (params.difficultyTo !== undefined) 
     havingList.add2("difficulty <= ?",params.difficultyTo);
 
+    let orderCol = 'date_created';
+    if (params.orderCol) {
+      const sortWhitelist: {[id: string]: string} = {
+        'date_created':'date_created',
+        'rating':'AVG(r.rating)',
+        'difficulty':'AVG(r.difficulty)',
+      };
+      orderCol = sortWhitelist[params.orderCol] || 'date_created';
+    }
+
     const query = `
       SELECT g.*,
       AVG(r.rating) AS rating,
       AVG(r.difficulty) AS difficulty,
+      date_created AS dateCreated,
       COUNT(r.id) AS rating_count
       FROM Game g
       LEFT JOIN Rating r ON r.removed=0 AND r.game_id=g.id
@@ -888,7 +906,7 @@ export default {
       ${whereList.getClause()}
       GROUP BY g.id
       ${havingList.getClause()}
-      ORDER BY ${params.orderCol || 'date_created'} ${params.orderDir || 'ASC'}
+      ORDER BY ${orderCol} ${params.orderDir || 'ASC'}
       LIMIT ?,?
     `;
     //console.log(query);

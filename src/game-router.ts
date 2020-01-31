@@ -283,6 +283,19 @@ app.route('/:id').get(handle(async (req,res,next) => {
     res.sendStatus(404);
     return;
   }
+
+  //get owner review
+  if (game.ownerId) {
+    const ownerReviews = await datastore.getReviews({
+      game_id:game.id,
+      user_id:+game.ownerId,
+      includeOwnerReview: true
+    })
+    if (ownerReviews.length == 1) {
+      game.ownerBio = ownerReviews[0];
+    }
+  }
+
   res.send(game); 
 }));
 
@@ -395,7 +408,12 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
   var limit = +req.query.limit || 50;
 
   var byUserId = (+req.query.byUserId) || undefined;
-  const rows = await datastore.getReviews({game_id:id,user_id:byUserId,page:page,limit:limit});
+  const rows = await datastore.getReviews({
+    game_id:id,
+    user_id:byUserId,
+    includeOwnerReview:(req.query.includeOwnerReview==='true'),
+    page:page,limit:limit
+  });
   res.send(rows);
 }));
 
@@ -454,6 +472,13 @@ app.route('/:id/reviews').put(userCheck(), handle(async (req,res,next) => {
 
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
+
+  if (req.body.rating) {
+    req.body.rating = Math.min(Math.max(req.body.rating, 0), 100);
+  }
+  if (req.body.difficulty) {
+    req.body.difficulty = Math.min(Math.max(req.body.difficulty, 0), 100);
+  }
 
   const newReview = await datastore.addReview(req.body,gameId,req.user.sub);
   res.send(newReview);

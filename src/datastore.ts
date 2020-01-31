@@ -92,7 +92,7 @@ export default {
       updateList.add('date_created',newdate);
     }
     updateList.add('owner_id',game.ownerId);
-    updateList.add('owner_bio',game.ownerBio);
+    //updateList.add('owner_bio',game.ownerBio);
   
     try {
       let params = updateList.getParams();
@@ -355,6 +355,9 @@ export default {
       where.addIf('r.removed',0,!isAdmin); //TODO: allow admin to toggle
       where.addIf('u.banned',0,!isAdmin); //TODO: allow admin to toggle
       where.addIf('g.removed',0,!isAdmin); //TODO: allow admin to toggle
+      if (!options.includeOwnerReview) {
+        where.addDirect('g.owner_id <> r.user_id');
+      }
 
       let params = [];
       if (options.page !== undefined) {
@@ -581,7 +584,10 @@ export default {
   },
 
   async getReview(reviewId: number): Promise<Review|null> {
-    const rows = await this.getReviews({id: reviewId});
+    const rows = await this.getReviews({
+      id: reviewId, 
+      includeOwnerReview: true
+    });
     if (!rows || rows.length == 0) return null;
     return rows[0];
   },
@@ -592,6 +598,7 @@ export default {
     const query = `
       SELECT g.*
           , g.date_created as dateCreated
+          , g.owner_id as ownerId
           , g.author as author_raw
           , AVG(r.rating) AS rating
           , AVG(r.difficulty) AS difficulty 

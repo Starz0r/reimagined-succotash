@@ -898,7 +898,7 @@ export default {
       SELECT g.*,
       AVG(r.rating) AS rating,
       AVG(r.difficulty) AS difficulty,
-      date_created AS dateCreated,
+      g.date_created AS dateCreated,
       COUNT(r.id) AS rating_count
       FROM Game g
       LEFT JOIN Rating r ON r.removed=0 AND r.game_id=g.id

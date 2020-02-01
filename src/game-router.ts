@@ -601,7 +601,7 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
   if (!game) return res.sendStatus(404);
   const ss: Screenshot = {
     gameId: +req.params.id,
-    description: req.body.description
+    description: req.body.description||''
   };
 
   const ssres = await datastore.addScreenshot(ss,req.user.sub);

@@ -726,7 +726,7 @@ export default {
       const insertList = new InsertList();
       insertList.add('game_id',ss.gameId);
       insertList.add('added_by_id',adderId);
-      insertList.add('description',ss.description);
+      insertList.addDirect('description',ss.description); //blank description is falsy
 
       const result = await database.execute(
         `INSERT INTO Screenshot ${insertList.getClause()}`, 

@@ -540,7 +540,11 @@ app.route('/:id/screenshots').get(handle(async (req,res,next) => {
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
 
-  let parms: GetScreenshotParms = {gameId,page,limit};
+  let approved = undefined;
+  if (req.query.approved) approved = req.query.approved==="1";
+  if (!isAdmin) approved = true; //only return approved screenshots
+
+  let parms: GetScreenshotParms = {gameId,page,limit,approved};
   if (!isAdmin) parms.removed = false;
   const rows = await datastore.getScreenshots(parms);
   res.send(rows);

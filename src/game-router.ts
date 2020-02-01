@@ -412,6 +412,7 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
     game_id:id,
     user_id:byUserId,
     includeOwnerReview:(req.query.includeOwnerReview==='true'),
+    textReviewsFirst:(req.query.textReviewsFirst==='true'),
     page:page,limit:limit
   });
   res.send(rows);

@@ -355,7 +355,7 @@ export default {
       where.addIf('r.removed',0,!isAdmin); //TODO: allow admin to toggle
       where.addIf('u.banned',0,!isAdmin); //TODO: allow admin to toggle
       where.addIf('g.removed',0,!isAdmin); //TODO: allow admin to toggle
-      if (!options.includeOwnerReview) {
+      if (options.includeOwnerReview===false) {
         where.addDirect('g.owner_id <> r.user_id');
       }
 

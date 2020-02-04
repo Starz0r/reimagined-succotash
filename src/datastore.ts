@@ -380,7 +380,7 @@ export default {
         ${where.getClause()}
         GROUP BY r.id
         ${options.textReviewsFirst
-          ?`	CASE WHEN (r.comment IS NULL OR r.comment='') THEN 0 ELSE 1 END DESC, 
+          ?`ORDER BY CASE WHEN (r.comment IS NULL OR r.comment='') THEN 0 ELSE 1 END DESC, 
               COUNT(l.id) DESC,
               r.date_created DESC`
           :'ORDER BY r.date_created DESC'}

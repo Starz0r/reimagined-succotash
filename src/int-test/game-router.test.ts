@@ -512,4 +512,26 @@ describe('game endpoint', function () {
     const games = list.data as any[];
     return expect(games.find(o => o.id == game.id)).to.be.undefined;
   });
+
+  it('returns the total count of matched games in header', async () => {
+    const game = await createGame();
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {name: game.user.username} //name contains username
+    });
+    expect(list).to.have.property('status').and.equal(200);
+
+    expect(list.headers).to.have.property('total-count').and.equal('1');
+  });
+  
+  it('returns 0 for the total count of matched games in header when no match', async () => {
+    const game = await createGame();
+    
+    const list = await axios.get(`http://localhost:4201/api/games`,{
+      params: {name: game.user.username+'zzz'} //name contains username
+    });
+    expect(list).to.have.property('status').and.equal(200);
+
+    expect(list.headers).to.have.property('total-count').and.equal('0');
+  });
 });

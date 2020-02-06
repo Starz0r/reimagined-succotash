@@ -837,6 +837,7 @@ export default {
 
   async countGames(params: GetGamesParms) {
     const rows = await this.getGames(params,true);
+    if (!rows || rows.length==0) return 0;
     return rows[0].total_count;
   },
 

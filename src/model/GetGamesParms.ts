@@ -4,7 +4,7 @@ export interface GetGamesParms {
   page: number;
   limit: number;
   orderCol?: string;
-  orderDir?: "ASC" | "DESC";
+  orderDir?: "asc" | "desc";
 
   id?: number;
   ownerUserId?: number;

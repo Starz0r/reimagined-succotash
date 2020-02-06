@@ -899,7 +899,8 @@ export default {
     let orderCol = 'date_created';
     if (params.orderCol) {
       const sortWhitelist: {[id: string]: string} = {
-        'date_created':'date_created',
+        'name':'g.sortname',
+        'date_created':'g.date_created',
         'rating':'AVG(r.rating)',
         'difficulty':'AVG(r.difficulty)',
       };

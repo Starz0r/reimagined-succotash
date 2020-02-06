@@ -193,13 +193,12 @@ app.route('/').post(adminCheck(), handle(async (req,res,next) => {
 app.route('/').get(handle(async (req,res,next) => {
   var order_col = whitelist(
     req.query.order_col,
-    ['sortname','date_created'],
-    'sortname');
-  order_col = 'g.'+order_col;
+    ['name','date_created','rating','difficulty'],
+    'name');
   let order_dir = whitelist(
     req.query.order_dir,
-    ['ASC','DESC'],
-    'ASC') as 'ASC'|'DESC';
+    ['asc','desc'],
+    'asc') as 'asc'|'desc';
   var isAdmin = req.user && req.user.isAdmin;
 
   const params: GetGamesParms = {

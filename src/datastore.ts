@@ -888,13 +888,13 @@ export default {
     
     const havingList = new WhereList("HAVING");
     if (params.ratingFrom !== undefined) 
-    havingList.add2("rating >= ?",params.ratingFrom);
+    havingList.add2("AVG(r.rating) >= ?",params.ratingFrom);
     if (params.ratingTo !== undefined)
-    havingList.add2("rating <= ?",params.ratingTo);
+    havingList.add2("AVG(r.rating) <= ?",params.ratingTo);
     if (params.difficultyFrom !== undefined) 
-    havingList.add2("difficulty >= ?",params.difficultyFrom);
+    havingList.add2("AVG(r.difficulty) >= ?",params.difficultyFrom);
     if (params.difficultyTo !== undefined) 
-    havingList.add2("difficulty <= ?",params.difficultyTo);
+    havingList.add2("AVG(r.difficulty) <= ?",params.difficultyTo);
 
     let orderCol = 'date_created';
     if (params.orderCol) {

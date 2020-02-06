@@ -238,6 +238,10 @@ app.route('/').get(handle(async (req,res,next) => {
   params.difficultyTo = req.query.difficultyTo;
 
   const rows = await datastore.getGames(params);
+  if (!params.page) {
+    const total = await datastore.countGames(params);
+    res.header('total-count',total);
+  }
   res.send(rows);
 }));
 

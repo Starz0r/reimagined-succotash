@@ -835,7 +835,12 @@ export default {
     }
   },
 
-  async getGames(params: GetGamesParms) {
+  async countGames(params: GetGamesParms) {
+    const rows = await this.getGames(params,true);
+    return rows[0].total_count;
+  },
+
+  async getGames(params: GetGamesParms, countOnly?: boolean) {
     const database = new Database();
 
     const whereList = new WhereList();
@@ -902,33 +907,48 @@ export default {
     }
 
     const query = `
-      SELECT g.*,
+      SELECT `+
+      (countOnly
+      ?`COUNT(1) AS total_count`
+      :`g.*,
       AVG(r.rating) AS rating,
       AVG(r.difficulty) AS difficulty,
       g.date_created AS dateCreated,
       COUNT(r.id) AS rating_count
+      `
+      )+
+      `
       FROM Game g
       LEFT JOIN Rating r ON r.removed=0 AND r.game_id=g.id
       LEFT JOIN User AS u ON u.id = r.user_id AND u.banned = 0
-      ${whereList.getClause()}
-      GROUP BY g.id
-      ${havingList.getClause()}
+      ${whereList.getClause()}`+
+      (countOnly
+      ?``
+      :`GROUP BY g.id
+      `
+      )+
+      ` 
+      ${havingList.getClause()}`+
+      (countOnly
+      ?``
+      :`
       ORDER BY ${orderCol} ${params.orderDir || 'ASC'}
       LIMIT ?,?
-    `;
-    //console.log(query);
-    //console.log(whereList.getParams());
-    //WHERE gg.removed = 0 AND gg.url IS NOT NULL and gg.url != '' FOR TOP 10 LATEST
+      `);
+    
+    let queryparms = whereList.getParams()
+      .concat(havingList.getParams());
+    if (!countOnly) queryparms = queryparms.concat([params.page*params.limit,params.limit]);
     try {
-      const rows = await database.query(query,
-        whereList.getParams()
-          .concat(havingList.getParams())
-          .concat([params.page*params.limit,params.limit]));
-      rows.forEach(game => {
-        if (!moment(game.date_created).isValid()) game.date_created = null;
-        if (game.collab == 1) game.author = game.author.split(" ");
-        else game.author = [game.author];
-      });
+      const rows = await database.query(query,queryparms);
+          
+      if (!countOnly) {
+        rows.forEach(game => {
+          if (!moment(game.date_created).isValid()) game.date_created = null;
+          if (game.collab == 1) game.author = game.author.split(" ");
+          else game.author = [game.author];
+        });
+      }
       return rows;
     } finally {
       database.close();

@@ -114,3 +114,16 @@ export function getConTest(ctx: Mocha.Context): Mocha.HookFunction {
       ctx.done(new Error('server not responding at http://localhost:4201/api, is it online?'));
     });
   }
+  
+
+export async function setUserToken(user: TestUser, token: string): Promise<any> {
+    const database = new Database();
+    try {
+        const success = await database.execute(
+            `UPDATE User SET reset_token = ?, reset_token_set_time = CURRENT_TIMESTAMP
+            WHERE id = ?`,[token,user.id]);
+        expect(success.affectedRows).to.be.equal(1);
+    } finally {
+        database.close();
+    }
+}

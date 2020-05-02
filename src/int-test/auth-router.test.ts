@@ -1,6 +1,7 @@
 import axios from 'axios';
 import chai from 'chai';
-import { getConTest, createUser } from './test-lib';
+import { fail, ok } from 'assert';
+import { getConTest, createUser, setUserToken } from './test-lib';
 import AuthModule from '../lib/auth';
 import jwt from 'jsonwebtoken';
 
@@ -71,20 +72,36 @@ describe('auth endpoint', function () {
     });
 
     it('allows the user to request a password reset', async () => {
-      //register
-      const reg = await axios.post('http://localhost:4201/api/users',
-      {
-        username:usernameA,
-        password:"test-pw",
-        email:"cmurphy1337@live.com"
-      });
-      expect(reg).to.have.property('status').and.equal(200);
-      expect(reg).to.have.property('data');
-      expect(reg.data).to.have.property('token').and.be.a('string');
+      const user = await createUser(false);
   
       //login
       const login = await axios.post('http://localhost:4201/api/auth/request-reset',
-          {username:usernameA});
+          {username:user.username});
       expect(login).to.have.property('status').and.equal(204);
     });
+
+    it("doesn't allow password reset for blank requests", async () => {
+      try {
+        await axios.post('http://localhost:4201/api/auth/reset',{});
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(401);
+        return;
+      }
+      fail("reset should not have been successful");
+    });
+
+    it('allows the user to reset their password', async () => {
+      const user = await createUser(false);
+
+      await setUserToken(user,"test-token");
+
+      const req = await axios.post('http://localhost:4201/api/auth/reset',{
+        username:user.username,
+        token:"test-token",
+        password:"new-password"
+      });
+      expect(req).to.have.property('status').and.equal(204);
+      expect(req.headers).to.have.property('token').and.be.a('string');
+    }).timeout(5000);
   });

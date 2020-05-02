@@ -204,6 +204,80 @@ This link is valid for 2 hours since making the request.\n
 /**
  * @swagger
  * 
+ * /auth/reset:
+ *   post:
+ *     summary: Submit Password Reset
+ *     description: Should be called with the token the user received in their reset email. 
+ *                  Generates a token after successful completion.
+ *     headers:
+ *      token:
+ *        schema:
+ *          type: string
+ *        description: User's token. Send in the Authorization header 
+ *                     as 'Bearer {token}' to execute requests as this user.
+ *     tags: 
+ *       - Authentication
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: username
+ *         in: formData
+ *         required: true
+ *         type: string
+ *       - name: token
+ *         in: formData
+ *         required: true
+ *         type: string
+ *       - name: password
+ *         in: formData
+ *         required: true
+ *         type: string
+ *         description: the new password
+ *     responses:
+ *       204:
+ *         description: password reset
+ *       400:
+ *         description: invalid username/token
+ * 
+ */
+app.route('/reset').post(handle(async (req,res,next) => {
+  const username = req.body.username;
+  if (!username) return res.sendStatus(401);
+  const token = req.body.token;
+  if (!token) return res.sendStatus(401);
+
+  const database = new Database();
+  try {
+    const results = await database.query(`
+    SELECT id,reset_token_set_time,is_admin FROM User WHERE name = ? AND reset_token = ?`,[username,token])
+    if (results.length == 0) return res.sendStatus(401);
+    if (results.length > 1) {
+      console.log(`retrieved multiple users! username:[${username}] token:[${token}]`);
+      return res.sendStatus(401);
+    }
+
+    await database.execute(
+      `UPDATE User SET 
+      phash2 = ? ,
+      phash = '' ,
+      salt = '' ,
+      reset_token = null,
+      reset_token_set_time = null,
+      ali_token = null,
+      ali_date_set = null
+    WHERE id = ? `,[req.body.password,results[0].id]);
+
+    const newtoken = auth.getToken(username,results[0].id,results[0].is_admin);
+    res.setHeader('token',newtoken);
+    res.sendStatus(204);
+  } finally {
+    database.close();
+  }
+}));
+
+/**
+ * @swagger
+ * 
  * /auth/refresh:
  *   post:
  *     summary: Refresh Token

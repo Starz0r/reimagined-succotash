@@ -6,6 +6,10 @@ import moment = require('moment');
 import crypto from 'crypto';
 import handle from './lib/express-async-catch';
 import { userCheck } from './lib/auth-check';
+import nodemailer from 'nodemailer';
+import config from './config/config';
+import util from 'util';
+//import fs from 'fs';
 
 const app = express.Router();
 const auth = new AuthModule();
@@ -107,14 +111,91 @@ app.route('/request-reset').post(handle(async (req,res,next) => {
   const username = req.body.username;
   if (!username) return res.sendStatus(400);
 
-  const token = crypto.randomBytes(128).toString('hex');
+  const token = crypto.randomBytes(126).toString('hex');
 
   const database = new Database();
   try {
+    const results = await database.query('SELECT email,reset_token_set_time FROM User WHERE name = ?',[username])
+
+    //204 if no user by name
+    if (results.length === 0) return res.sendStatus(204);
+    const result = results[0]
+
+    //204 if already requested reset within the hour
+    const rsts = result.reset_token_set_time;
+    if (rsts && moment(rsts).isAfter(moment().subtract(1, 'hours'))) {
+      return res.sendStatus(204);
+    }
+
     await database.execute(
       `UPDATE User SET reset_token = ?, reset_token_set_time = CURRENT_TIMESTAMP
-      WHERE name = ? AND `,[token,username]);
-    res.sendStatus(204);
+      WHERE name = ?`,[token,username]);
+
+  let transporter = nodemailer.createTransport(config.smtp);
+  //let html = fs.readFileSync('pword-reset-email.html', 'utf8');
+  let html = `<html>
+  <head>
+      <style>
+          body {
+              background-color: #303030;
+              color: white;
+              font: 400 14px/20px Roboto, "Helvetica Neue", sans-serif;
+          }
+
+          .body {
+              padding: 1em;
+          }
+
+          .header {
+              background-color: rgb(63, 81, 181);
+              padding: 1em;
+          }
+
+          h1 {
+              font: 500 20px/32px Roboto, "Helvetica Neue", sans-serif;
+          }
+
+          a {
+              color: #aaaaff;
+          }
+      </style>
+  </head>
+  <body style="margin: 0">
+      <div class="header">
+          <h1>
+              <img alt="delfruit cherry logo" src="data:image/gif;base64,R0lGODlhFQAYALMIABwcHAwMDCEhIQsLC3UAAP9bWwUAAP8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh/wtYTVAgRGF0YVhNUDw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NTUxOTAxMUFCMEJEMTFFNDk5NkJCOEEwREEzMENFNjEiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NTUxOTAxMUJCMEJEMTFFNDk5NkJCOEEwREEzMENFNjEiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo1NTE5MDExOEIwQkQxMUU0OTk2QkI4QTBEQTMwQ0U2MSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo1NTE5MDExOUIwQkQxMUU0OTk2QkI4QTBEQTMwQ0U2MSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PgH//v38+/r5+Pf29fTz8vHw7+7t7Ovq6ejn5uXk4+Lh4N/e3dzb2tnY19bV1NPS0dDPzs3My8rJyMfGxcTDwsHAv769vLu6ubi3trW0s7KxsK+urayrqqmop6alpKOioaCfnp2cm5qZmJeWlZSTkpGQj46NjIuKiYiHhoWEg4KBgH9+fXx7enl4d3Z1dHNycXBvbm1sa2ppaGdmZWRjYmFgX15dXFtaWVhXVlVUU1JRUE9OTUxLSklIR0ZFRENCQUA/Pj08Ozo5ODc2NTQzMjEwLy4tLCsqKSgnJiUkIyIhIB8eHRwbGhkYFxYVFBMSERAPDg0MCwoJCAcGBQQDAgEAACH5BAkeAAgALAAAAAAVABgAAAR1EMlJKzLYaorz3p0BhgYRfuWhHkXRoSvbumUgWAChzi1WHAQTJaDbzTqtlQghKBp7viRQlFrxXDzlJSa7zrQGrvcL5navMarZa1abd++DOx6f07nC6n1FAEzCeysBHE53fTiBBBsDOW8mSxoAGIUeHxIkkBQRACH5BAUeAAgALAAAAAAVABgAAARyEMlJq71Ymm0u/xpIbcRhmsS3VUB5FnDBXYF7xDEZVIJ945vCgSCYGHw4WVCY0pxMwKXw0Dk+fzkcanPFJmEnbvcLDhu6Xq0ZDY11xew4Kc5unulvjQ/flLTwKAAVA3tdBDsWf3WCGHNPKR0ZISqSlRcRADs=" />
+              <span class="title">Delicious Fruit 2.0 - Password Reset</span>
+          </h1>
+      </div>
+      <div class="body">
+          Greetings from Delicious Fruit!
+          <br><br>
+          A password reset request was made on your behalf. If this wasn't you, you can safely ignore this message.
+          <br><br>
+          To reset your password, click here: <a href='http://delicious-fruit.com/password_reset.php?name=%s&token=%s'>Reset Password</a>
+          <br><br>
+          This link is valid for 2 hours since making the request.
+          <br><br>
+          -The staff at Delicious-Fruit ❤️
+      </div>
+  </body>
+</html>`;
+  html = util.format(html,username,token);
+
+  const mailResult = await transporter.sendMail({
+    from:"webmaster@delicious-fruit.com",
+    to:result.email,
+    subject:`Delicious-Fruit Password Reset`,
+    html,
+    text:`Greetings from Delicious Fruit!\n
+A password reset request was made on your behalf. If this wasn't you, you can safely ignore this message.\n
+To reset your password, visit this link: http://delicious-fruit.com/password_reset.php?name=${username}&token=${token} \n
+This link is valid for 2 hours since making the request.\n
+-The staff at Delicious-Fruit ❤️`
+  });
+  console.log(mailResult);
+  res.sendStatus(204);
+
   } finally {
     database.close();
   }

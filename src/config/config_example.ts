@@ -12,4 +12,14 @@ export = {
   s3_ssl: true,
   s3_access:"",
   s3_secret:"",
+
+  smtp: {    
+    host: "smtp.example.com",
+    port: 587,
+    secure: true,
+    auth: {
+      user:"user",
+      pass:"p4ssw0rd",
+    }
+  }
 }

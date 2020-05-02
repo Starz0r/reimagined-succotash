@@ -70,5 +70,21 @@ describe('auth endpoint', function () {
       expect(newToken.exp).to.be.greaterThan(originalToken.exp);
     });
 
-    it('allows the user to request a password reset');
+    it('allows the user to request a password reset', async () => {
+      //register
+      const reg = await axios.post('http://localhost:4201/api/users',
+      {
+        username:usernameA,
+        password:"test-pw",
+        email:"cmurphy1337@live.com"
+      });
+      expect(reg).to.have.property('status').and.equal(200);
+      expect(reg).to.have.property('data');
+      expect(reg.data).to.have.property('token').and.be.a('string');
+  
+      //login
+      const login = await axios.post('http://localhost:4201/api/auth/request-reset',
+          {username:usernameA});
+      expect(login).to.have.property('status').and.equal(204);
+    });
   });

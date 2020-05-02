@@ -75,7 +75,7 @@ app.route('/').get(handle(async (req,res,next) => {
   //TODO: order by & dir
   var page = +req.query.page || 0;
   var limit = +req.query.limit || 50;
-  const rows = await datastore.getReviews({page:page,limit:limit});
+  const rows = await datastore.getReviews({removed:false,page:page,limit:limit});
   return res.send(rows);
 }));
 
@@ -135,14 +135,14 @@ app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
   const ogReview = await datastore.getReview(+rid);
   if (ogReview === null) return res.sendStatus(404);
 
-  const isReviewer = ogReview.userId == req.user.sub;
+  const isReviewer = +(ogReview.user_id!) == +req.user.sub;
 
-  if (!(isAdmin || isReviewer)) return res.sendStatus(403);
+  if (!isAdmin && !isReviewer) return res.sendStatus(403);
 
   const review = req.body;
   review.id = rid;
 
-  if (!(isAdmin || isReviewer)) {
+  if (!isAdmin && !isReviewer) {
     delete review.removed;
   }
 

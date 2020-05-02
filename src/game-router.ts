@@ -292,7 +292,8 @@ app.route('/:id').get(handle(async (req,res,next) => {
     const ownerReviews = await datastore.getReviews({
       game_id:game.id,
       user_id:+game.ownerId,
-      includeOwnerReview: true
+      includeOwnerReview: true,
+      removed: false,
     })
     if (ownerReviews.length == 1) {
       game.ownerBio = ownerReviews[0];
@@ -416,7 +417,8 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
     user_id:byUserId,
     includeOwnerReview:(req.query.includeOwnerReview==='true'),
     textReviewsFirst:(req.query.textReviewsFirst==='true'),
-    page:page,limit:limit
+    page:page,limit:limit,
+    removed:false
   });
   res.send(rows);
 }));

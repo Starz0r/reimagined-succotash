@@ -1,7 +1,7 @@
 export interface Review {
   id?: number;
-  userId?: number;
-  gameId?: number;
+  user_id?: number;
+  game_dd?: number;
   rating?: number;
   difficulty?: number;
   comment?: string;

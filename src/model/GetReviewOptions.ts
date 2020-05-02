@@ -6,4 +6,5 @@ export interface GetReviewOptions {
   limit?: number;
   textReviewsFirst?: boolean;
   includeOwnerReview?: boolean;
+  removed?: boolean;
 }

@@ -48,7 +48,6 @@ describe('review endpoint', function () {
       const admin = await createUser(true);
       const game = await createGame();
       const rv = await addReview(admin,game);
-      console.log(rv.id)
 
       let rsp = await axios.patch(`http://localhost:4201/api/reviews/${rv.id}`,
         { removed: true },

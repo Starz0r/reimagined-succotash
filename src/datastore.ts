@@ -346,17 +346,16 @@ export default {
   async getReviews(options: GetReviewOptions): Promise<any[]> {
     const database = new Database();
     try {
-      var isAdmin = false;
 
       const where = new WhereList();
       where.add('r.game_id',options.game_id);
       where.add('r.user_id',options.user_id);
       where.add('r.id',options.id);
-      where.addIf('r.removed',0,!isAdmin); //TODO: allow admin to toggle
-      where.addIf('u.banned',0,!isAdmin); //TODO: allow admin to toggle
-      where.addIf('g.removed',0,!isAdmin); //TODO: allow admin to toggle
+      where.add('r.removed',options.removed);
+      where.add('u.banned',options.removed);
+      where.add('g.removed',options.removed);
       if (options.includeOwnerReview===false) {
-        where.addDirect('g.owner_id <> r.user_id');
+        where.addDirect('g.owner_id is null or g.owner_id <> r.user_id');
       }
 
       let params = [];
@@ -391,6 +390,12 @@ export default {
     } finally {
       database.close();
     }
+  },
+
+  logQuery(query: string, params: any[]) {
+    console.log("==QUERY DEBUGGER==")
+    console.log(query);
+    console.log(params);
   },
 
   async addReview(review: Review, gameId: number, userId: number): Promise<Review> {
@@ -583,10 +588,11 @@ export default {
     }
   },
 
-  async getReview(reviewId: number): Promise<Review|null> {
+  async getReview(reviewId: number, removed?: boolean): Promise<Review|null> {
     const rows = await this.getReviews({
       id: reviewId, 
-      includeOwnerReview: true
+      includeOwnerReview: true,
+      removed
     });
     if (!rows || rows.length == 0) return null;
     return rows[0];

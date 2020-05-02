@@ -8,6 +8,7 @@ export class Database {
   constructor() {
     this.connection = mysql.createConnection({
       host: config.db_host,
+      port:config.db_port,
       database: config.db_database,
       user: config.db_user,
       password: config.db_password
@@ -52,6 +53,7 @@ export class Database {
     try {
       connection = mysql.createConnection({
         host: config.db_host,
+        port: config.db_port,
         user: config.db_user,
         password: config.db_password
       });

@@ -21,15 +21,14 @@ Auto-redeployment and breakpoint support are included through the use of nodemon
 To start the database for testing:
 
 ```
-docker run --net=host \
+docker run \
   -e MYSQL_ROOT_PASSWORD=my-secret-pw \
-  --name test-mysql -d mysql:latest \
+  -p 3306:3306 \
+  --name df2-mysql -d mysql:latest \
   mysqld --default-authentication-plugin=mysql_native_password
 ```
 
-To find the database IP for Windows: `ipconfig /all` and find DockerNAT, the IP will be something like 10.0.75.1. The mysql IP will be 10.0.75.2 (yeah I know, totally obvious)
-
-For linux, it's just the host IP. ezpz
+Then you can connect on localhost port 3306.
 
 ## Minio Test Instance
 

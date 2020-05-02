@@ -3,6 +3,7 @@ export = {
   db_database: "delfruit",
   db_user: "root",
   db_password: "",
+  db_port: 3306,
   app_port: 4201,
   app_jwt_secret: 'what_up_fam',
 

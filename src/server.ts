@@ -41,7 +41,7 @@ console.log('Welcome to delfruit server 2.0!');
 try {
   await Database.init();
 } catch (e) {
-  console.error("Database initialization failed!");
+  console.error("Database initialization failed! Is it running? check "+config.db_host);
   console.error(e);
   process.exit(ExitCode.DB_INIT_FAIL);
 }

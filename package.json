@@ -4,7 +4,8 @@
   "description": "delfruit 2.0 server in node",
   "main": "server.js",
   "scripts": {
-    "start": "ts-node src/server.ts",
+    "start": "ts-node-dev --respawn --transpileOnly src/server.ts",
+    "start-ts-node": "ts-node src/server.ts",
     "dev": "nodemon",
     "test": "ts-mocha -R spec src/test/**/*.ts",
     "test-int": "ts-mocha -R spec src/int-test/**/*.ts",
@@ -57,6 +58,7 @@
     "nyc": "^14.1.1",
     "supertest": "^4.0.2",
     "ts-mocha": "^6.0.0",
-    "ts-node": "^8.1.0"
+    "ts-node": "^8.1.0",
+    "ts-node-dev": "^1.0.0-pre.44"
   }
 }

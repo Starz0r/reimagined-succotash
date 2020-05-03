@@ -110,12 +110,14 @@ app.route('/login').post(handle(async (req,res,next) => {
 app.route('/request-reset').post(handle(async (req,res,next) => {
   const username = req.body.username;
   if (!username) return res.sendStatus(400);
+  const email = req.body.email;
+  if (!email) return res.sendStatus(400);
 
   const token = crypto.randomBytes(126).toString('hex');
 
   const database = new Database();
   try {
-    const results = await database.query('SELECT email,reset_token_set_time FROM User WHERE name = ?',[username])
+    const results = await database.query('SELECT reset_token_set_time FROM User WHERE name = ? AND email = ?',[username,email])
 
     //204 if no user by name
     if (results.length === 0) return res.sendStatus(204);
@@ -124,6 +126,7 @@ app.route('/request-reset').post(handle(async (req,res,next) => {
     //204 if already requested reset within the hour
     const rsts = result.reset_token_set_time;
     if (rsts && moment(rsts).isAfter(moment().subtract(1, 'hours'))) {
+      console.log(`Attempt to reset password too quickly for ${username}!`);
       return res.sendStatus(204);
     }
 
@@ -172,7 +175,7 @@ app.route('/request-reset').post(handle(async (req,res,next) => {
           <br><br>
           A password reset request was made on your behalf. If this wasn't you, you can safely ignore this message.
           <br><br>
-          To reset your password, click here: <a href='http://delicious-fruit.com/password_reset.php?name=%s&token=%s'>Reset Password</a>
+          To reset your password, click here: <a href='http://delicious-fruit.com/password-reset?name=%s&token=%s'>Reset Password</a>
           <br><br>
           This link is valid for 2 hours since making the request.
           <br><br>
@@ -182,9 +185,12 @@ app.route('/request-reset').post(handle(async (req,res,next) => {
 </html>`;
   html = util.format(html,username,token);
 
-  const mailResult = await transporter.sendMail({
+  //sendmail is being called non-synchronously here (without await) because it can take a second
+  //we're not telling the client anything different whether it succeeds or fails
+  //so just send the 204 at this point
+  transporter.sendMail({
     from:"webmaster@delicious-fruit.com",
-    to:result.email,
+    to:email,
     subject:`Delicious-Fruit Password Reset`,
     html,
     text:`Greetings from Delicious Fruit!\n
@@ -192,9 +198,13 @@ A password reset request was made on your behalf. If this wasn't you, you can sa
 To reset your password, visit this link: http://delicious-fruit.com/password_reset.php?name=${username}&token=${token} \n
 This link is valid for 2 hours since making the request.\n
 -The staff at Delicious-Fruit ❤️`
+  }).then(mailResult => {
+    console.log(mailResult);
+  }).catch(err => {
+    console.log("Error sending mail!");
+    console.log(err);
   });
-  console.log(mailResult);
-  res.sendStatus(204);
+  return res.sendStatus(204);
 
   } finally {
     database.close();
@@ -242,17 +252,33 @@ This link is valid for 2 hours since making the request.\n
  */
 app.route('/reset').post(handle(async (req,res,next) => {
   const username = req.body.username;
-  if (!username) return res.sendStatus(401);
+  if (!username) {
+    console.log('no username!')
+    return res.sendStatus(401);
+  }
   const token = req.body.token;
-  if (!token) return res.sendStatus(401);
+  if (!token) {
+    console.log('no token!')
+    return res.sendStatus(401);
+  }
 
   const database = new Database();
   try {
     const results = await database.query(`
-    SELECT id,reset_token_set_time,is_admin FROM User WHERE name = ? AND reset_token = ?`,[username,token])
-    if (results.length == 0) return res.sendStatus(401);
+    SELECT id,reset_token_set_time,is_admin,reset_token_set_time FROM User 
+    WHERE name = ? AND reset_token = ?`,[username,token])
+    if (results.length == 0) {
+      console.log('no db match!')
+      return res.sendStatus(401);
+    }
     if (results.length > 1) {
       console.log(`retrieved multiple users! username:[${username}] token:[${token}]`);
+      return res.sendStatus(401);
+    }
+
+    if (results[0].reset_token_set_time 
+      && moment(results[0].reset_token_set_time).isBefore(moment().subtract(2, 'hours'))) {
+      console.log(`Attempted to use an old reset token for ${username}`);
       return res.sendStatus(401);
     }
 
@@ -267,9 +293,15 @@ app.route('/reset').post(handle(async (req,res,next) => {
       ali_date_set = null
     WHERE id = ? `,[req.body.password,results[0].id]);
 
-    const newtoken = auth.getToken(username,results[0].id,results[0].is_admin);
-    res.setHeader('token',newtoken);
-    res.sendStatus(204);
+    //get user for login
+    const users = await database.query('SELECT id,name,phash2,is_admin as isAdmin FROM User WHERE name = ?',[username]);
+    if (users.length == 0) {
+      res.status(401).send({error: 'Invalid Credentials'});
+    }
+    const user = users[0];
+    user.token = auth.getToken(user.name,user.id,user.isAdmin);
+    res.setHeader('token',user.token);
+    return res.send(user);
   } finally {
     database.close();
   }

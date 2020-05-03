@@ -26,6 +26,20 @@ describe('auth endpoint', function () {
       expect(login).to.have.property('data');
       expect(login.data).to.have.property('token').and.be.a('string');
     });
+
+    it("doesn't allow login with a bad password", async () => {
+      const user = await createUser(false);
+  
+      //login
+      try {
+        await axios.post('http://localhost:4201/api/auth/login',
+            {username:user.username,password:"this is the wrong password"});
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(401);
+        return;
+      }
+    });
     
     it('allows the user to refresh their token', async () => {
       const user = await createUser(false);
@@ -76,8 +90,21 @@ describe('auth endpoint', function () {
   
       //login
       const login = await axios.post('http://localhost:4201/api/auth/request-reset',
-          {username:user.username});
+          {username:user.username, email: user.email});
       expect(login).to.have.property('status').and.equal(204);
+    });
+
+    it("doesn't allow password reset request without email", async () => {
+      const user = await createUser(false);
+      try {
+        await axios.post('http://localhost:4201/api/auth/request-reset',
+            {username:user.username});
+      } catch (err) {
+        expect(err).to.have.property('response');
+        expect(err.response).to.have.property('status').and.equal(400);
+        return;
+      }
+      fail("reset should not have been successful");
     });
 
     it("doesn't allow password reset for blank requests", async () => {
@@ -101,7 +128,9 @@ describe('auth endpoint', function () {
         token:"test-token",
         password:"new-password"
       });
-      expect(req).to.have.property('status').and.equal(204);
+      expect(req).to.have.property('status').and.equal(200);
       expect(req.headers).to.have.property('token').and.be.a('string');
+      expect(req).to.have.property('data');
+      expect(req.data).to.have.property('token').and.be.a('string');
     }).timeout(5000);
   });

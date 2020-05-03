@@ -11,6 +11,7 @@ export interface TestUser {
     id: number;
     username: string;
     password: string;
+    email: string;
 }
 
 export async function createUser(isAdmin: boolean): Promise<TestUser> {
@@ -41,7 +42,13 @@ export async function createUser(isAdmin: boolean): Promise<TestUser> {
     expect(login).to.have.property('data');
     expect(login.data).to.have.property('token').and.be.a('string');
 
-    return { token: login.data.token, id: login.data.id, username: usernameA, password: "test-pw" };
+    return { 
+        token: login.data.token, 
+        id: login.data.id, 
+        username: usernameA, 
+        password: "test-pw", 
+        email: "test@example.com" 
+    };
 }
 
 export async function createGame(parameters?: any): Promise<any> {

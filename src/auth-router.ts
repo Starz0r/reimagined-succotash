@@ -282,6 +282,7 @@ app.route('/reset').post(handle(async (req,res,next) => {
       return res.sendStatus(401);
     }
 
+    const phash = await auth.hashPassword(req.body.password);
     await database.execute(
       `UPDATE User SET 
       phash2 = ? ,
@@ -291,7 +292,7 @@ app.route('/reset').post(handle(async (req,res,next) => {
       reset_token_set_time = null,
       ali_token = null,
       ali_date_set = null
-    WHERE id = ? `,[req.body.password,results[0].id]);
+    WHERE id = ? `,[phash,results[0].id]);
 
     //get user for login
     const users = await database.query('SELECT id,name,phash2,is_admin as isAdmin FROM User WHERE name = ?',[username]);

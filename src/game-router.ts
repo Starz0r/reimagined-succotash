@@ -628,6 +628,12 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
     if (err) return console.log(err)
   });
 
+  datastore.addReport({
+    type:"screenshot",
+    targetId:""+ssres.id,
+    report:"Screenshot added"
+  },req.user.sub);
+
   res.send(ssres);
 }));
 

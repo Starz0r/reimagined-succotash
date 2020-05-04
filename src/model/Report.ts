@@ -6,6 +6,7 @@ export interface Report {
         |"game_update_url"
         |"game_update_owner"
         |"game_update_creator"
+        |"game_update"
         
         |"user"
         |"user_register"

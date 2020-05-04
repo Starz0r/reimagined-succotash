@@ -105,6 +105,13 @@ app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
     removed: true
   };
   await datastore.updateScreenshot(ssPatch,req.user.isAdmin);
+  
+  datastore.addReport({
+    type:"screenshot_remove",
+    targetId:""+ssPatch.id,
+    report:"Screenshot Removed"
+  },req.user.sub);
+
   res.sendStatus(204);
 }));
 

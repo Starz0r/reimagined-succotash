@@ -301,6 +301,14 @@ app.route('/reset').post(handle(async (req,res,next) => {
     }
     const user = users[0];
     user.token = auth.getToken(user.name,user.id,user.isAdmin);
+
+    datastore.addReport({
+      type:"user_password_change",
+      targetId:""+user.id,
+      report:"User password changed"
+    },user.id);
+
+
     res.setHeader('token',user.token);
     return res.send(user);
   } finally {

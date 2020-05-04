@@ -46,6 +46,12 @@ app.route('/').post(handle(async (req,res,next) => {
   const user = await datastore.addUser(req.body.username,phash,req.body.email)
   if (!user) return res.status(400).send({error:"User Exists",code:1});
 
+  datastore.addReport({
+    type:"user_register",
+    targetId:""+user.id,
+    report:"User Registered"
+  },user.id);
+
   user.token = auth.getToken(user.name,user.id,user.isAdmin);
   res.send(user);
 }));

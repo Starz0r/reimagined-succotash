@@ -88,6 +88,13 @@ app.route('/').post(adminCheck(), handle(async (req,res,next) => {
   const uid = req.user.sub;
 
   const game = await datastore.addGame(req.body,uid);
+
+  datastore.addReport({
+    type:"game_add",
+    targetId:""+game.id,
+    report:"Game added"
+  },req.user.sub);
+
   res.send(game);
 }));
 
@@ -351,6 +358,12 @@ app.route('/:id').delete(adminCheck(), handle(async (req,res,next) => {
   };
   const success = await datastore.updateGame(gamePatch,req.user.isAdmin);
   if (!success) return res.sendStatus(404);
+
+  datastore.addReport({
+    type:"game_remove",
+    targetId:""+game.id,
+    report:"Game removed"
+  },req.user.sub);
 
   res.sendStatus(204);
 }));
@@ -807,5 +820,12 @@ app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
 
   const newGame = await datastore.getGame(gid);
   if (newGame == null) return res.sendStatus(404);
-  else res.send(newGame);
+
+  datastore.addReport({
+    type:"game_update",
+    targetId:""+game.id,
+    report:"Game updated"
+  },req.user.sub);
+
+  res.send(newGame);
 }));

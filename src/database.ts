@@ -251,7 +251,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         reply_to_id int(11),
         thread_id int(11),
         PRIMARY KEY (id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      );
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -270,7 +270,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         UNIQUE KEY lr_ur (rating_id,user_id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      );
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -290,7 +290,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         KEY user_id (user_id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      );
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -307,7 +307,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         game_id int(11) NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (list_id,game_id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      );
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -329,7 +329,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         removed tinyint(1) NOT NULL DEFAULT '0',
         PRIMARY KEY (id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      );
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -350,7 +350,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         removed tinyint(1) NOT NULL DEFAULT 0,
         PRIMARY KEY (id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      );
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -372,7 +372,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         date_answered timestamp NULL DEFAULT NULL,
         PRIMARY KEY (id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      );
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -389,7 +389,24 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         user_follow_id int(11) NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id,user_follow_id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+      );
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createBadgeTable(connection: mysql.Connection) {
+    console.log('Creating user badge table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.UserBadge (
+        user_id int NOT NULL,
+        badge_id int NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+      );
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();

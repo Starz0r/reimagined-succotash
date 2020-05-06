@@ -132,6 +132,8 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
 
   locale char(5) NOT NULL DEFAULT 'en_US',
 
+  selected_badge int DEFAULT NULL,
+
   PRIMARY KEY (id),
   UNIQUE KEY name_2 (name),
   KEY banned (banned)

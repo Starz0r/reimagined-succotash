@@ -247,4 +247,14 @@ describe('user endpoint', function () {
         'id','name','dateCreated','isAdmin','twitchLink',
         'nicoLink','youtubeLink','twitterLink','bio']);
     });
+
+    it('allows retrieval of available badge list', async () => {
+      const user = await createUser(false);
+      
+      let rsp = await axios.put(`http://localhost:4201/api/users/${user.id}/badges`,{},
+        {headers: {'Authorization': "Bearer " + user.token}});
+        expect(rsp).to.have.property('status').and.equal(204);
+        expect(rsp).to.have.property('data').and.be.an('array');
+  
+    });
   });

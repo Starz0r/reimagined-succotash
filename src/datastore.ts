@@ -343,6 +343,18 @@ export default {
     }
   },
 
+  async getBadges(options: any): Promise<any[]> {
+    const database = new Database();
+    try {
+      const where = new WhereList();
+      where.add('ub.user_id',options.userId);
+      var query = `SELECT ub.user_id,ub.badge_id,ub.date_created FROM UserBadge ${where.getClause()}`;
+      return await database.query(query, where.getParams());
+    } finally {
+      database.close();
+    }
+  },
+
   async getReviews(options: GetReviewOptions): Promise<any[]> {
     const database = new Database();
     try {

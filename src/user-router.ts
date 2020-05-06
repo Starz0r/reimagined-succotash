@@ -143,6 +143,12 @@ app.route('/:id/reviews').get(handle(async (req,res,next) => {
   res.send(rows);
 }));
 
+app.route('/:id/badges').get(handle(async (req,res,next) => {
+  var id = parseInt(req.params.id, 10);
+  const rows = await datastore.getBadges({user_id:id});
+  res.send(rows);
+}));
+
 app.route('/:id').get(handle(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
   const params: GetUsersParms = {id,page:0,limit:1};

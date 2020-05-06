@@ -1009,6 +1009,8 @@ export default {
       ,u.can_screenshot as canScreenshot
       ,u.banned as banned
 
+      ,u.selected_badge
+
       FROM User u
       ${whereList.getClause()}
       ORDER BY ${orderCol} ${orderDir}

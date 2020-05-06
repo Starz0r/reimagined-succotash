@@ -375,6 +375,10 @@ app.route('/refresh').post(userCheck(), handle(async (req,res,next) => {
 }));
 
 export async function recaptchaVerify(action: string, token: string, remoteIp?: string): Promise<boolean> {
+  if (!config.recaptcha_secret) {
+    console.log('recaptcha secret missing, skipping validation');
+    return true;
+  }
   const request: any = {
     'secret' : config.recaptcha_secret,
     'response' : token,

@@ -187,6 +187,7 @@ export default {
       , r.date_created as dateCreated
       , r.date_answered as dateAnswered
       , u.name as reporterName
+      , u.selected_badge as reporterSelectedBadge
       , ua.name as answeredByName
       FROM Report r
       LEFT JOIN User u ON u.id=r.reporter_id
@@ -380,6 +381,7 @@ export default {
       var query = `
         SELECT r.*, 
         u.name user_name,
+        u.selected_badge,
         g.name game_name,
         COUNT(l.id) AS like_count,
         r.user_id = g.owner_id AS owner_review,
@@ -687,7 +689,7 @@ export default {
     whereList.addIf("s.removed",params.removed?1:0,params.removed!==undefined);
     
     var query = `
-      SELECT s.*, u.name user_name, g.name game_name
+      SELECT s.*, u.name user_name, g.name game_name, u.selected_badge
       , s.game_id as gameId
       , s.added_by_id as addedById
       FROM Screenshot s

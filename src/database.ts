@@ -72,6 +72,7 @@ export class Database {
       await this.createNewsTable(connection);
       await this.createReportTable(connection);
       await this.createUserFollowTable(connection);
+      await this.createBadgeTable(connection);
     } finally {
       if (connection) connection.end()
     }
@@ -407,7 +408,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         user_id int NOT NULL,
         badge_id int NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id)
+        PRIMARY KEY (user_id,badge_id)
       );
       `,[],(err,rows)=>{
         if (err) reject(err);

@@ -4,6 +4,7 @@ import AuthModule from './lib/auth';
 import { GetUsersParms } from './model/GetUsersParms';
 import handle from './lib/express-async-catch';
 import { userCheck } from './lib/auth-check';
+import { recaptchaVerify } from './auth-router';
 const auth = new AuthModule();
 const app = express.Router();
 export default app;
@@ -41,6 +42,13 @@ app.route('/').post(handle(async (req,res,next) => {
   if (!req.is('application/json')) return res.status(400).send('Invalid request: expected a JSON body of the format {"username":"example","password":"example","email":"example@example.com"}');
   if (!req.body.username) return res.status(400).send("invalid request: missing 'username' in request body");
   if (!req.body.password) return res.status(400).send("invalid request: missing 'password' in request body");
+
+  const rcptoken = req.body.rcptoken;
+  const verified = await recaptchaVerify('resetPW',rcptoken,req.ip);
+  if (!verified) {
+    console.log('recaptcha verify failed!')
+    return res.sendStatus(403);
+  }
 
   const phash = await auth.hashPassword(req.body.password);
   const user = await datastore.addUser(req.body.username,phash,req.body.email)

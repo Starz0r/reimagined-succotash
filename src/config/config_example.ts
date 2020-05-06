@@ -21,5 +21,8 @@ export = {
       user:"user",
       pass:"p4ssw0rd",
     }
-  }
+  },
+  
+  recaptcha_threshold: 0,
+  recaptcha_secret: ''
 }

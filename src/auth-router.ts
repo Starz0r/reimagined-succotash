@@ -9,6 +9,8 @@ import { userCheck } from './lib/auth-check';
 import nodemailer from 'nodemailer';
 import config from './config/config';
 import util from 'util';
+import axios from 'axios';
+import { restoreSpies } from 'expect';
 //import fs from 'fs';
 
 const app = express.Router();
@@ -51,6 +53,13 @@ export default app;
 app.route('/login').post(handle(async (req,res,next) => {
     const username = req.body.username;
     const password = req.body.password;
+
+    const rcptoken = req.body.rcptoken;
+    const verified = await recaptchaVerify('login',rcptoken,req.ip);
+    if (!verified) {
+      console.log('recaptcha verify failed!')
+      return res.sendStatus(403);
+    }
     
     const database = new Database();
     try {
@@ -112,6 +121,13 @@ app.route('/request-reset').post(handle(async (req,res,next) => {
   if (!username) return res.sendStatus(400);
   const email = req.body.email;
   if (!email) return res.sendStatus(400);
+
+  const rcptoken = req.body.rcptoken;
+  const verified = await recaptchaVerify('requestPwReset',rcptoken,req.ip);
+  if (!verified) {
+    console.log('recaptcha verify failed!')
+    return res.sendStatus(403);
+  }
 
   const token = crypto.randomBytes(126).toString('hex');
 
@@ -262,6 +278,13 @@ app.route('/reset').post(handle(async (req,res,next) => {
     return res.sendStatus(401);
   }
 
+  const rcptoken = req.body.rcptoken;
+  const verified = await recaptchaVerify('resetPW',rcptoken,req.ip);
+  if (!verified) {
+    console.log('recaptcha verify failed!')
+    return res.sendStatus(403);
+  }
+
   const database = new Database();
   try {
     const results = await database.query(`
@@ -350,3 +373,34 @@ app.route('/refresh').post(userCheck(), handle(async (req,res,next) => {
   res.setHeader('token',user.token);
   return res.send(user);
 }));
+
+export async function recaptchaVerify(action: string, token: string, remoteIp?: string): Promise<boolean> {
+  const request: any = {
+    'secret' : config.recaptcha_secret,
+    'response' : token,
+  };
+  if (remoteIp) request.remoteip = remoteIp;
+  try {
+    const rsp = await axios.post("https://www.google.com/recaptcha/api/siteverify",request);
+    if (!rsp.data.success) {
+      console.log("reCaptcha: Invalid token!")
+      console.log(rsp.data)
+      return false;
+    }
+    if (rsp.data.action != action) {
+      console.log("reCaptcha: Action doesn't match expected action! expected: "+action)
+      console.log(rsp.data)
+      return false;
+    }
+    if (rsp.data.score < config.recaptcha_threshold) {
+      console.log("reCaptcha: score under threshold!")
+      console.log(rsp.data)
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.log('recaptcha verify error! allowing request')
+    console.log(err);
+    return true;
+  }
+}

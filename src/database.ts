@@ -1,5 +1,5 @@
 
-import mysql from 'mysql';
+import mysql, { Connection } from 'mysql';
 import config from './config/config';
 
 export class Database {
@@ -49,34 +49,45 @@ export class Database {
   }
 
   static async init() {
-    let connection;
+    let connection: Connection;
 
-    try {
-      connection = mysql.createConnection({
-        host: config.db_host,
-        port: config.db_port,
-        user: config.db_user,
-        password: config.db_password,
-        timeout:60000
-      });
+    //attempt connection 4 times, wait 10 seconds between failed attempts
+    for (let retryCount=4;retryCount>0;retryCount--) {
+      console.log("connect attempt "+retryCount);
+      try {
+        connection = mysql.createConnection({
+          host: config.db_host,
+          port: config.db_port,
+          user: config.db_user,
+          password: config.db_password,
+          timeout:5000
+        });
+        connection = connection!;
 
-      await this.createDatabase(connection);
-      await this.createUserTable(connection);
-      await this.createGameTable(connection);
-      await this.createGameTagTable(connection);
-      await this.createTagTable(connection);
-      await this.createRatingTable(connection);
-      await this.createMessageTable(connection);
-      await this.createLikeReviewTable(connection);
-      await this.createListTable(connection);
-      await this.createListGameTable(connection);
-      await this.createScreenshotTable(connection);
-      await this.createNewsTable(connection);
-      await this.createReportTable(connection);
-      await this.createUserFollowTable(connection);
-      await this.createBadgeTable(connection);
-    } finally {
-      if (connection) connection.end()
+        await this.createDatabase(connection);
+        await this.createUserTable(connection);
+        await this.createGameTable(connection);
+        await this.createGameTagTable(connection);
+        await this.createTagTable(connection);
+        await this.createRatingTable(connection);
+        await this.createMessageTable(connection);
+        await this.createLikeReviewTable(connection);
+        await this.createListTable(connection);
+        await this.createListGameTable(connection);
+        await this.createScreenshotTable(connection);
+        await this.createNewsTable(connection);
+        await this.createReportTable(connection);
+        await this.createUserFollowTable(connection);
+        await this.createBadgeTable(connection);
+      } catch (err) {
+        await new Promise((resolve) => {setTimeout(resolve, 10000);});
+        if (retryCount <= 0) {
+          console.log("Failed to connect to database after 4 retries!");
+          throw err;
+        }
+      } finally {
+        if (connection!) (connection!).end()
+      }
     }
   }
 

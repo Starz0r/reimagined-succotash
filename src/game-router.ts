@@ -242,6 +242,7 @@ app.route('/').get(handle(async (req,res,next) => {
   params.ratingTo = req.query.ratingTo;
   params.difficultyFrom = req.query.difficultyFrom;
   params.difficultyTo = req.query.difficultyTo;
+  params.ownerUserId = req.query.ownerUserId;
 
   const rows = await datastore.getGames(params);
   if (!params.page) {

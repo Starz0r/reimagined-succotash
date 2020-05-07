@@ -350,7 +350,7 @@ export default {
     try {
       const where = new WhereList();
       where.add('ub.user_id',options.userId);
-      var query = `SELECT ub.user_id,ub.badge_id,ub.date_created FROM UserBadge ${where.getClause()}`;
+      var query = `SELECT ub.user_id,ub.badge_id,ub.date_created FROM UserBadge ub ${where.getClause()}`;
       return await database.query(query, where.getParams());
     } finally {
       database.close();

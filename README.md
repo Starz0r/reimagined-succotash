@@ -5,20 +5,46 @@ This project is the second iteration of Delfruit, which brings the application i
 * REST-compliant API
 * Stateless and scalable
 * MySQL 8.0 support
+* performant caching using memcached
 * Dockerized
 * Automated tests
 * Not PHP 🙂
 
 This project goes hand-in-hand with the df-client project, which is the Angular frontend for the Delfruit website. They are kept separate to allow the client to be compiled and deployed on a CDN without bulking up the server project.
 
-# Local Development
-For local development, you should start up a mysql instance, minio instance, and the server, and put them on the same network.
+# Quickstart
+
+Have docker, and want to spin up a quick instance for testing and development? It's dead simple!
+
+```sh
+# use dev config 
+cp src/config/config_dev.ts src/config/config.ts
+# start mysql, minio, memcached, and the app!
+docker-compose up
+```
+
+View the API docs at: http://localhost:4201/api/swagger/
+
+This command runs using `ts-node-dev` in watch mode, so changes to the server are immediately recompiled and picked up by the server.
+
+## How can I view the database?
+
+```sh
+docker exec -it delfruit2-server_mysql_1 mysql -u root -password=my-secret-pw delfruit
+```
+
+(of course, change the password/database if you've changed them in your config, but these are the defaults for local development)
+
+# Local Development (old)
+If you don't have or want to use docker, you can still run the server, but you will need to spin up all the dependencies yourself.
+
+For local development, you should start up a mysql instance, minio instance, memcached instance, and the server, and put them on the same network.
 
 Auto-redeployment and breakpoint support are included through the use of nodemon and ts-node.
 
 ## Mysql Test Instance
 
-To start the database for testing:
+To start the database for testing via docker:
 
 ```
 docker run \
@@ -33,6 +59,8 @@ Then you can connect on localhost port 3306.
 ## Minio Test Instance
 
 Delfruit uses an S3-compliant object storage service for storing uploaded content. For local development, you can use a Minio server.
+
+To start the minio server for testing via docker:
 
 ```
 docker run -p 9000:9000 minio/minio server /data
@@ -144,29 +172,7 @@ UPDATE User SET last_ip='';
 
 ## Setup Server Config
 
-```
-mkdir config
-vim config/config.ts
-```
-
-```ts
-export = {
-  db_host: "", //ip of droplet
-  db_database: "delfruit",
-  db_user: "root",
-  db_password: "", //keyboard mashings from above
-  app_port: 4201,
-  app_jwt_secret: '', //keyboard mashings
-
-  s3_host:"", //ip of droplet
-  s3_port:9000,
-  s3_ssl: false,
-  s3_access:"", //keyboard mashings from above
-  s3_secret:"", //keyboard mashings from above
-  s3_bucket:"df2images",
-  s3_region:"us-east-1"
-}
-```
+copy `config_dev.ts` and modify accordingly
 
 ## Start server
 

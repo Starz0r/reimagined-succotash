@@ -11,7 +11,8 @@ export class Database {
       port:config.db_port,
       database: config.db_database,
       user: config.db_user,
-      password: config.db_password
+      password: config.db_password,
+      timeout:60000
     });
 
     this.connection.on('error', function(err) {
@@ -55,7 +56,8 @@ export class Database {
         host: config.db_host,
         port: config.db_port,
         user: config.db_user,
-        password: config.db_password
+        password: config.db_password,
+        timeout:60000
       });
 
       await this.createDatabase(connection);

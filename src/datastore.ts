@@ -63,7 +63,7 @@ export default {
     updateList.add('unsuccessful_logins',user.unsuccessfulLogins);
     updateList.add('last_ip',user.lastIp);
     updateList.add('date_last_login',user.dateLastLogin);
-    updateList.add('selected_badge',user.selectedBadge);
+    updateList.add('selected_badge',user.selected_badge);
   
     try {
       let params = updateList.getParams();

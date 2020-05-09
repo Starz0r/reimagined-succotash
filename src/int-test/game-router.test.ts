@@ -68,7 +68,7 @@ describe('game endpoint', function () {
     //create game
     const rsp = await axios.post('http://localhost:4201/api/games',
         {
-          name:"i wanna "+name,
+          name:"i wanna be the "+name,
           url:"example.com/"+name,
           author:user.username
         },

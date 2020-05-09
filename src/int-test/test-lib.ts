@@ -4,9 +4,13 @@ import { Database } from '../database';
 import FormData from 'form-data';
 import fs from 'fs';
 import config from '../config/config';
+var Moniker = require('moniker');
 
 var expect = chai.expect;
 var fail = chai.assert.fail;
+
+var gamenamegen = Moniker.generator([Moniker.adjective, Moniker.noun],{glue:' '});
+var taggen = Moniker.generator([Moniker.adjective]);
 
 export interface TestUser {
     token: string;
@@ -68,12 +72,13 @@ export async function createUser(isAdmin: boolean): Promise<TestUser> {
 
 export async function createGame(parameters?: any): Promise<any> {
     const user = await createUser(true);
+    const name = gamenamegen.choose();
 
     //create game
     const rsp = await axios.post('http://localhost:4201/api/games',
         {
-            name: "i wanna " + user.username,
-            author: user.username,
+            name: "i wanna " + name,
+            author: name,
             ...parameters
         },
         { headers: { 'Authorization': "Bearer " + user.token } });
@@ -119,7 +124,7 @@ export async function addReview(user: TestUser, game: any): Promise<any> {
 }
 
 export async function addTag(user: TestUser): Promise<any> {
-    const nm = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const nm = taggen.choose();
 
     const tres = await axios.post('http://localhost:4201/api/tags',
       {name:nm},

@@ -4,9 +4,12 @@ import { fail, ok } from 'assert';
 import { createUser, createGame, getConTest, addReview, addTag } from './test-lib';
 import FormData from 'form-data';
 import fs from 'fs';
-import { hashSync } from 'bcrypt';
+var Moniker = require('moniker');
 
 var expect = chai.expect;
+
+var gamenamegen = Moniker.generator([Moniker.adjective, Moniker.noun],{glue:' '});
+var taggen = Moniker.generator([Moniker.adjective]);
 
 describe('game endpoint', function () {
   before(getConTest(this.ctx));
@@ -41,7 +44,7 @@ describe('game endpoint', function () {
   });
 
   it('prevents anonymous users from adding games', async () => {
-    const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const usernameA = gamenamegen.choose();
     
     try {
       await axios.post('http://localhost:4201/api/games',
@@ -60,12 +63,13 @@ describe('game endpoint', function () {
 
   it('allows admins to delete a game', async () => {
     const user = await createUser(true);
+    const name = gamenamegen.choose();
     
     //create game
     const rsp = await axios.post('http://localhost:4201/api/games',
         {
-          name:"i wanna "+user.username,
-          url:"example.com/"+user.username,
+          name:"i wanna "+name,
+          url:"example.com/"+name,
           author:user.username
         },
         {headers: {'Authorization': "Bearer " + user.token}});
@@ -187,7 +191,7 @@ describe('game endpoint', function () {
     const user = await createUser(false);
     const game = await createGame();
 
-    const nm = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const nm = taggen.choose();
 
     const tres = await axios.post('http://localhost:4201/api/tags',
       {name:nm},

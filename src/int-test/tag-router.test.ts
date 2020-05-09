@@ -3,11 +3,14 @@ import chai from 'chai';
 import { fail } from 'assert';
 import { getConTest, createUser } from './test-lib';
 import FormData from 'form-data';
+var Moniker = require('moniker');
 
 var expect = chai.expect;
 
+var taggen = Moniker.generator([Moniker.adjective]);
+
 function randomName() {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return taggen.choose();
 }
 
 describe('tag endpoint', function () {

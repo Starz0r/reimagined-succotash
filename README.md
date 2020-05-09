@@ -27,6 +27,14 @@ View the API docs at: http://localhost:4201/api/swagger/
 
 This command runs using `ts-node-dev` in watch mode, so changes to the server are immediately recompiled and picked up by the server.
 
+## Integration Testing
+
+Once the server is up and running, you can use the following to run an integration test on all the services to ensure that everything works as intended. As a bonus, this will opulate the database with dummy data for you to test with!
+
+```sh
+npm run test-int
+```
+
 ## How can I view the database?
 
 ```sh

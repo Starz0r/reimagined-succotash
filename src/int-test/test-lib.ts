@@ -3,8 +3,10 @@ import chai from 'chai';
 import { Database } from '../database';
 import FormData from 'form-data';
 import fs from 'fs';
+import config from '../config/config';
 
 var expect = chai.expect;
+var fail = chai.assert.fail;
 
 export interface TestUser {
     token: string;
@@ -26,12 +28,25 @@ export async function createUser(isAdmin: boolean): Promise<TestUser> {
     expect(reg.data).to.have.property('id').and.be.a('number');
 
     if (isAdmin) {
-        const db = new Database();
+        const db = new Database({
+            host: 'localhost',
+            port: 33061, //see docker-compose.yaml
+            database: config.db_database,
+            user: config.db_user,
+            password: config.db_password,
+            timeout:1000
+          });
         try {
             const success = await db.execute('update User set is_admin = 1 WHERE id = ?', [reg.data.id]);
             expect(success.affectedRows).to.be.equal(1);
+        } catch (err) {
+            fail("failed to connect to database!\n"+err);
         } finally {
-            db.close();
+            try { 
+                await db.close();
+            } catch (err) {
+                fail("failed to close database!\n"+err);
+            }
         }
     }
 
@@ -124,13 +139,27 @@ export function getConTest(ctx: Mocha.Context): Mocha.HookFunction {
   
 
 export async function setUserToken(user: TestUser, token: string): Promise<any> {
-    const database = new Database();
+    const database = new Database({
+        host: 'localhost',
+        port: 33061, //see docker-compose.yaml
+        database: config.db_database,
+        user: config.db_user,
+        password: config.db_password,
+        timeout:1000
+      });
     try {
         const success = await database.execute(
             `UPDATE User SET reset_token = ?, reset_token_set_time = CURRENT_TIMESTAMP
             WHERE id = ?`,[token,user.id]);
         expect(success.affectedRows).to.be.equal(1);
+    } catch (err) {
+        console.log("failed to connecto to database!\n"+err);
+        fail("failed to connecto to database!\n"+err);
     } finally {
-        database.close();
+        try { 
+            await database.close();
+        } catch (err) {
+            console.log("failed to close database!\n"+err);
+        }
     }
 }

@@ -5,15 +5,24 @@ import config from './config/config';
 export class Database {
   private connection: mysql.Connection;
 
-  constructor() {
-    this.connection = mysql.createConnection({
+  /**
+   * 
+   * @param configOverride if provided, forces a connection configuration.
+   * Really only used for integration testing - always use the parameterless version in prod.
+   */
+  constructor(configOverride?: mysql.ConnectionConfig) {
+    let useConfig: mysql.ConnectionConfig = {
       host: config.db_host,
       port:config.db_port,
       database: config.db_database,
       user: config.db_user,
       password: config.db_password,
       timeout:60000
-    });
+    };
+    if (configOverride) {
+      useConfig = configOverride;
+    }
+    this.connection = mysql.createConnection(useConfig);
 
     this.connection.on('error', function(err) {
       console.log('Error occurred on DB connection!')

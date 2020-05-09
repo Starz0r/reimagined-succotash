@@ -17,8 +17,10 @@ services:
     image: mysql:8.0.20
     environment:
       MYSQL_ROOT_PASSWORD: my-secret-pw
-    expose:
+    expose: # exposes 3306 on the internal container network for the server
       - "3306"
+    ports: # allows connection from integration tests, or an external mysql client.
+      - "33061:3306"
     command: --default-authentication-plugin=mysql_native_password
   minio:
     image: minio/minio

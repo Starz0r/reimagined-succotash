@@ -11,6 +11,7 @@ var fail = chai.assert.fail;
 
 var gamenamegen = Moniker.generator([Moniker.adjective, Moniker.noun],{glue:' '});
 var taggen = Moniker.generator([Moniker.adjective]);
+var usergen = Moniker.generator(['src/int-test/usernames']);
 
 export interface TestUser {
     token: string;
@@ -21,7 +22,7 @@ export interface TestUser {
 }
 
 export async function createUser(isAdmin: boolean): Promise<TestUser> {
-    const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const usernameA = usergen.choose();
 
     //register
     const reg = await axios.post('http://localhost:4201/api/users',
@@ -77,7 +78,7 @@ export async function createGame(parameters?: any): Promise<any> {
     //create game
     const rsp = await axios.post('http://localhost:4201/api/games',
         {
-            name: "i wanna " + name,
+            name: "i wanna be the " + name,
             author: name,
             ...parameters
         },

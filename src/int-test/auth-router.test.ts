@@ -4,12 +4,14 @@ import { fail, ok } from 'assert';
 import { getConTest, createUser, setUserToken } from './test-lib';
 import AuthModule from '../lib/auth';
 import jwt from 'jsonwebtoken';
+var Moniker = require('moniker');
 
 var expect = chai.expect;
+var usergen = Moniker.generator(['src/int-test/usernames']);
 
 describe('auth endpoint', function () {
     before(getConTest(this.ctx));
-    const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const usernameA = usergen.choose();
   
     it('allows the user to log in', async () => {
       //register

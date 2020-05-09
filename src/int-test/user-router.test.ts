@@ -3,8 +3,10 @@ import chai from 'chai';
 import { fail } from 'assert';
 import { getConTest, createUser } from './test-lib';
 import FormData from 'form-data';
+var Moniker = require('moniker');
 
 var expect = chai.expect;
+var usergen = Moniker.generator(['src/int-test/usernames']);
 
 describe('user endpoint', function () {
   const ctx = this.ctx;
@@ -25,7 +27,7 @@ describe('user endpoint', function () {
     });
   
     it('allows a user to be registered', async () => {
-      const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const usernameA = usergen.choose();
 
       const rsp = await axios.post('http://localhost:4201/api/users',
         {username:usernameA,password:"test-pw",email:"test@example.com"});
@@ -38,7 +40,7 @@ describe('user endpoint', function () {
     });
   
     it('rejects registration via form parameters', async () => {
-      const usernameA = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const usernameA = usergen.choose();
       let bodyFormData = new FormData();
       bodyFormData.append('userName', usernameA);
       bodyFormData.append('password', 'test-pw');

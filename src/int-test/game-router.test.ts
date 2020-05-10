@@ -1,7 +1,7 @@
 import axios from 'axios';
 import chai from 'chai';
 import { fail, ok } from 'assert';
-import { createUser, createGame, getConTest, addReview, addTag } from './test-lib';
+import { createUser, createGame, getConTest, addReview, addTag, genUsername, genGamename } from './test-lib';
 import FormData from 'form-data';
 import fs from 'fs';
 var Moniker = require('moniker');
@@ -44,14 +44,14 @@ describe('game endpoint', function () {
   });
 
   it('prevents anonymous users from adding games', async () => {
-    const usernameA = gamenamegen.choose();
+    const gn = genGamename();
     
     try {
       await axios.post('http://localhost:4201/api/games',
         {
-          name:"i wanna "+usernameA,
-          url:"example.com/"+usernameA,
-          author:usernameA
+          name:"i wanna "+gn,
+          url:"example.com/"+gn,
+          author:genUsername()
         });
     } catch (err) {
       expect(err).to.have.property('response');
@@ -63,7 +63,7 @@ describe('game endpoint', function () {
 
   it('allows admins to delete a game', async () => {
     const user = await createUser(true);
-    const name = gamenamegen.choose();
+    const name = genGamename();
     
     //create game
     const rsp = await axios.post('http://localhost:4201/api/games',
@@ -343,7 +343,7 @@ describe('game endpoint', function () {
     const game = await createGame();
     
     const list = await axios.get(`http://localhost:4201/api/games`,{
-      params: {name: game.user.username} //name contains username
+      params: {name: game.name} //name contains username
     });
     expect(list).to.have.property('status').and.equal(200);
     expect(list).to.have.property('data').and.be.an('array');
@@ -355,7 +355,7 @@ describe('game endpoint', function () {
     const game = await createGame();
     
     const list = await axios.get(`http://localhost:4201/api/games`,{
-      params: {author: game.user.username}
+      params: {author: game.author}
     });
     expect(list).to.have.property('status').and.equal(200);
     expect(list).to.have.property('data').and.be.an('array');
@@ -455,14 +455,6 @@ describe('game endpoint', function () {
     return expect(games.find(o => o.id == game.id)).to.be.undefined;
   });
 
-
-
-
-
-
-
-  
-
   it('supports difficulty-from search', async () => {
     const game = await createGame();
     const user = await createUser(false);
@@ -521,7 +513,7 @@ describe('game endpoint', function () {
     const game = await createGame();
     
     const list = await axios.get(`http://localhost:4201/api/games`,{
-      params: {name: game.user.username} //name contains username
+      params: {name: game.name} //name contains username
     });
     expect(list).to.have.property('status').and.equal(200);
 

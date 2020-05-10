@@ -1,7 +1,7 @@
 import axios from 'axios';
 import chai from 'chai';
 import { fail } from 'assert';
-import { getConTest, createUser } from './test-lib';
+import { getConTest, createUser, genUsername } from './test-lib';
 import FormData from 'form-data';
 var Moniker = require('moniker');
 
@@ -27,7 +27,7 @@ describe('user endpoint', function () {
     });
   
     it('allows a user to be registered', async () => {
-      const usernameA = usergen.choose();
+      const usernameA = genUsername();
 
       const rsp = await axios.post('http://localhost:4201/api/users',
         {username:usernameA,password:"test-pw",email:"test@example.com"});
@@ -40,7 +40,7 @@ describe('user endpoint', function () {
     });
   
     it('rejects registration via form parameters', async () => {
-      const usernameA = usergen.choose();
+      const usernameA = genUsername();
       let bodyFormData = new FormData();
       bodyFormData.append('userName', usernameA);
       bodyFormData.append('password', 'test-pw');
@@ -218,7 +218,7 @@ describe('user endpoint', function () {
       //add members if public data is added to the user
       expect(Object.keys(rsp.data)).to.have.members([
         'id','name','dateCreated','isAdmin','twitchLink',
-        'nicoLink','youtubeLink','twitterLink','bio']);
+        'nicoLink','youtubeLink','twitterLink','bio','selected_badge']);
     });
 
     it('does not expose sensitive user data to anons', async () => {
@@ -232,7 +232,7 @@ describe('user endpoint', function () {
       //add members if public data is added to the user
       expect(Object.keys(rsp.data)).to.have.members([
         'id','name','dateCreated','isAdmin','twitchLink',
-        'nicoLink','youtubeLink','twitterLink','bio']);
+        'nicoLink','youtubeLink','twitterLink','bio','selected_badge']);
     });
 
     it('does not expose sensitive user data on the user list to anons', async () => {
@@ -247,15 +247,15 @@ describe('user endpoint', function () {
       //add members if public data is added to the user
       expect(Object.keys(rsp.data[0])).to.have.members([
         'id','name','dateCreated','isAdmin','twitchLink',
-        'nicoLink','youtubeLink','twitterLink','bio']);
+        'nicoLink','youtubeLink','twitterLink','bio','selected_badge']);
     });
 
     it('allows retrieval of available badge list', async () => {
       const user = await createUser(false);
       
-      let rsp = await axios.put(`http://localhost:4201/api/users/${user.id}/badges`,{},
+      let rsp = await axios.get(`http://localhost:4201/api/users/${user.id}/badges`,
         {headers: {'Authorization': "Bearer " + user.token}});
-        expect(rsp).to.have.property('status').and.equal(204);
+        expect(rsp).to.have.property('status').and.equal(200);
         expect(rsp).to.have.property('data').and.be.an('array');
   
     });

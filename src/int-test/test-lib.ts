@@ -21,8 +21,16 @@ export interface TestUser {
     email: string;
 }
 
+export function genUsername() {
+    return usergen.choose() + '_' + Math.random().toString(36).substring(2, 6);
+}
+
+export function genGamename() {
+    return gamenamegen.choose() + '_' + Math.random().toString(36).substring(2, 6);
+}
+
 export async function createUser(isAdmin: boolean): Promise<TestUser> {
-    const usernameA = usergen.choose();
+    const usernameA = genUsername();
 
     //register
     const reg = await axios.post('http://localhost:4201/api/users',
@@ -73,13 +81,13 @@ export async function createUser(isAdmin: boolean): Promise<TestUser> {
 
 export async function createGame(parameters?: any): Promise<any> {
     const user = await createUser(true);
-    const name = gamenamegen.choose();
+    const name = gamenamegen.choose() + Math.random().toString(36).substring(2, 6);
 
     //create game
     const rsp = await axios.post('http://localhost:4201/api/games',
         {
             name: "i wanna be the " + name,
-            author: name,
+            author: user.username,
             ...parameters
         },
         { headers: { 'Authorization': "Bearer " + user.token } });
@@ -87,7 +95,7 @@ export async function createGame(parameters?: any): Promise<any> {
     expect(rsp).to.have.property('data');
     expect(rsp.data).to.have.property('id').and.be.a("number");
 
-    return { id: rsp.data.id, name: rsp.data.name, user };
+    return { id: rsp.data.id, name: rsp.data.name, author: rsp.data.author, user };
 }
 
 export async function addScreenshot(user: TestUser, game: any): Promise<any> {

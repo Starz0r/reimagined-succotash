@@ -92,6 +92,34 @@ const e: ErrorRequestHandler = (err,req,res,next) => {
 }
 app.use(e);
 
+// DEBUG ERROR LOGGING
+app.use((req, res, next) => {
+  var oldWrite = res.write,
+      oldEnd = res.end;
+
+  var chunks: any[] = [];
+
+  res.write = function (chunk: any) {
+    chunks.push(chunk);
+    // @ts-ignore
+    return oldWrite.apply(res, arguments);
+  };
+
+  res.end = function (chunk: any) {
+    if (chunk) chunks.push(chunk);
+    if (this.statusCode >= 400) {
+      let body: string;
+      if (typeof chunks[0] ==='string') body = chunks.join();
+      else body = Buffer.concat(chunks).toString('utf8');
+      console.log("ERROR: ", res.statusCode, req.path, body);
+    }
+    // @ts-ignore
+    oldEnd.apply(res, arguments);
+  };
+
+  next();
+});
+
 console.log('Initializing routers...');
 
 app.use('/api/games',game_router);

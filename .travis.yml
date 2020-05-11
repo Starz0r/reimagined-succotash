@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+  - '12'
+sudo: true
+
+services:
+    - docker
+
+install:
+  - docker-compose up
+
+script:
+  - npm run test-int

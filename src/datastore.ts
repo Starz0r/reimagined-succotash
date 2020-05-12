@@ -22,7 +22,7 @@ import { Permission } from './model/Permission';
 import config from './config/config';
 
 var Memcached = require('memcached');
-var memcached = new Memcached(config.memcache.hosts);
+var memcached = new Memcached(config.memcache.hosts,config.memcache.options);
 
 export default {
   /**
@@ -103,6 +103,8 @@ export default {
       params.push(game.id);
       const rows = await database.execute(
         ` UPDATE Game ${updateList.getSetClause()} WHERE id = ?`,params);
+      uncache(`game-exists-${game.id}`);
+      uncache(`game-${game.id}`);
       return (rows.affectedRows == 1);
     } finally {
       database.close();
@@ -473,6 +475,7 @@ export default {
       await database.execute(
         ` INSERT IGNORE INTO LikeReview (rating_id, user_id) VALUES (?,?)`,
         [reviewId,userId]);
+      uncache(`review-likes-${reviewId}`);
       return true;
     } finally {
       database.close();
@@ -486,6 +489,7 @@ export default {
       await database.execute(
         ` DELETE FROM LikeReview WHERE rating_id = ? AND user_id = ?`,
         [reviewId,userId]);
+      uncache(`review-likes-${reviewId}`);
       return true;
     } finally {
       database.close();
@@ -493,16 +497,19 @@ export default {
   },
 
   async isLiked(reviewId: number, userId: number): Promise<boolean> {
-    const database = new Database();
-  
-    try {
-      const results = await database.execute(
-        ` SELECT 1 FROM LikeReview WHERE rating_id = ? AND user_id = ?`,
-        [reviewId,userId]);
-      return results.length == 1;
-    } finally {
-      database.close();
-    }
+    const users = await cache(`review-likes-${reviewId}`, async () => {
+      const database = new Database();
+    
+      try {
+        const results = await database.execute(
+          ` SELECT user_id FROM LikeReview WHERE rating_id = ? AND user_id = ?`,
+          [reviewId,userId]);
+        return results.map((r: any) => r.user_id);
+      } finally {
+        database.close();
+      }
+    });
+    return users.includes(userId);
   },
 
   async addFollowToUser(targetUserId: number, userId: number): Promise<boolean> {
@@ -617,50 +624,54 @@ export default {
   },
 
   async getGame(id: number, database?: Database): Promise<Game | null> {
-    const doClose = !database;
-    const db = database || new Database();
-    const query = `
-      SELECT g.*
-          , g.date_created as dateCreated
-          , g.owner_id as ownerId
-          , g.author as author_raw
-          , AVG(r.rating) AS rating
-          , AVG(r.difficulty) AS difficulty 
-      FROM Game g 
-      LEFT JOIN Rating r ON r.game_id = g.id AND r.removed = 0
-      WHERE g.id = ?
-    `;
-    try {
-      const res = await db.query(query, [id]);
-      if (!res || res.length == 0) return null;
-
-      const game = res[0];
-      //if zero date, we don't have it, so null it out
-      if (!moment(game.dateCreated).isValid()) game.dateCreated = undefined;
-      if (game.collab && game.author_raw) game.author = (game.author_raw).split(" ");
-      else game.author = game.author_raw?[game.author_raw]:[];
-      delete game.author_raw;
-
-      game.urlSpdrn = game.url_spdrn;
-      delete game.url_spdrn;
-
-      delete game.date_created; //dateCreated
-
-      return game;
-    } finally {
-      if (doClose) db.close();
-    }
+    return await cache(`game-${id}`,async () => {
+      const doClose = !database;
+      const db = database || new Database();
+      const query = `
+        SELECT g.*
+            , g.date_created as dateCreated
+            , g.owner_id as ownerId
+            , g.author as author_raw
+            , AVG(r.rating) AS rating
+            , AVG(r.difficulty) AS difficulty 
+        FROM Game g 
+        LEFT JOIN Rating r ON r.game_id = g.id AND r.removed = 0
+        WHERE g.id = ?
+      `;
+      try {
+        const res = await db.query(query, [id]);
+        if (!res || res.length == 0) return null;
+  
+        const game = res[0];
+        //if zero date, we don't have it, so null it out
+        if (!moment(game.dateCreated).isValid()) game.dateCreated = undefined;
+        if (game.collab && game.author_raw) game.author = (game.author_raw).split(" ");
+        else game.author = game.author_raw?[game.author_raw]:[];
+        delete game.author_raw;
+  
+        game.urlSpdrn = game.url_spdrn;
+        delete game.url_spdrn;
+  
+        delete game.date_created; //dateCreated
+  
+        return game;
+      } finally {
+        if (doClose) db.close();
+      }
+    });
   },
 
   async gameExists(id: number): Promise<boolean> {
-    const db = new Database();
-    try {
-      const res = await db.query(
-        'SELECT 1 FROM Game g WHERE g.id = ? AND g.removed = 0', [id]);
-      return (res && res.length == 1);
-    } finally {
-      db.close();
-    }
+    return await cache(`game-exists-${id}`,async () => {
+      const db = new Database();
+      try {
+        const res = await db.query(
+          'SELECT 1 FROM Game g WHERE g.id = ? AND g.removed = 0', [id]);
+        return (res && res.length == 1);
+      } finally {
+        db.close();
+      }
+    });
   },
 
   async getRandomGame() {
@@ -771,24 +782,26 @@ export default {
   },
 
   async getTagsForGame(gameId: number, userId?: number) {
-    const whereList = new WhereList();
-    whereList.add('gt.game_id',gameId);
-    whereList.add('gt.user_id',userId);
+    return await cache(`game-tag-${gameId}-${userId}`, async () => {
+      const whereList = new WhereList();
+      whereList.add('gt.game_id',gameId);
+      whereList.add('gt.user_id',userId);
 
-    var query = `
-      SELECT t.name, t.id
-      FROM GameTag gt
-      JOIN Game g on g.id = gt.game_id AND g.removed = 0
-      JOIN Tag t on t.id = gt.tag_id
-      ${whereList.getClause()}
-    `;
+      var query = `
+        SELECT t.name, t.id
+        FROM GameTag gt
+        JOIN Game g on g.id = gt.game_id AND g.removed = 0
+        JOIN Tag t on t.id = gt.tag_id
+        ${whereList.getClause()}
+      `;
 
-    const database = new Database();
-    try {
-      return await database.query(query,whereList.getParams());
-    } finally {
-      database.close();
-    }
+      const database = new Database();
+      try {
+        return await database.query(query,whereList.getParams());
+      } finally {
+        database.close();
+      }
+    });
   },
 
   async getTags(tagId?: number, q?: string, name?: string) {
@@ -830,6 +843,7 @@ export default {
           `INSERT INTO GameTag ${insertList.getClause()}`, 
           insertList.getParams());
       }
+      uncache(`game-tag-${gameId}-${userId}`);
     } finally {
       database.close();
     }

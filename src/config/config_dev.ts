@@ -35,6 +35,10 @@ export default {
   recaptcha_secret: '',
 
   memcache: {
-    hosts:['memcache:11211']
+    hosts:['memcache:11211'],
+    /** options from https://www.npmjs.com/package/memcached */
+    options: { 
+      maxExpiration: 86400
+    }
   }
 }

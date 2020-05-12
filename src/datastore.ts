@@ -406,7 +406,14 @@ export default {
         ${options.page !== undefined ? ' LIMIT ?,? ' : ''}
       `;
       
-      return await database.query(query, where.getParams().concat(params));
+      const results = await database.query(query, where.getParams().concat(params));
+      
+      //the following data is cached, so it's not as bad as it seems at first glance :)
+      await Promise.all(results.map(async r => {
+        r.tags = await this.getTagsForGame(r.game_id,r.user_id)
+      }));
+
+      return results;
     } finally {
       database.close();
     }

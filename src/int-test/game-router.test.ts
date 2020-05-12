@@ -1,9 +1,10 @@
 import axios from 'axios';
 import chai from 'chai';
 import { fail, ok } from 'assert';
-import { createUser, createGame, getConTest, addReview, addTag, genUsername, genGamename } from './test-lib';
+import { createUser, createGame, getConTest, addReview, addTag, genUsername, genGamename, grantPermission } from './test-lib';
 import FormData from 'form-data';
 import fs from 'fs';
+import { Permission } from '../model/Permission';
 var Moniker = require('moniker');
 
 var expect = chai.expect;
@@ -325,6 +326,30 @@ describe('game endpoint', function () {
     expect(upd.data).to.have.property('description').and.equal('super neat screenshot');
     expect(upd.data).to.have.property('gameId').and.equal(game.id);
     expect(upd.data).to.have.property('approved').and.equal(null);
+  });
+
+  it('auto-approves a screenshot if the user has the permission', async () => {
+    const user = await createUser(false);
+    const game = await createGame();
+    await grantPermission(user,Permission.AUTO_APPROVE_SCREENSHOT);
+
+    let data = new FormData();
+
+    data.append('description', 'super neat screenshot');
+    data.append('screenshot', fs.createReadStream(__dirname+'/HYPE.png'));
+
+    const hd = data.getHeaders();
+    hd['Authorization'] = "Bearer " + user.token;
+
+    const upd = await axios.post(`http://localhost:4201/api/games/${game.id}/screenshots`,
+      data,
+      {headers: hd});
+    expect(upd).to.have.property('status').and.equal(200);
+    expect(upd).to.have.property('data');
+    expect(upd.data).to.have.property('id').and.be.a('number');
+    expect(upd.data).to.have.property('description').and.equal('super neat screenshot');
+    expect(upd.data).to.have.property('gameId').and.equal(game.id);
+    expect(upd.data).to.have.property('approved').and.equal(true);
   });
   
   it('supports id search', async () => {

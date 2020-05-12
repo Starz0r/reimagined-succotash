@@ -12,6 +12,7 @@ import multer from 'multer';
 import handle from './lib/express-async-catch';
 import { adminCheck, userCheck } from './lib/auth-check';
 import config from './config/config';
+import { Permission } from './model/Permission';
 const upload = multer({storage:multer.diskStorage({
    //If no destination is given, the operating system's default directory for temporary files is used.
   filename: function (req, file, cb) {
@@ -620,6 +621,11 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
     return res.status(400).send({error:'id must be a number'});
   }
   const gameId = parseInt(req.params.id,10);
+  
+  const permissions = await datastore.getPermissions(req.user.sub);
+  const autoApprove = permissions.includes(Permission.AUTO_APPROVE_SCREENSHOT);
+  const canScreenshot = permissions.includes(Permission.CAN_SCREENSHOT);
+  if (!canScreenshot) return res.status(403).send({error:'screenshot capability revoked'});
 
   const game = await datastore.gameExists(gameId);
   if (!game) return res.sendStatus(404);
@@ -627,8 +633,8 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
     gameId: +req.params.id,
     description: req.body.description||''
   };
-
-  const ssres = await datastore.addScreenshot(ss,req.user.sub);
+  
+  const ssres = await datastore.addScreenshot(ss,req.user.sub,autoApprove);
 
   //TODO: stream images straight into s3 via multer-s3 storage?
   var metaData = {
@@ -642,11 +648,20 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
     if (err) return console.log(err)
   });
 
-  datastore.addReport({
-    type:"screenshot",
-    targetId:""+ssres.id,
-    report:"Screenshot added"
-  },req.user.sub);
+  if (autoApprove) {
+    datastore.addReport({
+      type:"screenshot",
+      targetId:""+ssres.id,
+      report:"Screenshot added, automatically approved"
+    },req.user.sub);
+  } else {
+    datastore.addReport({
+      type:"screenshot",
+      targetId:""+ssres.id,
+      report:"Screenshot added, awaiting approval"
+    },req.user.sub);
+  }
+
 
   res.send(ssres);
 }));

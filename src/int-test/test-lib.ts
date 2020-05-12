@@ -4,6 +4,7 @@ import { Database } from '../database';
 import FormData from 'form-data';
 import fs from 'fs';
 import config from '../config/config';
+import { Permission } from '../model/Permission';
 var Moniker = require('moniker');
 
 var expect = chai.expect;
@@ -166,6 +167,30 @@ export async function setUserToken(user: TestUser, token: string): Promise<any> 
             `UPDATE User SET reset_token = ?, reset_token_set_time = CURRENT_TIMESTAMP
             WHERE id = ?`,[token,user.id]);
         expect(success.affectedRows).to.be.equal(1);
+    } catch (err) {
+        console.log("failed to connecto to database!\n"+err);
+        fail("failed to connecto to database!\n"+err);
+    } finally {
+        try { 
+            await database.close();
+        } catch (err) {
+            console.log("failed to close database!\n"+err);
+        }
+    }
+}
+
+export async function grantPermission(user: TestUser, permission: Permission): Promise<any> {
+    const database = new Database({
+        host: 'localhost',
+        port: 33061, //see docker-compose.yaml
+        database: config.db_database,
+        user: config.db_user,
+        password: config.db_password,
+        timeout:1000
+      });
+    try {
+        await database.execute(
+            `INSERT IGNORE INTO UserPermission (user_id,permission_id) VALUES (?,?)`,[user.id,permission]);
     } catch (err) {
         console.log("failed to connecto to database!\n"+err);
         fail("failed to connecto to database!\n"+err);

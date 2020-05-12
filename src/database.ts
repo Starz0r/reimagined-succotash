@@ -88,6 +88,7 @@ export class Database {
         await this.createReportTable(connection);
         await this.createUserFollowTable(connection);
         await this.createBadgeTable(connection);
+        await this.createPermissionTable(connection);
       } catch (err) {
         await new Promise((resolve) => {setTimeout(resolve, 10000);});
         if (retryCount <= 0) {
@@ -431,6 +432,24 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         badge_id int NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id,badge_id)
+      );
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createPermissionTable(connection: mysql.Connection) {
+    console.log('Creating user permission table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.UserPermission (
+        user_id int NOT NULL,
+        permission_id VARCHAR(32) NOT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        date_revoked timestamp,
+        PRIMARY KEY (user_id,permission_id)
       );
       `,[],(err,rows)=>{
         if (err) reject(err);

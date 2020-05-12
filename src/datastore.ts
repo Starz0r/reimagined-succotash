@@ -20,6 +20,7 @@ import { Report } from './model/Report';
 import { GetReportParams } from './model/GetReportParams';
 import { GetUsersParms } from './model/GetUsersParms';
 import { createTracing } from 'trace_events';
+import { Permission } from './model/Permission';
 
 export default {
   /**
@@ -738,7 +739,7 @@ export default {
     }
   },
 
-  async addScreenshot(ss: Screenshot, adderId: number): Promise<Screenshot> {
+  async addScreenshot(ss: Screenshot, adderId: number, autoApprove: boolean): Promise<Screenshot> {
     const database = new Database();
     try {
       //const userExists = await database.query(`SELECT 1 FROM User WHERE name = ?`,[username]);
@@ -748,6 +749,10 @@ export default {
       insertList.add('game_id',ss.gameId);
       insertList.add('added_by_id',adderId);
       insertList.addDirect('description',ss.description); //blank description is falsy
+      if (autoApprove) {
+        insertList.addDirect('approved_by_id',0);
+        insertList.addDirect('approved',1);
+      }
 
       const result = await database.execute(
         `INSERT INTO Screenshot ${insertList.getClause()}`, 
@@ -1026,6 +1031,38 @@ export default {
       );
       rows.forEach(u => {u.isAdmin = (u.isAdmin===1);})
       return rows;
+    } finally {
+      database.close();
+    }
+  },
+
+  async getPermissions(userid: number): Promise<string[]> {
+    const database = new Database();
+
+
+    try {
+      let whereList = new WhereList();
+      whereList.add("user_id",userid);
+      whereList.addDirect("date_revoked IS NULL");
+      const permRows = await database.query(
+        `SELECT * FROM UserPermission ${whereList.getClause()}`, 
+        whereList.getParams());
+      let permissions = permRows.map(r => r.permission_id);
+
+      whereList = new WhereList();
+      whereList.add("id",userid);
+      const userRow = await database.query(
+        `SELECT * FROM User ${whereList.getClause()}`, 
+        whereList.getParams());
+
+      if (userRow.length === 1) {
+        if (userRow[0].can_report) permissions.push(Permission.CAN_REPORT);
+        if (userRow[0].can_submit) permissions.push(Permission.CAN_SUBMIT);
+        if (userRow[0].can_review) permissions.push(Permission.CAN_REVIEW);
+        if (userRow[0].can_screenshot) permissions.push(Permission.CAN_SCREENSHOT);
+        if (userRow[0].can_message) permissions.push(Permission.CAN_MESSAGE);
+      }
+      return permissions;
     } finally {
       database.close();
     }

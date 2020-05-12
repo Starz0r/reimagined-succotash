@@ -1,9 +1,10 @@
 import axios from 'axios';
 import chai from 'chai';
-import { createUser, getConTest, createGame, addScreenshot } from './test-lib';
+import { createUser, getConTest, createGame, addScreenshot, hasPermission } from './test-lib';
 import { fail } from 'assert';
 import FormData from 'form-data';
 import fs from 'fs';
+import { Permission } from '../model/Permission';
 
 var expect = chai.expect;
 
@@ -40,6 +41,27 @@ describe('screenshot endpoint', function () {
       const rsp = await axios.delete(`http://localhost:4201/api/screenshots/${ss.id}`,
         {headers: {'Authorization': "Bearer " + admin.token}});
       expect(rsp).to.have.property('status').and.equal(204);
+    });
+
+    it('grants auto-approve once the approve threshold has been met', async function () {
+      this.timeout(3000) //took 1205 in my test
+      const admin = await createUser(true);
+      const user = await createUser(false);
+      const game = await createGame();
+      //create and approve 10 screenshots
+      for (let i = 0; i < 10; i++) {
+        const ss = await addScreenshot(user,game);
+        await axios.patch(`http://localhost:4201/api/screenshots/${ss.id}`,{approved: true},
+          {headers: {'Authorization': "Bearer " + admin.token}});
+
+          if (i === 8) { //one before end
+            const hadPerm = await hasPermission(user,Permission.AUTO_APPROVE_SCREENSHOT);
+            expect(hadPerm).to.be.false;
+          }
+      }
+
+      const hadPerm = await hasPermission(user,Permission.AUTO_APPROVE_SCREENSHOT);
+      expect(hadPerm).to.be.true;
     });
 
     it('prevents non-admins from deleting a screenshot', async () => {

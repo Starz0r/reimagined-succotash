@@ -688,6 +688,7 @@ export default {
     whereList.add("s.game_id",params.gameId);
     whereList.addIf("s.approved",params.approved?1:0,params.approved!==undefined);
     whereList.addIf("s.removed",params.removed?1:0,params.removed!==undefined);
+    whereList.add("s.added_by_id",params.addedById);
     
     var query = `
       SELECT s.*, u.name user_name, g.name game_name, u.selected_badge
@@ -1039,7 +1040,6 @@ export default {
   async getPermissions(userid: number): Promise<string[]> {
     const database = new Database();
 
-
     try {
       let whereList = new WhereList();
       whereList.add("user_id",userid);
@@ -1063,6 +1063,17 @@ export default {
         if (userRow[0].can_message) permissions.push(Permission.CAN_MESSAGE);
       }
       return permissions;
+    } finally {
+      database.close();
+    }
+  },
+
+  async grantPermission(user_id: number, permission: Permission): Promise<any> {
+    const database = new Database();
+
+    try {
+      await database.execute(
+        `INSERT IGNORE INTO UserPermission (user_id,permission_id) VALUES (?,?)`,[user_id,permission]);
     } finally {
       database.close();
     }

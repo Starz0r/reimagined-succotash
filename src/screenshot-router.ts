@@ -4,6 +4,7 @@ import { GetScreenshotParms } from "./model/GetScreenshotParms";
 import { Screenshot } from "./model/Screenshot";
 import handle from './lib/express-async-catch';
 import { adminCheck } from './lib/auth-check';
+import { Permission } from './model/Permission';
 
 const app = express.Router();
 export default app;
@@ -127,5 +128,12 @@ app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
 
   const newGame = await datastore.getScreenshot(gid);
   if (newGame == null) res.sendStatus(404);
-  else res.send(newGame);
+  
+  const userScreenshots = await datastore.getScreenshots({addedById: newGame!.addedById!, approved: true,page:0,limit:10});
+  if (userScreenshots.length >= 10) {
+    console.log('grant permission')
+    await datastore.grantPermission(newGame!.addedById!,Permission.AUTO_APPROVE_SCREENSHOT);
+  }
+
+  res.send(newGame);
 }));

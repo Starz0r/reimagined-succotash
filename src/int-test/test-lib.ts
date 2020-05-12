@@ -202,3 +202,29 @@ export async function grantPermission(user: TestUser, permission: Permission): P
         }
     }
 }
+
+export async function hasPermission(user: TestUser, permission: Permission): Promise<boolean> {
+    const database = new Database({
+        host: 'localhost',
+        port: 33061, //see docker-compose.yaml
+        database: config.db_database,
+        user: config.db_user,
+        password: config.db_password,
+        timeout:1000
+      });
+    try {
+        const result = await database.execute(
+            `SELECT 1 FROM UserPermission WHERE user_id=? AND permission_id=?`,[user.id,permission]);
+        return result.length === 1;
+    } catch (err) {
+        console.log("failed to connecto to database!\n"+err);
+        fail("failed to connecto to database!\n"+err);
+        return false;
+    } finally {
+        try { 
+            await database.close();
+        } catch (err) {
+            console.log("failed to close database!\n"+err);
+        }
+    }
+}

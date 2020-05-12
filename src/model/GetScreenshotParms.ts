@@ -5,4 +5,5 @@ export interface GetScreenshotParms {
   page: number;
   limit: number;
   id?: number;
+  addedById?: number;
 }

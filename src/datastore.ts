@@ -12,15 +12,17 @@ import { GetReviewOptions } from './model/GetReviewOptions';
 import { GetScreenshotParms } from './model/GetScreenshotParms';
 import { GetGamesParms } from './model/GetGamesParms';
 import { GetListsParms } from './model/GetListsParms';
-import { getTagsParms } from './model/getTagsParms';
 import { News } from './model/News';
 import { GetNewsParms } from './model/GetNewsParms';
 import whitelist from './lib/whitelist';
 import { Report } from './model/Report';
 import { GetReportParams } from './model/GetReportParams';
 import { GetUsersParms } from './model/GetUsersParms';
-import { createTracing } from 'trace_events';
 import { Permission } from './model/Permission';
+import config from './config/config';
+
+var Memcached = require('memcached');
+var memcached = new Memcached(config.memcache.hosts);
 
 export default {
   /**
@@ -1038,34 +1040,36 @@ export default {
   },
 
   async getPermissions(userid: number): Promise<string[]> {
-    const database = new Database();
+    return await cache('user-perm-'+userid, async () => {
+      const database = new Database();
 
-    try {
-      let whereList = new WhereList();
-      whereList.add("user_id",userid);
-      whereList.addDirect("date_revoked IS NULL");
-      const permRows = await database.query(
-        `SELECT * FROM UserPermission ${whereList.getClause()}`, 
-        whereList.getParams());
-      let permissions = permRows.map(r => r.permission_id);
+      try {
+        let whereList = new WhereList();
+        whereList.add("user_id",userid);
+        whereList.addDirect("date_revoked IS NULL");
+        const permRows = await database.query(
+          `SELECT * FROM UserPermission ${whereList.getClause()}`, 
+          whereList.getParams());
+        let permissions: string[] = permRows.map(r => r.permission_id);
 
-      whereList = new WhereList();
-      whereList.add("id",userid);
-      const userRow = await database.query(
-        `SELECT * FROM User ${whereList.getClause()}`, 
-        whereList.getParams());
+        whereList = new WhereList();
+        whereList.add("id",userid);
+        const userRow = await database.query(
+          `SELECT * FROM User ${whereList.getClause()}`, 
+          whereList.getParams());
 
-      if (userRow.length === 1) {
-        if (userRow[0].can_report) permissions.push(Permission.CAN_REPORT);
-        if (userRow[0].can_submit) permissions.push(Permission.CAN_SUBMIT);
-        if (userRow[0].can_review) permissions.push(Permission.CAN_REVIEW);
-        if (userRow[0].can_screenshot) permissions.push(Permission.CAN_SCREENSHOT);
-        if (userRow[0].can_message) permissions.push(Permission.CAN_MESSAGE);
+        if (userRow.length === 1) {
+          if (userRow[0].can_report) permissions.push(Permission.CAN_REPORT);
+          if (userRow[0].can_submit) permissions.push(Permission.CAN_SUBMIT);
+          if (userRow[0].can_review) permissions.push(Permission.CAN_REVIEW);
+          if (userRow[0].can_screenshot) permissions.push(Permission.CAN_SCREENSHOT);
+          if (userRow[0].can_message) permissions.push(Permission.CAN_MESSAGE);
+        }
+        return permissions;
+      } finally {
+        database.close();
       }
-      return permissions;
-    } finally {
-      database.close();
-    }
+    });
   },
 
   async grantPermission(user_id: number, permission: Permission): Promise<any> {
@@ -1074,8 +1078,32 @@ export default {
     try {
       await database.execute(
         `INSERT IGNORE INTO UserPermission (user_id,permission_id) VALUES (?,?)`,[user_id,permission]);
+
+        uncache('user-perm-'+user_id);
     } finally {
       database.close();
     }
   }
+}
+
+async function cache<T>(key: string,supplier: ()=>Promise<T>): Promise<T> {
+  try {
+    const cached = await new Promise<T>((r,j)=>{
+      memcached.get(key,function(err:any,data:any){
+        if (err) j(err); else r(data?.data)
+      })
+    });
+    if (cached) return cached;
+  } catch (err) {
+    console.log('Error occurred retrieving '+key+' from memcache!')
+    console.log(err);
+  }
+
+  const result = await supplier();
+  memcached.set(key, {data:result});
+  return result;
+}
+
+function uncache(key: string) {
+  memcached.del(key);
 }

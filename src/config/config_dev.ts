@@ -32,5 +32,9 @@ export default {
   /**
    * recaptcha secret key. if empty, is disabled. get from recaptcha dashboard
    */
-  recaptcha_secret: ''
+  recaptcha_secret: '',
+
+  memcache: {
+    hosts:['memcache:11211']
+  }
 }

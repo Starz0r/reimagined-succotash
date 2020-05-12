@@ -662,7 +662,6 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
     },req.user.sub);
   }
 
-
   res.send(ssres);
 }));
 

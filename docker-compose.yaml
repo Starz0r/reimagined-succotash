@@ -29,4 +29,6 @@ services:
     command: ["server", "/data"]
   memcache:
     image: memcached
+    expose: # exposes 3306 on the internal container network for the server
+      - "11211"
 

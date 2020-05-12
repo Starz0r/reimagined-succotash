@@ -24,5 +24,9 @@ export = {
   },
   
   recaptcha_threshold: 0,
-  recaptcha_secret: ''
+  recaptcha_secret: '',
+
+  memcache: {
+    hosts:['memcache:11211']
+  }
 }

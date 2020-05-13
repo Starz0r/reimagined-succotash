@@ -407,7 +407,7 @@ export default {
       `;
       
       const results = await database.query(query, where.getParams().concat(params));
-      
+
       //the following data is cached, so it's not as bad as it seems at first glance :)
       await Promise.all(results.map(async r => {
         r.tags = await this.getTagsForGame(r.game_id,r.user_id)
@@ -1104,7 +1104,26 @@ export default {
     } finally {
       database.close();
     }
-  }
+  },
+  
+  async getApiUsers(params: any): Promise<any[]> {
+    const database = new Database();
+
+    const query = `
+      SELECT *
+
+      FROM ApiUser u
+      LIMIT ?,?
+    `;
+    try {
+      const rows = await database.query(query,
+        [params.page*params.limit,params.limit]
+      );
+      return rows;
+    } finally {
+      database.close();
+    }
+  },
 }
 
 async function cache<T>(key: string,supplier: ()=>Promise<T>): Promise<T> {

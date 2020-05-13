@@ -17,6 +17,7 @@ import screenshot_router from './screenshot-router';
 import news_router from './news-router';
 import report_router from './report-router';
 import tag_router from './tag-router';
+import api_router from './api-router';
 
 import { Database } from './database';
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -133,6 +134,7 @@ app.use('/api/screenshots',screenshot_router);
 app.use('/api/news',news_router);
 app.use('/api/reports',report_router);
 app.use('/api/tags',tag_router);
+app.use('/api/api',api_router);
 
 console.log('Initializing object storage...');
 

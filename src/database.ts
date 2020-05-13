@@ -59,45 +59,48 @@ export class Database {
 
   static async init() {
     let connection: Connection;
-
-    //attempt connection 4 times, wait 10 seconds between failed attempts
-    for (let retryCount=4;retryCount>0;retryCount--) {
-      console.log("connect attempt "+retryCount);
-      try {
-        connection = mysql.createConnection({
-          host: config.db_host,
-          port: config.db_port,
-          user: config.db_user,
-          password: config.db_password,
-          timeout:5000
-        });
-        connection = connection!;
-
-        await this.createDatabase(connection);
-        await this.createUserTable(connection);
-        await this.createGameTable(connection);
-        await this.createGameTagTable(connection);
-        await this.createTagTable(connection);
-        await this.createRatingTable(connection);
-        await this.createMessageTable(connection);
-        await this.createLikeReviewTable(connection);
-        await this.createListTable(connection);
-        await this.createListGameTable(connection);
-        await this.createScreenshotTable(connection);
-        await this.createNewsTable(connection);
-        await this.createReportTable(connection);
-        await this.createUserFollowTable(connection);
-        await this.createBadgeTable(connection);
-        await this.createPermissionTable(connection);
-      } catch (err) {
-        await new Promise((resolve) => {setTimeout(resolve, 10000);});
-        if (retryCount <= 0) {
-          console.log("Failed to connect to database after 4 retries!");
-          throw err;
-        }
-      } finally {
-        if (connection!) (connection!).end()
+    try {
+      //attempt connection 4 times, wait 10 seconds between failed attempts
+      for (let retryCount=4;retryCount>0;retryCount--) {
+        console.log("connect attempt "+retryCount);
+        try {
+          connection = mysql.createConnection({
+            host: config.db_host,
+            port: config.db_port,
+            user: config.db_user,
+            password: config.db_password,
+            timeout:5000
+          });
+        } catch (err) {
+          await new Promise((resolve) => {setTimeout(resolve, 10000);});
+          if (retryCount <= 0) {
+            console.log("Failed to connect to database after 4 retries!");
+            throw err;
+          }
+        } 
       }
+
+      connection = connection!;
+      await this.createDatabase(connection);
+      await this.createUserTable(connection);
+      await this.createGameTable(connection);
+      await this.createGameTagTable(connection);
+      await this.createTagTable(connection);
+      await this.createRatingTable(connection);
+      await this.createMessageTable(connection);
+      await this.createLikeReviewTable(connection);
+      await this.createListTable(connection);
+      await this.createListGameTable(connection);
+      await this.createScreenshotTable(connection);
+      await this.createNewsTable(connection);
+      await this.createReportTable(connection);
+      await this.createUserFollowTable(connection);
+      await this.createBadgeTable(connection);
+      await this.createPermissionTable(connection);
+      await this.createApiTable(connection);
+      await this.createApiUserTable(connection);
+    } finally {
+      if (connection!) (connection!).end()
     }
   }
 
@@ -451,6 +454,46 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         date_revoked timestamp,
         PRIMARY KEY (user_id,permission_id)
       );
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createApiTable(connection: mysql.Connection) {
+    console.log('Creating api table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.Api (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        host varchar(300) NOT NULL,
+        endpoint varchar(100) NOT NULL,
+        method varchar(100) DEFAULT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        api_user int(11) DEFAULT NULL,
+        params varchar(1000) DEFAULT NULL,
+        PRIMARY KEY (id)
+      );
+      `,[],(err,rows)=>{
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  }
+
+  static createApiUserTable(connection: mysql.Connection) {
+    console.log('Creating api user table...')
+    return new Promise((resolve,reject) => {
+      connection.query(`
+      CREATE TABLE IF NOT EXISTS delfruit.ApiUser (
+        id int(11) NOT NULL AUTO_INCREMENT,
+        api_key varchar(100) NOT NULL,
+        description varchar(200) DEFAULT NULL,
+        date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        origin varchar(120) DEFAULT NULL,
+        PRIMARY KEY (id)
+      );      
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();

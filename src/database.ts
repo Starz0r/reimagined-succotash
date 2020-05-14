@@ -1,6 +1,7 @@
 
 import mysql, { Connection } from 'mysql';
-import config from './config/config';
+import Config from './model/config';
+let config: Config = require('./config/config.json');
 
 export class Database {
   private connection: mysql.Connection;
@@ -11,14 +12,7 @@ export class Database {
    * Really only used for integration testing - always use the parameterless version in prod.
    */
   constructor(configOverride?: mysql.ConnectionConfig) {
-    let useConfig: mysql.ConnectionConfig = {
-      host: config.db_host,
-      port:config.db_port,
-      database: config.db_database,
-      user: config.db_user,
-      password: config.db_password,
-      timeout:60000
-    };
+    let useConfig: mysql.ConnectionConfig = config.db;
     if (configOverride) {
       useConfig = configOverride;
     }
@@ -64,16 +58,13 @@ export class Database {
       for (let retryCount=4;retryCount>0;retryCount--) {
         console.log("connect attempt "+retryCount);
         try {
-          connection = mysql.createConnection({
-            host: config.db_host,
-            port: config.db_port,
-            user: config.db_user,
-            password: config.db_password,
-            timeout:5000
-          });
+          let conn = {...config.db};
+          delete conn.database; //don't set the initial database
+          connection = mysql.createConnection(conn);
+          await this.createDatabase(connection);
         } catch (err) {
           await new Promise((resolve) => {setTimeout(resolve, 10000);});
-          if (retryCount <= 0) {
+          if (retryCount <= 1) {
             console.log("Failed to connect to database after 4 retries!");
             throw err;
           }
@@ -81,7 +72,6 @@ export class Database {
       }
 
       connection = connection!;
-      await this.createDatabase(connection);
       await this.createUserTable(connection);
       await this.createGameTable(connection);
       await this.createGameTagTable(connection);

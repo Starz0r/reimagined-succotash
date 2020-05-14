@@ -11,7 +11,9 @@ import * as Minio from 'minio';
 import multer from 'multer';
 import handle from './lib/express-async-catch';
 import { adminCheck, userCheck } from './lib/auth-check';
-import config from './config/config';
+import Config from './model/config';
+let config: Config = require('./config/config.json');
+
 import { Permission } from './model/Permission';
 const upload = multer({storage:multer.diskStorage({
    //If no destination is given, the operating system's default directory for temporary files is used.
@@ -20,17 +22,10 @@ const upload = multer({storage:multer.diskStorage({
   }
 })})
 
-const minioClient = new Minio.Client({
-  endPoint: config.s3_host,
-  port: config.s3_port,
-  useSSL: config.s3_ssl,
-  accessKey: config.s3_access,
-  secretKey: config.s3_secret
-});
+const minioClient = new Minio.Client(config.s3);
 
 const app = express.Router();
 export default app;
-
 
 /**
  * @swagger
@@ -828,7 +823,7 @@ app.route('/:id').patch(adminCheck(), handle(async (req,res,next) => {
   var gid = parseInt(req.params.id, 10);
 
   let game = req.body as Game;
-  game.id = gid;
+  game.id = gid; 
 
   const gameFound = await datastore.updateGame(game,req.user.isAdmin);
   if (!gameFound) return res.sendStatus(404);

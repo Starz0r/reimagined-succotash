@@ -3,9 +3,6 @@ import bodyParser from 'body-parser';
 import uuid from 'uuid/v4';
 
 import jwt_middleware from 'express-jwt';
-//import jwt from 'jsonwebtoken';
-
-import config from './config/config';
 import game_router from './game-router';
 import user_router from './user-router';
 import review_router from './review-router';
@@ -18,12 +15,13 @@ import news_router from './news-router';
 import report_router from './report-router';
 import tag_router from './tag-router';
 import api_router from './api-router';
-
 import { Database } from './database';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import * as Minio from 'minio';
 import { refreshToken } from './lib/auth-check';
+import Config from './model/config';
+let config: Config = require('./config/config.json');
 
 /** Exit codes for fatal errors. */
 enum ExitCode {
@@ -42,7 +40,7 @@ console.log('Welcome to delfruit server 2.0!');
 try {
   await Database.init();
 } catch (e) {
-  console.error("Database initialization failed! Is it running? check "+config.db_host);
+  console.error("Database initialization failed! Is it running? check "+config.db.host);
   console.error(e);
   process.exit(ExitCode.DB_INIT_FAIL);
 }
@@ -139,13 +137,7 @@ app.use('/api/api',api_router);
 console.log('Initializing object storage...');
 
 try {
-  const minioClient = new Minio.Client({
-    endPoint: config.s3_host,
-    port: config.s3_port,
-    useSSL: config.s3_ssl,
-    accessKey: config.s3_access,
-    secretKey: config.s3_secret
-  });
+  const minioClient = new Minio.Client(config.s3);
 
   const bucketJustCreated = await new Promise((res,rej) => {
     minioClient.bucketExists(config.s3_bucket,(err,exists)=>{

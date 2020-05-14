@@ -1,0 +1,42 @@
+{
+  "db":{
+    "host": "mysql",
+    "database": "delfruit",
+    "user": "root",
+    "password": "my-secret-pw",
+    "port": 3306,
+    "timeout": 5000
+  },
+
+  "app_port": 4201,
+  "app_jwt_secret": "what_up_fam",
+
+  "s3":{
+    "endPoint":"minio",
+    "port":9000,
+    "useSSL": false,
+    "accessKey":"minioadmin",
+    "secretKey":"minioadmin"
+  },
+  "s3_bucket":"df2images",
+  "s3_region":"us-east-1",
+
+  "smtp": {    
+    "host": "",
+    "port": 587,
+    "secure": false,
+    "auth": {
+      "user":"",
+      "pass":""
+    }
+  },
+  "recaptcha_threshold": 0,
+  "recaptcha_secret": "",
+
+  "memcache": {
+    "hosts":["memcache:11211"],
+    "options": {
+      "maxExpiration": 86400
+    }
+  }
+}

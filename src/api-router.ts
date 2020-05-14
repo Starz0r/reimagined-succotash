@@ -1,6 +1,5 @@
 import express from 'express';
 import datastore from './datastore';
-import { GetUsersParms } from './model/GetUsersParms';
 import handle from './lib/express-async-catch';
 import { adminCheck } from './lib/auth-check';
 const app = express.Router();

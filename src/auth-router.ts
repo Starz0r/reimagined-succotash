@@ -7,10 +7,10 @@ import crypto from 'crypto';
 import handle from './lib/express-async-catch';
 import { userCheck } from './lib/auth-check';
 import nodemailer from 'nodemailer';
-import config from './config/config';
 import util from 'util';
 import axios from 'axios';
-//import fs from 'fs';
+import Config from './model/config';
+let config: Config = require('./config/config.json');
 
 const app = express.Router();
 const auth = new AuthModule();

@@ -3,8 +3,9 @@ import chai from 'chai';
 import { Database } from '../database';
 import FormData from 'form-data';
 import fs from 'fs';
-import config from '../config/config';
 import { Permission } from '../model/Permission';
+import Config from '../model/config';
+let config: Config = require('../config/config.json');
 var Moniker = require('moniker');
 
 var expect = chai.expect;
@@ -45,9 +46,9 @@ export async function createUser(isAdmin: boolean): Promise<TestUser> {
         const db = new Database({
             host: 'localhost',
             port: 33061, //see docker-compose.yaml
-            database: config.db_database,
-            user: config.db_user,
-            password: config.db_password,
+            database: config.db.database,
+            user: config.db.user,
+            password: config.db.password,
             timeout:1000
           });
         try {
@@ -157,9 +158,9 @@ export async function setUserToken(user: TestUser, token: string): Promise<any> 
     const database = new Database({
         host: 'localhost',
         port: 33061, //see docker-compose.yaml
-        database: config.db_database,
-        user: config.db_user,
-        password: config.db_password,
+        database: config.db.database,
+        user: config.db.user,
+        password: config.db.password,
         timeout:1000
       });
     try {
@@ -183,9 +184,9 @@ export async function grantPermission(user: TestUser, permission: Permission): P
     const database = new Database({
         host: 'localhost',
         port: 33061, //see docker-compose.yaml
-        database: config.db_database,
-        user: config.db_user,
-        password: config.db_password,
+        database: config.db.database,
+        user: config.db.user,
+        password: config.db.password,
         timeout:1000
       });
     try {
@@ -207,9 +208,9 @@ export async function hasPermission(user: TestUser, permission: Permission): Pro
     const database = new Database({
         host: 'localhost',
         port: 33061, //see docker-compose.yaml
-        database: config.db_database,
-        user: config.db_user,
-        password: config.db_password,
+        database: config.db.database,
+        user: config.db.user,
+        password: config.db.password,
         timeout:1000
       });
     try {

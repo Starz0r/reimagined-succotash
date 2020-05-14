@@ -19,7 +19,8 @@ import { Report } from './model/Report';
 import { GetReportParams } from './model/GetReportParams';
 import { GetUsersParms } from './model/GetUsersParms';
 import { Permission } from './model/Permission';
-import config from './config/config';
+import Config from './model/config';
+let config: Config = require('./config/config.json');
 
 var Memcached = require('memcached');
 var memcached = new Memcached(config.memcache.hosts,config.memcache.options);

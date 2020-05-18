@@ -21,7 +21,8 @@ const upload = multer({storage:multer.diskStorage({
     cb(null, file.fieldname + '-' + Date.now())
   }
 })})
-
+console.log("config:")
+console.log(config);
 const minioClient = new Minio.Client(config.s3);
 
 const app = express.Router();

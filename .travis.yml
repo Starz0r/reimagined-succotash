@@ -13,4 +13,6 @@ install:
   - docker-compose up -d
 
 script:
-  - npm i && npm run test-int
+  - npm i
+  - docker ps
+  - npm run test-int

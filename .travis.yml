@@ -10,7 +10,7 @@ before_install:
   - cp src/config/config.dev.json src/config/config.json
 
 install:
-  - docker-compose up
+  - docker-compose up -d
 
 script:
   - npm run test-int

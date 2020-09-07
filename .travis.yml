@@ -14,5 +14,6 @@ install:
 
 script:
   - npm i
+  - ./travis.wait.sh
   - docker ps
   - npm run test-int

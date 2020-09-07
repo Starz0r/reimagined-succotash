@@ -3,6 +3,7 @@ import chai from 'chai';
 import { fail } from 'assert';
 import { getConTest, createUser, genUsername } from './test-lib';
 import FormData from 'form-data';
+import moment from 'moment';
 var Moniker = require('moniker');
 
 var expect = chai.expect;
@@ -269,5 +270,56 @@ describe('user endpoint', function () {
         expect(rsp).to.have.property('status').and.equal(200);
         expect(rsp).to.have.property('data').and.be.an('array');
         expect((rsp.data as any[]).find(u=>u.name===user.username)).to.not.be.null;
+    });
+
+    it("includes permissions for self", async () => {
+      const user = await createUser(true);
+      
+      let rsp = await axios.get(`http://localhost:4201/api/users/${user.id}`,
+        {headers: {'Authorization': "Bearer " + user.token}});
+        expect(rsp).to.have.property('status').and.equal(200);
+        expect(rsp).to.have.property('data').and.be.an('object');
+        expect(rsp.data).to.have.property('permissions');
+    });
+
+    it("includes permissions for admins", async () => {
+      const user = await createUser(true);
+      const target_user = await createUser(false);
+      
+      let rsp = await axios.get(`http://localhost:4201/api/users/${target_user.id}`,
+        {headers: {'Authorization': "Bearer " + user.token}});
+        expect(rsp).to.have.property('status').and.equal(200);
+        expect(rsp).to.have.property('data').and.be.an('object');
+        expect(rsp.data).to.have.property('permissions');
+    });
+
+    it("doesn't include permissions if it's not you", async () => {
+      const user = await createUser(false);
+      const target_user = await createUser(false);
+      
+      let rsp = await axios.get(`http://localhost:4201/api/users/${target_user.id}`,
+        {headers: {'Authorization': "Bearer " + user.token}});
+        expect(rsp).to.have.property('status').and.equal(200);
+        expect(rsp).to.have.property('data').and.be.an('object');
+        expect(rsp.data).to.not.have.property('permissions');
+    });
+
+    it("shows revoked permissions", async () => {
+      const user = await createUser(true);
+      const target_user = await createUser(false);
+      const perm = "CAN_REPORT";
+      let revokeRsp = await axios.patch(`http://localhost:4201/api/users/${target_user.id}/permissions/${perm}`,
+        {revoked_until:moment().add(1,'days')},
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(revokeRsp).to.have.property('status').and.equal(200);
+      
+      let rsp = await axios.get(`http://localhost:4201/api/users/${target_user.id}`,
+        {headers: {'Authorization': "Bearer " + user.token}});
+      expect(rsp).to.have.property('status').and.equal(200);
+      expect(rsp).to.have.property('data').and.be.an('object');
+      expect(rsp.data).to.have.property('permissions');
+      expect(rsp.data.permissions).to.have.property(perm);
+      expect(rsp.data.permissions[perm]).to.have.property("revoked_until");
+      expect(moment(rsp.data.permissions[perm].revoked_until).isAfter(moment())).to.be.true;
     });
   });

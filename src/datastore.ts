@@ -18,7 +18,7 @@ import whitelist from './lib/whitelist';
 import { Report } from './model/Report';
 import { GetReportParams } from './model/GetReportParams';
 import { GetUsersParms } from './model/GetUsersParms';
-import { Permission } from './model/Permission';
+import { Permission, DEFAULT_PERMISSIONS } from './model/Permission';
 import Config from './model/config';
 let config: Config = require('./config/config.json');
 
@@ -53,16 +53,14 @@ export default {
   
     updateList.add('phash2',user.phash2);
     updateList.add('email',user.email);
-    updateList.add('can_report',user.canReport);
-    updateList.add('can_submit',user.canSubmit);
-    updateList.add('can_review',user.canReview);
-    updateList.add('can_screenshot',user.canScreenshot);
+
+    updateList.add('banned',user.banned);
+
     updateList.add('twitch_link',user.twitchLink);
     updateList.add('nico_link',user.nicoLink);
     updateList.add('youtube_link',user.youtubeLink);
     updateList.add('twitterLink',user.twitterLink);
     updateList.add('bio',user.bio);
-    updateList.add('banned',user.banned);
     updateList.add('locale',user.locale);
     updateList.add('unsuccessful_logins',user.unsuccessfulLogins);
     updateList.add('last_ip',user.lastIp);
@@ -1011,7 +1009,8 @@ export default {
   async getUser(id: number): Promise<any> {
     const users = await this.getUsers({id,page:0,limit:1});
     if (!users || users.length == 0) return null;
-    return users[0];
+    const user = users[0];
+    return user;
   },
 
   async getUsers(params: GetUsersParms): Promise<any[]> {
@@ -1039,10 +1038,6 @@ export default {
       , u.nico_link as nicoLink, u.twitter_link as twitterLink
       , u.bio, u.is_admin as isAdmin, u.email
 
-      ,u.can_report as canReport
-      ,u.can_submit as canSubmit
-      ,u.can_review as canReview
-      ,u.can_screenshot as canScreenshot
       ,u.banned as banned
 
       ,u.selected_badge
@@ -1064,33 +1059,28 @@ export default {
     }
   },
 
-  async getPermissions(userid: number): Promise<string[]> {
+  async getPermissions(userid: number): Promise<any> {
     return await cache('user-perm-'+userid, async () => {
       const database = new Database();
 
       try {
         let whereList = new WhereList();
         whereList.add("user_id",userid);
-        whereList.addDirect("date_revoked IS NULL");
         const permRows = await database.query(
           `SELECT * FROM UserPermission ${whereList.getClause()}`, 
           whereList.getParams());
-        let permissions: string[] = permRows.map(r => r.permission_id);
 
-        whereList = new WhereList();
-        whereList.add("id",userid);
-        const userRow = await database.query(
-          `SELECT * FROM User ${whereList.getClause()}`, 
-          whereList.getParams());
+        let perms = permRows.reduce((o,v)=>{
+          o[v.permission_id]=v;
+          return o;
+        },{} as any);
 
-        if (userRow.length === 1) {
-          if (userRow[0].can_report) permissions.push(Permission.CAN_REPORT);
-          if (userRow[0].can_submit) permissions.push(Permission.CAN_SUBMIT);
-          if (userRow[0].can_review) permissions.push(Permission.CAN_REVIEW);
-          if (userRow[0].can_screenshot) permissions.push(Permission.CAN_SCREENSHOT);
-          if (userRow[0].can_message) permissions.push(Permission.CAN_MESSAGE);
-        }
-        return permissions;
+        //add any perms not in the DB
+        DEFAULT_PERMISSIONS.filter(p => !perms[p])
+          .forEach(p=>{
+            perms[p] = {permission_id:p};
+          });
+        return perms;
       } finally {
         database.close();
       }
@@ -1103,6 +1093,22 @@ export default {
     try {
       await database.execute(
         `INSERT IGNORE INTO UserPermission (user_id,permission_id) VALUES (?,?)`,[user_id,permission]);
+
+        uncache('user-perm-'+user_id);
+    } finally {
+      database.close();
+    }
+  },
+
+  async updatePermission(user_id: number, permission: Permission, revokedUntil: string): Promise<any> {
+    const database = new Database();
+
+    try {
+      await database.execute(
+        `INSERT INTO UserPermission (user_id,permission_id,revoked_until) 
+        VALUES (?,?,?)
+        ON DUPLICATE KEY UPDATE
+        revoked_until = ?`,[user_id,permission,revokedUntil,revokedUntil]);
 
         uncache('user-perm-'+user_id);
     } finally {

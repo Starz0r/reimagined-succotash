@@ -14,7 +14,7 @@ import { adminCheck, userCheck } from './lib/auth-check';
 import Config from './model/config';
 let config: Config = require('./config/config.json');
 
-import { Permission } from './model/Permission';
+import { Permission, hasPermission } from './model/Permission';
 const upload = multer({storage:multer.diskStorage({
    //If no destination is given, the operating system's default directory for temporary files is used.
   filename: function (req, file, cb) {
@@ -619,8 +619,8 @@ app.route('/:id/screenshots').post(userCheck(), upload.single('screenshot'), han
   const gameId = parseInt(req.params.id,10);
   
   const permissions = await datastore.getPermissions(req.user.sub);
-  const autoApprove = permissions.includes(Permission.AUTO_APPROVE_SCREENSHOT);
-  const canScreenshot = permissions.includes(Permission.CAN_SCREENSHOT);
+  const autoApprove = hasPermission(permissions,Permission.AUTO_APPROVE_SCREENSHOT);
+  const canScreenshot = hasPermission(permissions,Permission.CAN_SCREENSHOT);
   if (!canScreenshot) return res.status(403).send({error:'screenshot capability revoked'});
 
   const game = await datastore.gameExists(gameId);

@@ -12,7 +12,7 @@ before_install:
 install:
   - docker-compose up -d
   - npm i
-  - ./travis.wait.sh
+  - until curl -s localhost:4201/api/ping/; do true; done > /dev/null
   - docker ps
 
 script:

@@ -6,6 +6,9 @@ sudo: true
 services:
     - docker
 
+before_install:
+  - cp src/config/config.dev.json src/config/config.json
+
 install:
   - docker-compose up
 

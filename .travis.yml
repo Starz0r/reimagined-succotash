@@ -11,9 +11,9 @@ before_install:
 
 install:
   - docker-compose up -d
-
-script:
   - npm i
   - ./travis.wait.sh
   - docker ps
+
+script:
   - npm run test-int

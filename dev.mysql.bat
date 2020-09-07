@@ -1,0 +1,1 @@
+docker exec -it delfruit2-server_mysql_1 mysql -u root --password=my-secret-pw

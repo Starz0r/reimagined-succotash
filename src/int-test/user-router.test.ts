@@ -259,4 +259,15 @@ describe('user endpoint', function () {
         expect(rsp).to.have.property('data').and.be.an('array');
   
     });
+
+    it('allows searching for user by name', async () => {
+      const user = await createUser(false);
+      
+      let rsp = await axios.get(`http://localhost:4201/api/users`,
+        {headers: {'Authorization': "Bearer " + user.token},
+          params:{name:user.username.substring(3,10)}});
+        expect(rsp).to.have.property('status').and.equal(200);
+        expect(rsp).to.have.property('data').and.be.an('array');
+        expect((rsp.data as any[]).find(u=>u.name===user.username)).to.not.be.null;
+    });
   });

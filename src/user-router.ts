@@ -77,6 +77,11 @@ app.route('/').post(handle(async (req,res,next) => {
  *       - application/json
  *     parameters:
  *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Fragment of user name to search for
+ *       - in: query
  *         name: following
  *         schema:
  *           type: boolean
@@ -112,16 +117,20 @@ app.route('/').get(handle(async (req,res,next) => {
   if (!req.user || !req.user.isAdmin) params.banned = false;
   else params.banned = req.query.banned;
   if (req.query.following && req.user && req.user.sub) params.followerUserId = req.user.sub;
+  if (req.query.name) params.name = req.query.name;
   //TODO: order by
   const users = await datastore.getUsers(params);
-  users.forEach(u => {
-    delete u.email;
-    delete u.canReport;
-    delete u.canSubmit;
-    delete u.canReview;
-    delete u.canScreenshot;
-    delete u.banned;
-  });
+
+  if (!req.user || !req.user.isAdmin) {
+    users.forEach(u => {
+      delete u.email;
+      delete u.canReport;
+      delete u.canSubmit;
+      delete u.canReview;
+      delete u.canScreenshot;
+      delete u.banned;
+    });
+  }
   return res.send(users);
 }));
 

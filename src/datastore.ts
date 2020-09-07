@@ -1026,6 +1026,9 @@ export default {
       if (!params.banned) whereList.add("u.banned",0)
       else whereList.add("u.banned",1)
     }
+    if (params.name !== undefined) {
+      whereList.addPhrase("u.name LIKE ?",'%'+params.name+'%');
+    }
     
     const orderCol = whitelist(params.orderCol,['id','date_created'],'id');
     const orderDir = whitelist(params.orderDir,['ASC','DESC'],'DESC');

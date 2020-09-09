@@ -1,7 +1,10 @@
-import config from '../config/config';
+
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import ms from 'ms';
+import Config from '../model/config';
+
+let config: Config = require('../config/config.json');
 
 export default class AuthModule {
   public getSecret(): string {

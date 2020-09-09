@@ -441,7 +441,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         user_id int NOT NULL,
         permission_id VARCHAR(32) NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        date_revoked timestamp,
+        revoked_until timestamp,
         PRIMARY KEY (user_id,permission_id)
       );
       `,[],(err,rows)=>{

@@ -6,8 +6,14 @@ sudo: true
 services:
     - docker
 
+before_install:
+  - cp src/config/config.dev.json src/config/config.json
+
 install:
-  - docker-compose up
+  - docker-compose up -d
+  - npm i
+  - until curl -s localhost:4201/api/ping/; do true; done > /dev/null
+  - docker ps
 
 script:
   - npm run test-int

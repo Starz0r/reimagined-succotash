@@ -5,6 +5,8 @@ import { GetUsersParms } from './model/GetUsersParms';
 import handle from './lib/express-async-catch';
 import { userCheck } from './lib/auth-check';
 import { recaptchaVerify } from './auth-router';
+import { Permission } from './model/Permission';
+import moment from 'moment';
 const auth = new AuthModule();
 const app = express.Router();
 export default app;
@@ -77,6 +79,11 @@ app.route('/').post(handle(async (req,res,next) => {
  *       - application/json
  *     parameters:
  *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         description: Fragment of user name to search for
+ *       - in: query
  *         name: following
  *         schema:
  *           type: boolean
@@ -112,16 +119,20 @@ app.route('/').get(handle(async (req,res,next) => {
   if (!req.user || !req.user.isAdmin) params.banned = false;
   else params.banned = req.query.banned;
   if (req.query.following && req.user && req.user.sub) params.followerUserId = req.user.sub;
+  if (req.query.name) params.name = req.query.name;
   //TODO: order by
   const users = await datastore.getUsers(params);
-  users.forEach(u => {
-    delete u.email;
-    delete u.canReport;
-    delete u.canSubmit;
-    delete u.canReview;
-    delete u.canScreenshot;
-    delete u.banned;
-  });
+
+  if (!req.user || !req.user.isAdmin) {
+    users.forEach(u => {
+      delete u.email;
+      delete u.canReport;
+      delete u.canSubmit;
+      delete u.canReview;
+      delete u.canScreenshot;
+      delete u.banned;
+    });
+  }
   return res.send(users);
 }));
 
@@ -149,9 +160,34 @@ app.route('/:id/badges').get(handle(async (req,res,next) => {
   res.send(rows);
 }));
 
+app.route('/:id/permissions/:pid').patch(handle(async (req,res,next)=>{
+  var uid = parseInt(req.params.id,10);
+  var pid = req.params.pid;
+
+  //only admins can change permissions
+  const isAdmin = req.user && req.user.isAdmin;
+  if (!isAdmin) {
+    return res.status(403).send({error:'access forbidden to this user'});
+  }
+
+  const perm = pid as Permission;
+  if (perm == null) {
+    return res.status(400).send({error:`invalid permission: ${pid}`});
+  }
+
+  let revokedUntil = req.body.revoked_until || null;
+  if (revokedUntil != null) {
+    revokedUntil = moment(revokedUntil).format("YYYY-MM-DD HH:mm:ss");
+  }
+
+  await datastore.updatePermission(uid,pid as Permission,revokedUntil);
+  const ret = await datastore.getPermissions(uid);
+  res.send(ret);
+}));
+
 app.route('/:id').get(handle(async (req,res,next) => {
   var id = parseInt(req.params.id, 10);
-  const params: GetUsersParms = {id,page:0,limit:1};
+  const params = {id,page:0,limit:1} as GetUsersParms;
   if (!req.user || !req.user.isAdmin) params.banned = false;
 
   const users = await datastore.getUsers(params);
@@ -159,11 +195,12 @@ app.route('/:id').get(handle(async (req,res,next) => {
   const user = users[0];
   if (user && (!req.user || req.user.sub != id)) {
     delete user.email;
-    delete user.canReport;
-    delete user.canSubmit;
-    delete user.canReview;
-    delete user.canScreenshot;
     delete user.banned;
+  }
+  
+  const canSeePerms = !!(req.user && (req.user.sub == id || req.user.isAdmin))
+  if (canSeePerms) {
+    user.permissions = await datastore.getPermissions(id);
   }
   res.send(user);
 }));
@@ -225,10 +262,6 @@ app.route('/:id').patch(userCheck(), handle(async (req,res,next) => {
   }
 
   if (!req.user.isAdmin) {
-    delete user.canReport;
-    delete user.canSubmit;
-    delete user.canReview;
-    delete user.canScreenshot;
     delete user.banned;
     delete user.unsuccessfulLogins;
     delete user.lastIp;

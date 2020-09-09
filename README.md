@@ -1,6 +1,8 @@
 # Delicious-Fruit Server 2.0
 This project is the second iteration of Delfruit, which brings the application into the modern era!
 
+[![Build Status](https://travis-ci.com/Klazen108/delfruit2-server.svg?token=aSsK6e8aPhD8C4qg6qwK&branch=master)](https://travis-ci.com/Klazen108/delfruit2-server)
+
 * Built on Typescript and Node.js
 * REST-compliant API
 * Stateless and scalable

@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: iwm-ingress
+spec:
+  rules:
+  - host: df2.fangam.es
+    http:
+      paths:
+      - path: /api
+        backend:
+          serviceName: df2-server
+          servicePort: 4201
+      - path: /
+        backend:
+          serviceName: df2-client
+          servicePort: 80

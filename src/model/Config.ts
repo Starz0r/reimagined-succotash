@@ -6,6 +6,7 @@ export default interface Config {
 
   app_port: number;
   app_jwt_secret: string;
+  bcrypt_rounds: number;
 
   s3: Minio.ClientOptions;
   s3_bucket:string;

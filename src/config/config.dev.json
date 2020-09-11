@@ -10,6 +10,7 @@
 
   "app_port": 4201,
   "app_jwt_secret": "what_up_fam",
+  "bcrypt_rounds": 3,
 
   "s3":{
     "endPoint":"minio",

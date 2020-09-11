@@ -213,6 +213,11 @@ const options = {
 const specs = swaggerJsdoc(options);
 app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(specs));
 
+if (config.bcrypt_rounds < 10) {
+  console.log("WARNING!! bcrypt_rounds is less than 10. "+
+  "Lower values mean faster hash attempts for password crackers!");
+}
+
 console.log('Starting app...');
 
 app.listen(config.app_port,  () => {

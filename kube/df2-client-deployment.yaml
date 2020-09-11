@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.test.yaml
+    kompose.version: 1.19.0 (f63a961c)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: df2-client
+  name: df2-client
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.test.yaml
+        kompose.version: 1.19.0 (f63a961c)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: df2-client
+    spec:
+      containers:
+      - image: klazen108/df2-client
+        name: df2-client
+        ports:
+        - containerPort: 80
+        resources: {}
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      io.kompose.service: df2-client
+status: {}

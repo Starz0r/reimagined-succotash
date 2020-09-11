@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.test.yaml
+    kompose.version: 1.19.0 (f63a961c)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: df2-server
+  name: df2-server
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.test.yaml
+        kompose.version: 1.19.0 (f63a961c)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: df2-server
+    spec:
+      containers:
+      - image: klazen108/df2-server
+        name: df2-server
+        ports:
+        - containerPort: 4201
+        resources: {}  
+        volumeMounts:
+          - name: secret-volume
+            #this should get changed for release
+            mountPath: /home/node/app/src/config
+            readOnly: true
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: df2-server-config
+  selector:
+    matchLabels:
+      io.kompose.service: df2-server
+status: {}

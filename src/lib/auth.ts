@@ -32,7 +32,7 @@ export default class AuthModule {
   }
 
   public async hashPassword(password: string): Promise<string> {
-    return await bcrypt.hash(password,10);
+    return await bcrypt.hash(password,config.bcrypt_rounds);
   }
 
   public async verifyPassword(hash: string, password: string): Promise<boolean> {

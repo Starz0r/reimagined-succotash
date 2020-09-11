@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.test.yaml
+    kompose.version: 1.19.0 (f63a961c)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: df2-server
+  name: df2-server
+spec:
+  ports:
+  - name: "4201"
+    port: 4201
+    targetPort: 4201
+  selector:
+    io.kompose.service: df2-server
+status:
+  loadBalancer: {}

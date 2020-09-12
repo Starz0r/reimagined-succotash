@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
   PRIMARY KEY (id),
   UNIQUE KEY name_2 (name),
   KEY banned (banned)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) DEFAULT CHARSET=utf8;
       
       `,[],(err,rows)=>{
         if (err) reject(err);
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         PRIMARY KEY (id),
         KEY removed (removed),
         KEY date_created (date_created)
-      ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+      ) DEFAULT CHARSET=utf8;
       
       `,[],(err,rows)=>{
         if (err) reject(err);
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         user_id int(11) NOT NULL,
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (game_id,tag_id,user_id)
-      ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+      ) DEFAULT CHARSET=utf8;
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         PRIMARY KEY (id),
         date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         KEY name (name)
-      ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+      ) DEFAULT CHARSET=utf8;
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();
@@ -246,7 +246,7 @@ CREATE TABLE IF NOT EXISTS delfruit.User (
         KEY game_id (removed,game_id),
         KEY review_date (date_created),
         KEY idx_gid_rem (game_id,removed)
-      ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+      ) DEFAULT CHARSET=utf8;
       `,[],(err,rows)=>{
         if (err) reject(err);
         else resolve();

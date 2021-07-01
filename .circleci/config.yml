@@ -21,6 +21,7 @@ jobs:
                 name: Build
                 command: |
                     apk add --no-cache git
+                    git fetch --tags
                     docker build -t $CONTAINER_REGISTRY_URL/$CONTAINER_REGISTRY/reimagined-succotash:latest -t $CONTAINER_REGISTRY_URL/$CONTAINER_REGISTRY/reimagined-succotash:$(git describe) .
             - when:
                 condition: <<parameters.with_deploy>>

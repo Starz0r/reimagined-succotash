@@ -1,15 +1,40 @@
 version: 2.1
 
 executors:
+  node:
+    working_directory: /tmp/int_tests
+    docker:
+      - image: node:12.18.4-alpine3.12
   docker:
     working_directory: /tmp/workspace
     docker:
       - image: docker:latest
 
 jobs:
+    integration-tests:
+        executor: node
+        steps:
+            - checkout
+            - setup_remote_docker:
+                version: 17.09.0-ce
+            - run:
+                name: Get Configuration
+                command: |
+                    cp src/config/config.dev.json src/config/config.json
+            - run:
+                name: Setup Development Environment
+                command: |
+                    docker-compose up -d
+                    npm i
+                    until curl -s localhost:4201/api/ping/; do true; done > /dev/null
+                    docker ps
+            - run:
+                name: Run Integration Tests
+                command: |
+                    npm run test-int
     docker:
         parameters:
-            with_deploy:
+            with_publish:
                 type: boolean
                 default: false
         executor: docker
@@ -24,7 +49,7 @@ jobs:
                     git fetch --tags
                     docker build -t $CONTAINER_REGISTRY_URL/$CONTAINER_REGISTRY/reimagined-succotash:latest -t $CONTAINER_REGISTRY_URL/$CONTAINER_REGISTRY/reimagined-succotash:$(git describe) .
             - when:
-                condition: <<parameters.with_deploy>>
+                condition: <<parameters.with_publish>>
                 steps:
                     - run:
                         name: Publish
@@ -35,11 +60,13 @@ jobs:
                             
 workflows:
     version: 2
-    build:
+    testing:
         jobs:
+            - integration-tests:
+                name: Integration Tests
             - docker:
-                name: auto-build
-                with_deploy: true
+                name: Build & Publish
+                with_publish: true
                 filters:
                     branches:
                         only: master

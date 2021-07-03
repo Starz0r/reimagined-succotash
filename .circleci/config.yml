@@ -4,7 +4,7 @@ executors:
   node:
     working_directory: /tmp/int_tests
     docker:
-      - image: node:12.18.4-alpine3.12
+      - image: node:12.18.4-buster-slim
   docker:
     working_directory: /tmp/workspace
     docker:
@@ -24,7 +24,7 @@ jobs:
             - run:
                 name: Install Docker Compose
                 command: |
-                    apk add --no-cache curl
+                    apt install -y curl sudo
                     curl -L https://github.com/docker/compose/releases/download/1.25.3/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
                     chmod +x ~/docker-compose
                     sudo mv ~/docker-compose /usr/local/bin/docker-compose

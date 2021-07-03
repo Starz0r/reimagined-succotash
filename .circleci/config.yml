@@ -72,7 +72,8 @@ workflows:
             - integration-tests:
                 name: Integration Tests
             - docker:
-                requires: integration-tests
+                requires:
+                    - integration-tests
                 name: Build & Publish
                 with_publish: true
                 filters:

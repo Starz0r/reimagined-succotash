@@ -22,24 +22,28 @@ jobs:
                 command: |
                     cp src/config/config.dev.json src/config/config.json
             - run:
-                name: Install Docker Compose
+                name: Install Docker & Docker Compose
                 command: |
                     apt update
-                    apt install -y curl sudo git python3 make build-essential
+                    apt install -y curl
+                    deb https://download.docker.com/linux/debian/ buster stable
+                    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+                    apt update
+                    apt install -y apt-transport-https ca-certificates gnupg lsb-release sudo git python3 make build-essential docker-ce=17.12.0~ce-0
                     curl -L https://github.com/docker/compose/releases/download/1.25.3/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
                     chmod +x ~/docker-compose
                     sudo mv ~/docker-compose /usr/local/bin/docker-compose
             - run:
-                name: Setup Development Environment
+                name: Setup Testing Environment
                 command: |
                     docker-compose up -d
                     docker-compose ps
                     docker-compose logs -t --tail="all" df2-server
+                    docker ps
             - run:
                 name: Wait For Server Warmup
                 command: |
                     npm i -d
-                    docker-compose ps
                     git clone https://github.com/vishnubob/wait-for-it
                     chmod +x ./wait-for-it/wait-for-it.sh
                     until ./wait-for-it/wait-for-it.sh localhost:4201 -t 3
@@ -47,6 +51,7 @@ jobs:
                         docker-compose ps
                         docker-compose logs -t --tail="all" df2-server
                     done
+                    docker ps
             - run:
                 name: Run Integration Tests
                 command: |

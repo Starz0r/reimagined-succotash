@@ -47,7 +47,7 @@ services:
     image: toschneck/wait-for-it
     command: ["localhost:4201", "-t", "0"]
     depends_on:
-        - memcached
+        - memcache
         - minio
         - mysql
         - df2-server

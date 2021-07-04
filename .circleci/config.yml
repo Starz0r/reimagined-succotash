@@ -40,7 +40,6 @@ jobs:
                 command: |
                     npm i -d
                     docker-compose ps
-                    until curl -s localhost:4201/api/ping/; do true; done > /dev/null
             - run:
                 name: Run Integration Tests
                 command: |

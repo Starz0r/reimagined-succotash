@@ -15,6 +15,11 @@ services:
       - memcache
     volumes:
       - ./src:/app/src
+    healthcheck:
+        test: [ "CMD", "curl", "localhost:4201/api/ping/" ]
+        timeout: 5s
+        intervals: 3s
+        retries: 10
     #command: ["ls", "-al", "src"]
   mysql:
     image: mysql:8.0.20

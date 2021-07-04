@@ -39,10 +39,8 @@ jobs:
                 name: Wait For Server Warmup
                 command: |
                     npm i -d
-                    docker ps
                     docker-compose ps
                     until curl -s localhost:4201/api/ping/; do true; done > /dev/null
-                    docker ps
             - run:
                 name: Run Integration Tests
                 command: |

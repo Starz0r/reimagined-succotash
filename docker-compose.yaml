@@ -16,7 +16,6 @@ services:
     volumes:
       - ./src:/app/src
     #command: ["ls", "-al", "src"]
-    network_mode: "host"
   mysql:
     image: mysql:8.0.20
     environment:

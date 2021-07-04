@@ -35,6 +35,7 @@ jobs:
                 command: |
                     docker-compose up -d
                     docker-compose ps
+                    docker-compose logs -t --tail="all" int_tests_df2-server_1
             - run:
                 name: Wait For Server Warmup
                 command: |

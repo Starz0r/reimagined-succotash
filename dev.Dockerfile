@@ -12,7 +12,7 @@ RUN npm install
 COPY --chown=node:node nodemon.json .
 COPY --chown=node:node tsconfig.json .
 COPY --chown=node:node typings ./typings
-#COPY --chown=node:node src ./src
+COPY --chown=node:node src ./src
 
 EXPOSE 4201
 

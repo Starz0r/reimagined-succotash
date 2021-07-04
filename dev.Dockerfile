@@ -14,6 +14,10 @@ COPY --chown=node:node . .
 
 RUN ls -la
 
+RUN ls -la ./src
+
+RUN ls -la ./src/config
+
 RUN cp ./src/config/config.dev.json ./src/config/config.json
 
 EXPOSE 4201

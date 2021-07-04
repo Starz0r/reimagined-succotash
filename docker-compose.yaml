@@ -37,3 +37,7 @@ services:
       - "11211"
     ports:
       - "11211:11211"
+  shell:
+    image: bash
+    depends_on:
+        - df2-server

@@ -37,7 +37,7 @@ jobs:
             - run:
                 name: Wait For Server Warmup
                 command: |
-                    npm i
+                    npm i -ddd
                     until curl -s localhost:4201/api/ping/; do true; done > /dev/null
                     docker ps
             - run:

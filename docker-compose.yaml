@@ -43,3 +43,11 @@ services:
       - "11211"
     ports:
       - "11211:11211"
+  wait-for-startup:
+    image: toschneck/wait-for-it
+    command: ["localhost:4201", "-t", "0"]
+    depends_on:
+        - memcached
+        - minio
+        - mysql
+        - df2-server

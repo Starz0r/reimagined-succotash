@@ -32,7 +32,7 @@ jobs:
             - run:
                 name: Setup Development Environment
                 command: |
-                    docker-compose up -d
+                    docker-compose up -d &
                     npm i
                     until curl -s localhost:4201/api/ping/; do true; done > /dev/null
                     docker ps

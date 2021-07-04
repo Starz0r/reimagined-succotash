@@ -31,7 +31,6 @@ jobs:
                     sudo mv ~/docker-compose /usr/local/bin/docker-compose
             - run:
                 name: Setup Development Environment
-                background: true
                 command: |
                     docker-compose up -d
                     docker-compose ps
@@ -40,6 +39,8 @@ jobs:
                 name: Wait For Server Warmup
                 command: |
                     npm i -d
+                    docker ps
+                    docker-compose ps
                     until curl -s localhost:4201/api/ping/; do true; done > /dev/null
                     docker ps
             - run:

@@ -10,8 +10,8 @@ services:
       - mysql
       - minio
       - memcache
-    #volumes:
-    #  - ./src:/app/src
+    volumes:
+      - ./src:/app/src
     #command: ["ls", "-al", "src"]
   mysql:
     image: mysql:5

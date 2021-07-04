@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: dev.Dockerfile
+    expose:
+      - "4201"
     ports:
      - "4201:4201"
     depends_on:
@@ -14,7 +16,7 @@ services:
       - ./src:/app/src
     #command: ["ls", "-al", "src"]
   mysql:
-    image: mysql:5
+    image: mysql:8.0.20
     environment:
       MYSQL_ROOT_PASSWORD: my-secret-pw
     expose: # exposes 3306 on the internal container network for the server
@@ -31,4 +33,5 @@ services:
     image: memcached:1.6.9
     expose: # exposes 3306 on the internal container network for the server
       - "11211"
-
+    ports:
+      - "11211:11211"

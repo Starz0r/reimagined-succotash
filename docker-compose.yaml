@@ -1,4 +1,9 @@
 version: '3'
+
+networks:
+    default:
+        driver: bridge
+
 services:
   df2-server:
     build:
@@ -15,6 +20,8 @@ services:
     volumes:
       - ./src:/app/src
     #command: ["ls", "-al", "src"]
+    networks:
+        - default
   mysql:
     image: mysql:8.0.20
     environment:

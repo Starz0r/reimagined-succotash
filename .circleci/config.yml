@@ -25,7 +25,7 @@ jobs:
                 name: Install Docker Compose
                 command: |
                     apt update
-                    apt install -y curl sudo python3 make build-essential
+                    apt install -y curl sudo git python3 make build-essential
                     curl -L https://github.com/docker/compose/releases/download/1.25.3/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
                     chmod +x ~/docker-compose
                     sudo mv ~/docker-compose /usr/local/bin/docker-compose
@@ -40,6 +40,9 @@ jobs:
                 command: |
                     npm i -d
                     docker-compose ps
+                    git clone https://github.com/vishnubob/wait-for-it
+                    chmod +x ./wait-for-it/wait-for-it.sh
+                    ./wait-for-it/wait-for-it.sh localhost:4201 -t 0 -- echo "Server has warmed up!"
             - run:
                 name: Run Integration Tests
                 command: |

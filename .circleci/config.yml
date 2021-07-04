@@ -42,7 +42,11 @@ jobs:
                     docker-compose ps
                     git clone https://github.com/vishnubob/wait-for-it
                     chmod +x ./wait-for-it/wait-for-it.sh
-                    ./wait-for-it/wait-for-it.sh localhost:4201 -t 0 -- echo "Server has warmed up!"
+                    until ./wait-for-it/wait-for-it.sh localhost:4201 -t 3
+                    do
+                        docker-compose ps
+                        docker-compose logs -t --tail="all" df2-server
+                    done
             - run:
                 name: Run Integration Tests
                 command: |

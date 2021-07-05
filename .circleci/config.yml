@@ -24,7 +24,7 @@ jobs:
             - run:
                 name: Install Docker & Docker Compose
                 command: |
-                    apk add --no-cache git python3 make alpine-sdk jq sudo npm curl docker-compose
+                    apk add --no-cache git python3 make alpine-sdk jq sudo npm curl docker-compose bash
             - run:
                 name: Setup Testing Environment
                 command: |

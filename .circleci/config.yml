@@ -15,8 +15,6 @@ jobs:
         executor: node
         steps:
             - checkout
-            - setup_remote_docker:
-                version: 17.09.0-ce
             - run:
                 name: Get Configuration
                 command: |

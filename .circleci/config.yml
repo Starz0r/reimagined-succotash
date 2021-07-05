@@ -22,11 +22,11 @@ jobs:
             - run:
                 name: Install Packages
                 command: |
-                    apt update
-                    apt install -y curl sudo apt-transport-https ca-certificates gnupg lsb-release git python3 make build-essential jq
-                    curl -fsSL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-                    apt update
-                    apt install -y nodejs
+                    sudo apt update
+                    sudo apt install -y curl sudo apt-transport-https ca-certificates gnupg lsb-release git python3 make build-essential jq
+                    sudo curl -fsSL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+                    sudo apt update
+                    sudo apt install -y nodejs
             - run:
                 name: Setup Testing Environment
                 command: |

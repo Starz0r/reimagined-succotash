@@ -46,7 +46,7 @@ jobs:
                     npm i -d
                     git clone https://github.com/vishnubob/wait-for-it
                     chmod +x ./wait-for-it/wait-for-it.sh
-                    until ./wait-for-it/wait-for-it.sh localhost:4201 -t 3
+                    until sudo ./wait-for-it/wait-for-it.sh localhost:4201 -t 3
                     do
                         docker-compose ps
                         docker-compose logs -t --tail="all" df2-server

@@ -24,6 +24,9 @@ jobs:
                 command: |
                     apt update
                     apt install -y curl sudo apt-transport-https ca-certificates gnupg lsb-release git python3 make build-essential jq
+                    curl -fsSL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+                    apt update
+                    apt install -y nodejs
             - run:
                 name: Setup Testing Environment
                 command: |

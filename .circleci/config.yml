@@ -3,8 +3,8 @@ version: 2.1
 executors:
   node:
     working_directory: /tmp/int_tests
-    docker:
-      - image: docker:latest
+    machine:
+      - image: ubuntu-1604:201903-01
   docker:
     working_directory: /tmp/workspace
     docker:
@@ -15,16 +15,15 @@ jobs:
         executor: node
         steps:
             - checkout
-            - setup_remote_docker:
-                version: 17.09.0-ce
             - run:
                 name: Get Configuration
                 command: |
                     cp src/config/config.dev.json src/config/config.json
             - run:
-                name: Install Docker & Docker Compose
+                name: Install Packages
                 command: |
-                    apk add --no-cache git python3 make alpine-sdk jq sudo npm curl docker-compose bash
+                    apt update
+                    apt install -y curl sudo apt-transport-https ca-certificates gnupg lsb-release git python3 make build-essential jq
             - run:
                 name: Setup Testing Environment
                 command: |
@@ -37,7 +36,12 @@ jobs:
                 command: |
                     npm i -d
                     git clone https://github.com/vishnubob/wait-for-it
-                    until ./wait-for-it/wait-for-it.sh localhost:4201 -t 3
+                    chmod +x ./wait-for-it/wait-for-it.sh
+                    docker ps --latest -q -f 'name=df2-server' > container.id
+                    cat container.id
+                    docker container inspect $(cat container.id) | jq -r .[].NetworkSettings.Networks | jq -r .[].IPAddress > df2-server.ip
+                    cat df2-server.ip
+                    until ./wait-for-it/wait-for-it.sh $(cat df2-server.ip):4201 -t 3
                     do
                         docker-compose ps
                         docker-compose logs -t --tail="all" df2-server

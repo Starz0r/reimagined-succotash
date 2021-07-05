@@ -36,6 +36,7 @@ jobs:
                 name: Wait For Server Warmup
                 command: |
                     npm i -d
+                    git clone https://github.com/vishnubob/wait-for-it
                     until ./wait-for-it/wait-for-it.sh localhost:4201 -t 3
                     do
                         docker-compose ps

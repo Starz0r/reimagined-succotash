@@ -34,10 +34,10 @@ jobs:
             - run:
                 name: Setup Testing Environment
                 command: |
-                    docker-compose up -d
-                    docker-compose ps
-                    docker-compose logs -t --tail="all" df2-server
-                    docker ps
+                    sudo docker-compose up -d
+                    sudo docker-compose ps
+                    sudo docker-compose logs -t --tail="all" df2-server
+                    sudo docker ps
             - run:
                 name: Wait For Server Warmup
                 command: |
@@ -46,14 +46,14 @@ jobs:
                     chmod +x ./wait-for-it/wait-for-it.sh
                     until sudo ./wait-for-it/wait-for-it.sh localhost:4201 -t 3
                     do
-                        docker-compose ps
-                        docker-compose logs -t --tail="all" df2-server
+                        sudo docker-compose ps
+                        sudo docker-compose logs -t --tail="all" df2-server
                     done
-                    docker ps
+                    sudo docker ps
             - run:
                 name: Run Integration Tests
                 command: |
-                    npm run test-int
+                    sudo npm run test-int
     docker:
         parameters:
             with_publish:

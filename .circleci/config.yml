@@ -48,7 +48,7 @@ jobs:
                     chmod +x ./wait-for-it/wait-for-it.sh
                     docker ps --latest -q -f 'name=df2-server' > container.id
                     cat container.id
-                    docker container inspect $$$ | jq -r .[].NetworkSettings.Networks | jq -r .[].IPAddress > df2-server.ip
+                    docker container inspect $(cat container.id) | jq -r .[].NetworkSettings.Networks | jq -r .[].IPAddress > df2-server.ip
                     cat df2-server.ip
                     until ./wait-for-it/wait-for-it.sh $(cat df2-server.ip):4201 -t 3
                     do

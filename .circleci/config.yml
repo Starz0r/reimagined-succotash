@@ -15,8 +15,6 @@ jobs:
         executor: node
         steps:
             - checkout
-            - setup_remote_docker:
-                version: 17.09.0-ce
             - run:
                 name: Get Configuration
                 command: |
@@ -33,29 +31,30 @@ jobs:
                     curl -L https://github.com/docker/compose/releases/download/1.25.3/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
                     chmod +x ~/docker-compose
                     sudo mv ~/docker-compose /usr/local/bin/docker-compose
+                    sudo dockerd -H unix:///var/run/docker.sock -H tcp://localhost
             - run:
                 name: Setup Testing Environment
                 command: |
-                    docker-compose up -d
-                    docker-compose ps
-                    docker-compose logs -t --tail="all" df2-server
-                    docker ps
+                    sudo docker-compose up -d
+                    sudo docker-compose ps
+                    sudo docker-compose logs -t --tail="all" df2-server
+                    sudo docker ps
             - run:
                 name: Wait For Server Warmup
                 command: |
                     npm i -d
                     git clone https://github.com/vishnubob/wait-for-it
                     chmod +x ./wait-for-it/wait-for-it.sh
-                    docker ps --latest -q -f 'name=df2-server' > container.id
+                    sudo docker ps --latest -q -f 'name=df2-server' > container.id
                     cat container.id
-                    docker container inspect $(cat container.id) | jq -r .[].NetworkSettings.Networks | jq -r .[].IPAddress > df2-server.ip
+                    sudo docker container inspect $(cat container.id) | jq -r .[].NetworkSettings.Networks | jq -r .[].IPAddress > df2-server.ip
                     cat df2-server.ip
-                    until ./wait-for-it/wait-for-it.sh $(cat df2-server.ip):4201 -t 3
+                    until sudo ./wait-for-it/wait-for-it.sh $(cat df2-server.ip):4201 -t 3
                     do
-                        docker-compose ps
-                        docker-compose logs -t --tail="all" df2-server
+                        sudo docker-compose ps
+                        sudo docker-compose logs -t --tail="all" df2-server
                     done
-                    docker ps
+                    sudo docker ps
             - run:
                 name: Run Integration Tests
                 command: |
